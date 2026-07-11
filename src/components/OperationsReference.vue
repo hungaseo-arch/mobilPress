@@ -100,8 +100,14 @@ function todayPct(gantt: OpsGantt): number | null {
 }
 
 // ── 열 정렬 규칙 (전체 표 공통) ──────────────────
-/** 금액 열 → 오른쪽 정렬 + 줄바꿈 금지 */
+/** 여러 값이 나열되는 긴 텍스트 열(시장 가격 목록·인사이트 등) — 균등폭/줄바꿈금지 대상에서 제외 */
+function isLongTextHeader(header: string): boolean {
+  return /시장 가격|Harga Pasar|인사이트|Insight|경쟁사|Kompetitor|주요/i.test(header)
+}
+
+/** 금액 열 → 오른쪽 정렬 + 줄바꿈 금지 (시장 가격 같은 목록형은 제외) */
 function isAmountHeader(header: string): boolean {
+  if (isLongTextHeader(header)) return false
   return /Rp|금액|예산|실적|Budget|Realisasi|Total|Harga/i.test(header)
 }
 
@@ -126,6 +132,11 @@ function alignClass(headers: string[], index: number): string {
 /** 역할 컬럼은 한 줄로 표시 (줄바꿈 금지, 표는 균등폭 해제) */
 function isRoleHeader(header: string): boolean {
   return /역할|Peran|Role/i.test(header)
+}
+
+/** 셀 텍스트를 줄 단위로 분리 — '|' 는 줄바꿈, 각 줄 안의 괄호 묶음은 내부 줄바꿈 방지. */
+function cellLines(text: string): { text: string; nowrap: boolean }[][] {
+  return text.split('|').map((seg) => cellParts(seg.trim()))
 }
 
 /** 셀 텍스트를 조각으로 분리 — 괄호 묶음 (예: (18:00–06:00))은 내부 줄바꿈을 막습니다. */
@@ -156,7 +167,8 @@ function cellClass(headers: string[], cellIndex: number): string[] {
 /** 모든 열을 균등 폭으로 배분 (셀 간격 동일 유지).
  *  단, 역할 컬럼이 있으면 내용 길이대로 배분 (한 줄 유지가 우선). */
 function eqWidthEnabled(headers: string[]): boolean {
-  return headers.length >= 2 && !headers.some(isRoleHeader)
+  // 역할/긴 텍스트 열이 있으면 내용 길이대로 배분 (균등폭 강제 시 좁아져 글자가 겹침)
+  return headers.length >= 2 && !headers.some(isRoleHeader) && !headers.some(isLongTextHeader)
 }
 function eqWidthStyle(headers: string[]): Record<string, string> {
   return eqWidthEnabled(headers) ? { width: `${100 / headers.length}%` } : {}
@@ -272,7 +284,9 @@ const barClass: Record<GanttRow['status'], string> = {
                           class="px-5 py-2.5 text-foreground"
                           :class="[{ 'font-semibold': cellIndex === 0 }, cellClass(section.table.headers.slice(1), cellIndex)]"
                         >
-                          <span v-for="(part, i) in cellParts(cell)" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
+                          <span v-for="(line, li) in cellLines(cell)" :key="li" class="block">
+                            <span v-for="(part, i) in line" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
+                          </span>
                         </td>
                       </tr>
                     </tbody>
@@ -315,7 +329,9 @@ const barClass: Record<GanttRow['status'], string> = {
                         cellClass(section.table.headers, cellIndex),
                       ]"
                     >
-                      <span v-for="(part, i) in cellParts(cell)" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
+                      <span v-for="(line, li) in cellLines(cell)" :key="li" class="block">
+                        <span v-for="(part, i) in line" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
+                      </span>
                     </td>
                   </tr>
                 </tbody>
