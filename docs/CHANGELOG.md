@@ -2,6 +2,15 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-11 — 장착 정보에 작업자·입력자 추가
+
+- `installations` 에 `worker`(작업자), `entered_by`(입력자) 컬럼 추가
+  (**SQL Editor 에서 schema.sql 재실행 + Data API "Refresh schema cache" 필요**)
+- 작업자: 장착 등록/수정 폼에서 직접 입력, 목록의 작업일 칸에 표시
+- 입력자: 신규 등록 시 로그인 사용자 이름으로 **자동 기록** (수정해도 원본 유지),
+  수정 폼에서 읽기 전용으로 표시
+- i18n: form.worker(Petugas), form.enteredBy(Diinput oleh)
+
 ## 2026-07-11 — 비밀번호 재설정 기능 + 권한 관리 SQL 문서
 
 - `docs/ROLES.md` **신규**: 계정별 권한 부여/회수/현황 조회 SQL 모음

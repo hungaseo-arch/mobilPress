@@ -27,6 +27,8 @@ const form = reactive<InstallationForm>(
         qty: props.editing.qty,
         serialNumbers: props.editing.serialNumbers,
         workTime: props.editing.workTime,
+        worker: props.editing.worker,
+        enteredBy: props.editing.enteredBy,
         status: props.editing.status,
         note: props.editing.note,
         serviceFee: props.editing.serviceFee,
@@ -138,6 +140,14 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         <div>
           <label :class="labelClass" for="workTime">{{ t('form.workTime') }}</label>
           <input id="workTime" v-model="form.workTime" :class="inputClass" placeholder="13.30–16.30" />
+        </div>
+        <div>
+          <label :class="labelClass" for="worker">{{ t('form.worker') }}</label>
+          <input id="worker" v-model="form.worker" :class="inputClass" />
+        </div>
+        <div v-if="editing && form.enteredBy">
+          <span :class="labelClass">{{ t('form.enteredBy') }}</span>
+          <p class="px-1 py-2 text-sm text-muted-foreground">{{ form.enteredBy }}</p>
         </div>
         <div>
           <label :class="labelClass" for="instStatus">{{ t('form.status') }}</label>

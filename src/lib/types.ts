@@ -37,6 +37,9 @@ export interface InstallationForm {
   qty: number
   serialNumbers: string
   workTime: string
+  worker: string
+  /** 입력자 — 저장 시 로그인 사용자 이름으로 자동 기록 (수동 입력 아님) */
+  enteredBy: string
   status: InstallationStatus
   note: string
   serviceFee: number

@@ -43,6 +43,8 @@ create table if not exists public.installations (
   qty              integer not null default 1,
   serial_numbers   text not null default '',
   work_time        text not null default '',
+  worker           text not null default '',   -- 작업자
+  entered_by       text not null default '',   -- 입력자 (앱이 로그인 사용자 이름으로 자동 기록)
   status           text not null default 'completed' check (status in ('completed', 'pending', 'cancelled')),
   note             text not null default '',
   service_fee      bigint not null default 0,
@@ -53,6 +55,10 @@ create table if not exists public.installations (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+
+-- 기존 테이블에 작업자/입력자 컬럼 추가 (재실행 안전)
+alter table public.installations add column if not exists worker text not null default '';
+alter table public.installations add column if not exists entered_by text not null default '';
 
 -- updated_at 자동 갱신 트리거
 create or replace function public.set_updated_at()

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { apiFetch } from '@/lib/api'
+import { currentUser } from '@/lib/auth-state'
 import { parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { seedCustomers, seedInstallations } from '@/data/seed'
@@ -115,16 +116,20 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   async function saveInstallation(form: InstallationForm, editingId: string | null): Promise<boolean> {
     saving.value = true
     try {
+      // 입력자: 신규 등록 시 로그인 사용자 이름으로 자동 기록 (수정 시에는 원본 유지)
+      const payload: InstallationForm = editingId
+        ? form
+        : { ...form, enteredBy: currentUser.value?.name || currentUser.value?.email || '' }
       const response = editingId
         ? await apiFetch(`/mobil-press/installations/${editingId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(form),
+            body: JSON.stringify(payload),
           })
         : await apiFetch('/mobil-press/installations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(form),
+            body: JSON.stringify(payload),
           })
       await parseApi(response)
       toast.success(editingId ? t('toast.installationUpdated') : t('toast.installationSaved'))
