@@ -304,17 +304,25 @@ const tabsKo: OpsTab[] = [
         },
       },
       {
-        title: '시험 운영 & 프로모션',
+        title: '시험 운영',
         table: {
           headers: ['구분', '내용'],
           rows: [
             ['시험 운영', '1개월, 하루 1개소 (20개소)'],
             ['시험 할인', '50% (서비스 + 출동비)'],
+            ['일일 최소 목표', '2개소 / 4 pcs'],
+            ['리드타임', 'H+1'],
+          ],
+        },
+      },
+      {
+        title: '프로모션',
+        table: {
+          headers: ['구분', '내용'],
+          rows: [
             ['프로모션 기간', '6개월'],
             ['프로모션 서비스 할인', '30%'],
             ['프로모션 출동비 할인', 'Rp 100,000'],
-            ['일일 최소 목표', '2개소 / 4 pcs'],
-            ['리드타임', 'H+1'],
           ],
         },
       },
@@ -645,17 +653,25 @@ const tabsId: OpsTab[] = [
         },
       },
       {
-        title: 'Rencana Uji Coba & Promosi',
+        title: 'Uji Coba',
         table: {
           headers: ['Keterangan', 'Detail'],
           rows: [
             ['Masa Uji Coba', '1 bulan, 1 tempat/hari (20 tempat)'],
             ['Diskon Uji Coba', '50% (jasa + mobilisasi)'],
+            ['Target Harian Minimum', '2 tempat / 4 pcs'],
+            ['Lead Time', 'H+1'],
+          ],
+        },
+      },
+      {
+        title: 'Promosi',
+        table: {
+          headers: ['Keterangan', 'Detail'],
+          rows: [
             ['Masa Promosi', '6 bulan'],
             ['Diskon Promosi Jasa', '30%'],
             ['Diskon Mobilisasi Promosi', 'Rp 100,000'],
-            ['Target Harian Minimum', '2 tempat / 4 pcs'],
-            ['Lead Time', 'H+1'],
           ],
         },
       },
