@@ -128,6 +128,21 @@ function isRoleHeader(header: string): boolean {
   return /역할|Peran|Role/i.test(header)
 }
 
+/** 셀 텍스트를 조각으로 분리 — 괄호 묶음 (예: (18:00–06:00))은 내부 줄바꿈을 막습니다. */
+function cellParts(text: string): { text: string; nowrap: boolean }[] {
+  const parts: { text: string; nowrap: boolean }[] = []
+  const re = /\([^)]*\)/g
+  let last = 0
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push({ text: text.slice(last, m.index), nowrap: false })
+    parts.push({ text: m[0], nowrap: true })
+    last = m.index + m[0].length
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), nowrap: false })
+  return parts.length ? parts : [{ text, nowrap: false }]
+}
+
 function cellClass(headers: string[], cellIndex: number): string[] {
   const header = headers[cellIndex] ?? ''
   const classes = [alignClass(headers, cellIndex)]
@@ -257,7 +272,7 @@ const barClass: Record<GanttRow['status'], string> = {
                           class="px-5 py-2.5 text-foreground"
                           :class="[{ 'font-semibold': cellIndex === 0 }, cellClass(section.table.headers.slice(1), cellIndex)]"
                         >
-                          {{ cell }}
+                          <span v-for="(part, i) in cellParts(cell)" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
                         </td>
                       </tr>
                     </tbody>
@@ -300,7 +315,7 @@ const barClass: Record<GanttRow['status'], string> = {
                         cellClass(section.table.headers, cellIndex),
                       ]"
                     >
-                      {{ cell }}
+                      <span v-for="(part, i) in cellParts(cell)" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
                     </td>
                   </tr>
                 </tbody>

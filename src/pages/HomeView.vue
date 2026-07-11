@@ -11,6 +11,8 @@ import RevenueHistoryModal from '@/components/RevenueHistoryModal.vue'
 import MonthlyHistoryModal from '@/components/MonthlyHistoryModal.vue'
 import RequestHistoryModal from '@/components/RequestHistoryModal.vue'
 import OperationsReference from '@/components/OperationsReference.vue'
+import TablePagination from '@/components/TablePagination.vue'
+import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
 
 const store = useMobilPressStore()
@@ -23,6 +25,19 @@ const tabs = computed<{ key: Tab; label: string }[]>(() => [
   { key: 'revenue', label: t('tab.revenue') },
   { key: 'operations', label: t('tab.operations') },
 ])
+
+// 실적 분석 서브탭: 고객별 매출 / 월별 매출
+type RevenueTab = 'customer' | 'month'
+const revenueTab = ref<RevenueTab>('customer')
+const revenueTabs = computed<{ key: RevenueTab; label: string }[]>(() => [
+  { key: 'customer', label: t('revenue.byCustomer') },
+  { key: 'month', label: t('revenue.byMonth') },
+])
+
+// 페이지네이션 (장착 실적 / 고객별 매출 / 월별 매출)
+const instPage = usePagination(computed(() => store.filteredInstallations), 10)
+const custPage = usePagination(computed(() => store.revenueByCustomer), 10)
+const monthPage = usePagination(computed(() => store.revenueByMonth), 12)
 
 const customerModalOpen = ref(false)
 const editingCustomer = ref<Customer | null>(null)
@@ -169,25 +184,40 @@ onMounted(() => {
       <OperationsReference v-if="activeTab === 'operations'" />
 
       <template v-else>
-        <!-- 검색 + 등록 -->
-        <div class="mb-5 flex flex-wrap items-center justify-end gap-2">
-          <div class="relative w-full max-w-xs">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              v-model="store.query"
-              type="search"
-              :placeholder="t('search.placeholder')"
-              class="w-full rounded-md border border-border bg-input py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+        <!-- 검색 + (실적 분석) 서브탭 + 등록 — 한 행 정리 -->
+        <div class="mb-5 flex flex-wrap items-center gap-2" :class="activeTab === 'revenue' ? 'justify-between' : 'justify-end'">
+          <!-- 실적 분석 서브탭 (왼쪽) -->
+          <div v-if="activeTab === 'revenue'" class="flex w-fit gap-1 rounded-lg border border-border bg-card p-1">
+            <button
+              v-for="rt in revenueTabs"
+              :key="rt.key"
+              type="button"
+              class="whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-medium transition"
+              :class="revenueTab === rt.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+              @click="revenueTab = rt.key"
+            >
+              {{ rt.label }}
+            </button>
           </div>
-          <button
-            v-if="activeTab === 'installations' && canEdit"
-            type="button"
-            class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-            @click="openInstallationModal()"
-          >
-            <Plus class="h-4 w-4" /> {{ t('btn.addInstallation') }}
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative w-full max-w-xs">
+              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                v-model="store.query"
+                type="search"
+                :placeholder="t('search.placeholder')"
+                class="w-full rounded-md border border-border bg-input py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <button
+              v-if="activeTab === 'installations' && canEdit"
+              type="button"
+              class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              @click="openInstallationModal()"
+            >
+              <Plus class="h-4 w-4" /> {{ t('btn.addInstallation') }}
+            </button>
+          </div>
         </div>
 
         <!-- 로딩 -->
@@ -197,7 +227,8 @@ onMounted(() => {
         </div>
 
         <!-- 장착 실적 -->
-        <section v-else-if="activeTab === 'installations'" class="overflow-x-auto rounded-xl border border-border bg-card">
+        <section v-else-if="activeTab === 'installations'" class="rounded-xl border border-border bg-card">
+          <div class="overflow-x-auto">
           <table class="w-full min-w-260 text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
@@ -220,7 +251,7 @@ onMounted(() => {
                 </td>
               </tr>
               <tr
-                v-for="item in store.filteredInstallations"
+                v-for="item in instPage.paged.value"
                 :key="item.id"
                 class="border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
               >
@@ -265,13 +296,22 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
+          </div>
+          <TablePagination
+            :page="instPage.page.value"
+            :page-count="instPage.pageCount.value"
+            :start="instPage.start.value"
+            :end="instPage.end.value"
+            :total="instPage.total.value"
+            @go="instPage.go"
+          />
         </section>
 
-        <!-- 실적 분석: 고객별 매출 + 월별 매출 -->
-        <div v-else class="space-y-8">
-        <section>
-        <h2 class="mb-3 text-base font-bold text-foreground">{{ t('revenue.byCustomer') }}</h2>
-        <div class="overflow-x-auto rounded-xl border border-border bg-card">
+        <!-- 실적 분석: 고객별 매출 / 월별 매출 (서브탭은 상단 검색 행에) -->
+        <div v-else>
+        <!-- 고객별 매출 -->
+        <section v-if="revenueTab === 'customer'" class="rounded-xl border border-border bg-card">
+          <div class="overflow-x-auto">
           <table class="w-full min-w-140 table-fixed text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
@@ -290,11 +330,11 @@ onMounted(() => {
                 </td>
               </tr>
               <tr
-                v-for="([name, value], index) in store.revenueByCustomer"
+                v-for="([name, value], index) in custPage.paged.value"
                 :key="name"
                 class="border-b border-border/60 transition last:border-0 hover:bg-secondary/40"
               >
-                <td class="px-4 py-3 text-muted-foreground">{{ index + 1 }}</td>
+                <td class="px-4 py-3 text-muted-foreground">{{ custPage.offset.value + index + 1 }}</td>
                 <td class="px-4 py-3">
                   <button
                     type="button"
@@ -333,13 +373,20 @@ onMounted(() => {
               </tr>
             </tfoot>
           </table>
-        </div>
+          </div>
+          <TablePagination
+            :page="custPage.page.value"
+            :page-count="custPage.pageCount.value"
+            :start="custPage.start.value"
+            :end="custPage.end.value"
+            :total="custPage.total.value"
+            @go="custPage.go"
+          />
         </section>
 
         <!-- 월별 매출 -->
-        <section>
-        <h2 class="mb-3 text-base font-bold text-foreground">{{ t('revenue.byMonth') }}</h2>
-        <div class="overflow-x-auto rounded-xl border border-border bg-card">
+        <section v-else class="rounded-xl border border-border bg-card">
+          <div class="overflow-x-auto">
           <table class="w-full min-w-140 text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
@@ -357,7 +404,7 @@ onMounted(() => {
                 </td>
               </tr>
               <tr
-                v-for="[month, value] in store.revenueByMonth"
+                v-for="[month, value] in monthPage.paged.value"
                 :key="month"
                 class="cursor-pointer border-b border-border/60 transition last:border-0 hover:bg-secondary/40"
                 :title="t('month.rowHint')"
@@ -380,7 +427,15 @@ onMounted(() => {
               </tr>
             </tfoot>
           </table>
-        </div>
+          </div>
+          <TablePagination
+            :page="monthPage.page.value"
+            :page-count="monthPage.pageCount.value"
+            :start="monthPage.start.value"
+            :end="monthPage.end.value"
+            :total="monthPage.total.value"
+            @go="monthPage.go"
+          />
         </section>
         </div>
       </template>
