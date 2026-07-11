@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ClipboardList, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
-import { authEnabled, canEdit, currentUser, logout } from '@/lib/auth-state'
+import { authEnabled, canDelete, canEdit, currentUser, logout } from '@/lib/auth-state'
 import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
 import { lang, setLang, t } from '@/lib/i18n'
 import CustomerFormModal from '@/components/CustomerFormModal.vue'
@@ -251,6 +251,7 @@ onMounted(() => {
                       <Pencil class="h-4 w-4" />
                     </button>
                     <button
+                      v-if="canDelete"
                       type="button"
                       class="rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
                       :aria-label="t('btn.delete')"

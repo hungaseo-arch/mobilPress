@@ -2,6 +2,36 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-11 — GitHub Pages 배포 설정 (npm run deploy)
+
+- `gh-pages` 패키지 추가, `npm run deploy` 스크립트 구성 (빌드 → 404.html 복사 → gh-pages 브랜치 푸시)
+- `vite.config.ts`: production `base: '/mobilPress/'` (GitHub Pages 하위 경로 대응)
+- `router/index.ts`: `createWebHistory(import.meta.env.BASE_URL)` 로 base 경로 반영
+- 배포 URL: https://hungaseo-arch.github.io/mobilPress/
+- ⚠️ 주의: `.env` 의 Neon URL 이 빌드 결과물에 포함됨 (VITE_ 변수는 원래 클라이언트 노출용).
+  보안은 Neon Auth 로그인 + RLS 가 담당하므로 URL 노출 자체는 설계상 문제 없음
+- ⬜ 배포 사이트에서 로그인이 안 되면 Neon 콘솔 Auth → Configuration 의
+  Trusted origins 에 `https://hungaseo-arch.github.io` 추가 필요
+
+## 2026-07-11 — 역할 3단계로 세분화 (admin / staff / user)
+
+- **요구사항**: staff 는 등록·수정만, 삭제는 admin 만
+- `db/schema.sql` (**SQL Editor 재실행 필요**):
+  - `user_roles` 의 role 허용값에 `admin` 추가 (기존 테이블도 constraint 교체로 반영)
+  - `is_staff()` = staff 이상(입력·수정), `is_admin()` = admin(삭제) 함수 분리
+  - delete RLS 정책을 `is_admin()` 으로 변경
+- `auth-state.ts`: `Role` 에 admin 추가, `canEdit`(staff 이상) / `canDelete`(admin) 분리
+- `HomeView.vue`: 삭제(휴지통) 버튼은 admin 에게만 표시
+- 기존 staff 계정은 그대로 등록·수정 가능. 삭제가 필요한 계정은 admin 으로 승격:
+  `insert into user_roles ... values ('<USER_ID>', 'admin') on conflict do update ...`
+
+## 2026-07-11 — 초기 장착 실적 DB 등록용 seed.sql 추가
+
+- `db/seed.sql` **신규**: 보고서 기반 초기 데이터(고객 2건 + 장착 실적 3건)를 SQL Editor 에서
+  직접 등록. `where not exists` 로 중복 방지 — 여러 번 실행해도 안전
+- 앱의 "보고서 기반 초기 데이터 등록" 버튼(src/data/seed.ts)과 동일 데이터. 수정 시 양쪽 동기 유지
+- GitHub 등록: https://github.com/hungaseo-arch/mobilPress (main, .env 제외)
+
 ## 2026-07-10 — 역할 기반 권한(staff/user) + 감사 로그
 
 - **요구사항**: 수정 시 로그 기록 / staff 는 데이터 입력·수정, user 는 조회만

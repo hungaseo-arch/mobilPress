@@ -4,7 +4,8 @@
 --       Data API 활성화 (RLS 기반 접근).
 --
 -- 권한 모델:
---   staff — 데이터 입력/수정/삭제 + 조회
+--   admin — 데이터 입력/수정/삭제 + 조회
+--   staff — 데이터 입력/수정 + 조회 (삭제 불가)
 --   user  — 데이터 조회만 (신규 가입자 기본값)
 -- 모든 입력/수정/삭제는 audit_logs 에 자동 기록됩니다.
 
@@ -72,19 +73,24 @@ create trigger installations_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- ─────────────────────────────────────────────
--- 3. 역할 (user_roles) — staff / user
+-- 3. 역할 (user_roles) — admin / staff / user
 --    가입만 하면 기본 'user'(조회 전용)이며, 행이 없어도 user 로 취급됩니다.
---    staff 승격은 콘솔 SQL Editor 에서 (USER_ID 는 콘솔 Auth → Users 에서 확인):
---      insert into public.user_roles (user_id, role) values ('<USER_ID>', 'staff')
+--    승격은 콘솔 SQL Editor 에서 (USER_ID 는 콘솔 Auth → Users 에서 확인):
+--      insert into public.user_roles (user_id, role) values ('<USER_ID>', 'admin')  -- 또는 'staff'
 --        on conflict (user_id) do update set role = excluded.role;
 -- ─────────────────────────────────────────────
 create table if not exists public.user_roles (
   user_id    text primary key,
-  role       text not null default 'user' check (role in ('staff', 'user')),
+  role       text not null default 'user' check (role in ('admin', 'staff', 'user')),
   created_at timestamptz not null default now()
 );
 
--- 현재 요청 사용자가 staff 인지 검사 (RLS 정책에서 사용).
+-- 기존 테이블에 admin 역할 허용 (재실행 안전)
+alter table public.user_roles drop constraint if exists user_roles_role_check;
+alter table public.user_roles add constraint user_roles_role_check
+  check (role in ('admin', 'staff', 'user'));
+
+-- 현재 요청 사용자가 입력/수정 가능(staff 이상)인지 검사 (RLS 정책에서 사용).
 -- security definer: user_roles 의 RLS 와 무관하게 조회 가능해야 하므로.
 create or replace function public.is_staff()
 returns boolean
@@ -93,7 +99,19 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.user_roles
-    where user_id = auth.user_id() and role = 'staff'
+    where user_id = auth.user_id() and role in ('admin', 'staff')
+  )
+$$;
+
+-- 현재 요청 사용자가 삭제 가능(admin)인지 검사.
+create or replace function public.is_admin()
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.user_roles
+    where user_id = auth.user_id() and role = 'admin'
   )
 $$;
 
@@ -149,7 +167,7 @@ create trigger installations_audit
 
 -- ─────────────────────────────────────────────
 -- 5. RLS (Row Level Security)
---    조회: 로그인 사용자 전원 / 입력·수정·삭제: staff 만
+--    조회: 로그인 사용자 전원 / 입력·수정: staff 이상 / 삭제: admin 만
 -- ─────────────────────────────────────────────
 alter table public.customers enable row level security;
 alter table public.installations enable row level security;
@@ -175,7 +193,7 @@ create policy customers_update on public.customers
 
 drop policy if exists customers_delete on public.customers;
 create policy customers_delete on public.customers
-  for delete to authenticated using (public.is_staff());
+  for delete to authenticated using (public.is_admin());
 
 -- installations: 조회는 전원, 쓰기는 staff
 drop policy if exists installations_select on public.installations;
@@ -192,7 +210,7 @@ create policy installations_update on public.installations
 
 drop policy if exists installations_delete on public.installations;
 create policy installations_delete on public.installations
-  for delete to authenticated using (public.is_staff());
+  for delete to authenticated using (public.is_admin());
 
 -- user_roles: 본인 역할만 조회 가능, API 로는 쓰기 불가 (SQL Editor 로만 관리)
 drop policy if exists user_roles_select_own on public.user_roles;

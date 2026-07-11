@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = env.VITE_API_PROXY_TARGET ?? ''
 
   return {
+    // GitHub Pages 배포 경로 (https://hungaseo-arch.github.io/mobilPress/)
+    base: mode === 'production' ? '/mobilPress/' : '/',
     server: {
       host: '::',
       port: 5173,
