@@ -186,13 +186,13 @@ onMounted(() => {
       <template v-else>
         <!-- 검색 + (실적 분석) 서브탭 + 등록 — 한 행 정리 -->
         <div class="mb-5 flex flex-wrap items-center gap-2" :class="activeTab === 'revenue' ? 'justify-between' : 'justify-end'">
-          <!-- 실적 분석 서브탭 (왼쪽) — 운영자료 탭과 동일 스타일 -->
-          <div v-if="activeTab === 'revenue'" class="flex flex-wrap gap-1.5">
+          <!-- 실적 분석 서브탭 (왼쪽) — 검색바·등록 버튼과 높이/크기 동일 -->
+          <div v-if="activeTab === 'revenue'" class="flex flex-wrap gap-2">
             <button
               v-for="rt in revenueTabs"
               :key="rt.key"
               type="button"
-              class="whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition"
+              class="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition"
               :class="
                 revenueTab === rt.key
                   ? 'border-primary bg-primary text-primary-foreground'
