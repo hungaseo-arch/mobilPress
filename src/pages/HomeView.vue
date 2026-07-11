@@ -199,8 +199,8 @@ onMounted(() => {
               {{ rt.label }}
             </button>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="relative w-full max-w-xs">
+          <div class="flex items-center gap-2">
+            <div class="relative w-48 sm:w-64">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 v-model="store.query"
