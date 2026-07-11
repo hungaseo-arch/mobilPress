@@ -32,6 +32,8 @@ export interface OpsTab {
   key: string
   label: string
   sections: OpsSection[]
+  /** true 면 섹션(표)을 넓은 화면에서 한 행에 2개씩 배치 */
+  pairSections?: boolean
 }
 
 const tabsKo: OpsTab[] = [
@@ -273,6 +275,7 @@ const tabsKo: OpsTab[] = [
   {
     key: 'pricing',
     label: '⑥ 서비스 요금',
+    pairSections: true,
     sections: [
       {
         title: '서비스 요금표',
@@ -613,6 +616,7 @@ const tabsId: OpsTab[] = [
   {
     key: 'pricing',
     label: '⑥ Harga Jasa',
+    pairSections: true,
     sections: [
       {
         title: 'Daftar Harga Jasa',

@@ -138,14 +138,13 @@ function cellClass(headers: string[], cellIndex: number): string[] {
   return classes
 }
 
-/** 3~5열 표는 열 폭 균등 배분 (1/3, 1/4, 1/5).
+/** 모든 열을 균등 폭으로 배분 (셀 간격 동일 유지).
  *  단, 역할 컬럼이 있으면 내용 길이대로 배분 (한 줄 유지가 우선). */
-function eqWidthClass(headers: string[]): string {
-  if (headers.some(isRoleHeader)) return ''
-  if (headers.length === 3) return 'w-1/3'
-  if (headers.length === 4) return 'w-1/4'
-  if (headers.length === 5) return 'w-1/5'
-  return ''
+function eqWidthEnabled(headers: string[]): boolean {
+  return headers.length >= 2 && !headers.some(isRoleHeader)
+}
+function eqWidthStyle(headers: string[]): Record<string, string> {
+  return eqWidthEnabled(headers) ? { width: `${100 / headers.length}%` } : {}
 }
 
 const barClass: Record<GanttRow['status'], string> = {
@@ -176,7 +175,10 @@ const barClass: Record<GanttRow['status'], string> = {
     </nav>
 
     <template v-for="tab in operationsTabs" :key="tab.key">
-      <div v-if="activeKey === tab.key" class="space-y-4">
+      <div
+        v-if="activeKey === tab.key"
+        :class="tab.pairSections ? 'grid gap-4 lg:grid-cols-2 lg:items-start' : 'space-y-4'"
+      >
         <section
           v-for="(section, sectionIndex) in tab.sections"
           :key="section.title"
@@ -228,7 +230,7 @@ const barClass: Record<GanttRow['status'], string> = {
                 <div class="overflow-x-auto">
                   <table
                     class="w-full min-w-140 text-left text-sm"
-                    :class="{ 'table-fixed': eqWidthClass(section.table.headers.slice(1)) !== '' }"
+                    :class="{ 'table-fixed': eqWidthEnabled(section.table.headers.slice(1)) }"
                   >
                     <thead>
                       <tr class="border-t border-border/60 text-xs text-muted-foreground">
@@ -236,10 +238,8 @@ const barClass: Record<GanttRow['status'], string> = {
                           v-for="(header, headerIndex) in section.table.headers.slice(1)"
                           :key="header"
                           class="whitespace-nowrap px-5 py-2 font-medium"
-                          :class="[
-                            alignClass(section.table.headers.slice(1), headerIndex),
-                            eqWidthClass(section.table.headers.slice(1)),
-                          ]"
+                          :class="alignClass(section.table.headers.slice(1), headerIndex)"
+                          :style="eqWidthStyle(section.table.headers.slice(1))"
                         >
                           {{ header }}
                         </th>
@@ -270,7 +270,7 @@ const barClass: Record<GanttRow['status'], string> = {
             <div v-else-if="section.table" class="overflow-x-auto">
               <table
                 class="w-full min-w-140 text-left text-sm"
-                :class="{ 'table-fixed': eqWidthClass(section.table.headers) !== '' }"
+                :class="{ 'table-fixed': eqWidthEnabled(section.table.headers) }"
               >
                 <thead>
                   <tr class="border-b border-border text-xs text-muted-foreground">
@@ -278,10 +278,8 @@ const barClass: Record<GanttRow['status'], string> = {
                       v-for="(header, headerIndex) in section.table.headers"
                       :key="header"
                       class="whitespace-nowrap px-4 py-2.5 font-medium"
-                      :class="[
-                        alignClass(section.table.headers, headerIndex),
-                        eqWidthClass(section.table.headers),
-                      ]"
+                      :class="alignClass(section.table.headers, headerIndex)"
+                      :style="eqWidthStyle(section.table.headers)"
                     >
                       {{ header }}
                     </th>

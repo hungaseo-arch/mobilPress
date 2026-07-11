@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 import { emptyInstallation } from '@/data/seed'
+import { operationTeam } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import type { Installation, InstallationForm } from '@/lib/types'
 
@@ -74,10 +75,25 @@ watch(
   (qty) => syncSerialCount(qty),
 )
 
+// 작업자: 운영팀(operationTeam) 체크박스로 선택. 저장은 쉼표 연결 문자열.
+// 명단에 없는 기존 값(수동 입력분)은 그대로 보존합니다.
+const selectedWorkers = ref<string[]>(
+  form.worker.split(',').map((v) => v.trim()).filter(Boolean),
+)
+const customWorkers = computed(() =>
+  selectedWorkers.value.filter((w) => !operationTeam.includes(w as (typeof operationTeam)[number])),
+)
+function toggleWorker(name: string) {
+  const idx = selectedWorkers.value.indexOf(name)
+  if (idx >= 0) selectedWorkers.value.splice(idx, 1)
+  else selectedWorkers.value.push(name)
+}
+
 function onSubmit() {
   if (!form.customerName.trim()) return
   emit('submit', {
     ...form,
+    worker: selectedWorkers.value.map((v) => v.trim()).filter(Boolean).join(', '),
     serialNumbers: serials.value.map((v) => v.trim()).filter(Boolean).join(', '),
     qty: Number(form.qty) || 0,
     serviceFee: Number(form.serviceFee) || 0,
@@ -142,8 +158,26 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           <input id="workTime" v-model="form.workTime" :class="inputClass" placeholder="13.30–16.30" />
         </div>
         <div>
-          <label :class="labelClass" for="worker">{{ t('form.worker') }}</label>
-          <input id="worker" v-model="form.worker" :class="inputClass" />
+          <span :class="labelClass">{{ t('form.worker') }}</span>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button
+              v-for="name in operationTeam"
+              :key="name"
+              type="button"
+              class="rounded-md border px-3 py-1.5 text-sm transition"
+              :class="
+                selectedWorkers.includes(name)
+                  ? 'border-primary bg-primary/10 font-medium text-primary'
+                  : 'border-border text-muted-foreground hover:text-foreground'
+              "
+              @click="toggleWorker(name)"
+            >
+              {{ name }}
+            </button>
+            <span v-for="name in customWorkers" :key="name" class="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground">
+              {{ name }}
+            </span>
+          </div>
         </div>
         <div v-if="editing && form.enteredBy">
           <span :class="labelClass">{{ t('form.enteredBy') }}</span>

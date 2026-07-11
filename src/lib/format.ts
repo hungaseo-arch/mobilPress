@@ -32,3 +32,7 @@ export function productLines(product: string): string[] {
   const lines = (product ?? '').split(' / ').map((v) => v.trim()).filter(Boolean)
   return lines.length ? lines : ['-']
 }
+
+// 운영팀 인원 (운영자료 > 운영팀 명단과 동기 유지).
+// 장착 작업자 입력 시 후보로 제공하며, 통상 2~3인이 한 작업을 수행합니다.
+export const operationTeam = ['Firman', 'Harun', 'Arun'] as const

@@ -39,7 +39,7 @@ const revenueDetailCustomerObj = computed(
   () => store.customers.find((c) => c.companyName === revenueDetailCustomer.value) ?? null,
 )
 
-// 해당 장착 고객의 요청 고객(딜러/총판) — 장착 실적에서 중복 없이 수집
+// 해당 장착고객의 요청고객(요청고객) — 장착 실적에서 중복 없이 수집
 function requestCustomersOf(companyName: string): string[] {
   const names = store.installations
     .filter((i) => i.customerName === companyName && i.distributor)
