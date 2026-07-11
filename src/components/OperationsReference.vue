@@ -171,13 +171,13 @@ const barClass: Record<GanttRow['status'], string> = {
 
 <template>
   <div>
-    <!-- 하위 탭 -->
-    <nav class="mb-4 flex flex-wrap gap-1.5">
+    <!-- 하위 탭 (실적 분석 서브탭·검색행과 동일 크기) -->
+    <nav class="mb-4 flex flex-wrap gap-2">
       <button
         v-for="tab in operationsTabs"
         :key="tab.key"
         type="button"
-        class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition"
+        class="rounded-full border px-4 py-2 text-sm font-semibold transition"
         :class="
           activeKey === tab.key
             ? 'border-primary bg-primary text-primary-foreground'
