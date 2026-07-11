@@ -48,7 +48,7 @@ export const seedCustomers: CustomerForm[] = [
     lastVisitDate: '2026-06-29',
   },
   {
-    companyName: 'PT. Hankook Tire',
+    companyName: 'PT. Hankook Tire Indonesia',
     businessType: 'End user / Manufacturing',
     contactName: '',
     area: 'Cikarang',
@@ -82,7 +82,7 @@ export const seedInstallations: InstallationForm[] = [
   {
     workDate: '2026-07-01',
     distributor: 'PT. Total Tire Bank',
-    customerName: 'PT. Hankook Tire',
+    customerName: 'PT. Hankook Tire Indonesia',
     product: 'ASC 28*9-15 S2000',
     rimSize: '15',
     qty: 6,
@@ -98,7 +98,7 @@ export const seedInstallations: InstallationForm[] = [
   {
     workDate: '2026-07-06',
     distributor: 'PT. Total Tire Bank',
-    customerName: 'PT. Hankook Tire',
+    customerName: 'PT. Hankook Tire Indonesia',
     product: 'ASC 6.50-10 S2000',
     rimSize: '10',
     qty: 2,

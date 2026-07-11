@@ -123,20 +123,28 @@ function alignClass(headers: string[], index: number): string {
   return 'text-left'
 }
 
+/** 역할 컬럼은 한 줄로 표시 (줄바꿈 금지, 표는 균등폭 해제) */
+function isRoleHeader(header: string): boolean {
+  return /역할|Peran|Role/i.test(header)
+}
+
 function cellClass(headers: string[], cellIndex: number): string[] {
   const header = headers[cellIndex] ?? ''
   const classes = [alignClass(headers, cellIndex)]
   if (isAmountHeader(header) || isQtyHeader(header) || isDateHeader(header)) {
     classes.push('whitespace-nowrap', 'tabular-nums')
   }
+  if (isRoleHeader(header)) classes.push('whitespace-nowrap')
   return classes
 }
 
-/** 3~5열 표는 열 폭 균등 배분 (1/3, 1/4, 1/5) */
-function eqWidthClass(count: number): string {
-  if (count === 3) return 'w-1/3'
-  if (count === 4) return 'w-1/4'
-  if (count === 5) return 'w-1/5'
+/** 3~5열 표는 열 폭 균등 배분 (1/3, 1/4, 1/5).
+ *  단, 역할 컬럼이 있으면 내용 길이대로 배분 (한 줄 유지가 우선). */
+function eqWidthClass(headers: string[]): string {
+  if (headers.some(isRoleHeader)) return ''
+  if (headers.length === 3) return 'w-1/3'
+  if (headers.length === 4) return 'w-1/4'
+  if (headers.length === 5) return 'w-1/5'
   return ''
 }
 
@@ -220,7 +228,7 @@ const barClass: Record<GanttRow['status'], string> = {
                 <div class="overflow-x-auto">
                   <table
                     class="w-full min-w-140 text-left text-sm"
-                    :class="{ 'table-fixed': eqWidthClass(section.table.headers.length - 1) !== '' }"
+                    :class="{ 'table-fixed': eqWidthClass(section.table.headers.slice(1)) !== '' }"
                   >
                     <thead>
                       <tr class="border-t border-border/60 text-xs text-muted-foreground">
@@ -230,7 +238,7 @@ const barClass: Record<GanttRow['status'], string> = {
                           class="whitespace-nowrap px-5 py-2 font-medium"
                           :class="[
                             alignClass(section.table.headers.slice(1), headerIndex),
-                            eqWidthClass(section.table.headers.length - 1),
+                            eqWidthClass(section.table.headers.slice(1)),
                           ]"
                         >
                           {{ header }}
@@ -262,7 +270,7 @@ const barClass: Record<GanttRow['status'], string> = {
             <div v-else-if="section.table" class="overflow-x-auto">
               <table
                 class="w-full min-w-140 text-left text-sm"
-                :class="{ 'table-fixed': eqWidthClass(section.table.headers.length) !== '' }"
+                :class="{ 'table-fixed': eqWidthClass(section.table.headers) !== '' }"
               >
                 <thead>
                   <tr class="border-b border-border text-xs text-muted-foreground">
@@ -272,7 +280,7 @@ const barClass: Record<GanttRow['status'], string> = {
                       class="whitespace-nowrap px-4 py-2.5 font-medium"
                       :class="[
                         alignClass(section.table.headers, headerIndex),
-                        eqWidthClass(section.table.headers.length),
+                        eqWidthClass(section.table.headers),
                       ]"
                     >
                       {{ header }}
