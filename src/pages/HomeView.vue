@@ -385,6 +385,10 @@ onMounted(() => {
       </template>
     </div>
 
+    <footer class="border-t border-border py-6 text-center text-xs text-muted-foreground">
+      Copyright © ASEOA
+    </footer>
+
     <CustomerFormModal
       v-if="customerModalOpen"
       :editing="editingCustomer"
