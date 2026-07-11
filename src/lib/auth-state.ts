@@ -8,9 +8,10 @@ export const authEnabled = dataMode === 'neon' && isNeonConfigured
 
 export const currentUser = ref<AuthUser | null>(null)
 
-/** DB 의 user_roles 테이블 기준 역할. 행이 없으면 'user'(조회 전용). */
-export type Role = 'admin' | 'staff' | 'user'
-export const userRole = ref<Role>('user')
+/** DB 의 user_roles 테이블 기준 역할. 행이 없으면 'user'(조회 전용).
+ *  외부에서는 직접 변경하지 말고 canEdit/canDelete 를 사용하세요. */
+type Role = 'admin' | 'staff' | 'user'
+const userRole = ref<Role>('user')
 
 /** 데이터 입력/수정 가능 여부 (staff 이상). mock/proxy 모드에서는 항상 허용. */
 export const canEdit = computed(() => !authEnabled || userRole.value !== 'user')

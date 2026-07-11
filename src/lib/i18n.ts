@@ -55,7 +55,6 @@ const messages: Record<string, { id: string; ko: string }> = {
 
   'th.bizArea': { id: 'Bisnis / Area', ko: '업종 / 지역' },
   'th.vendorPrice': { id: 'Vendor / Harga Pasar', ko: '현재 업체 / 시장가' },
-  'th.status': { id: 'Status', ko: '상태' },
   'th.lastVisit': { id: 'Kunjungan Terakhir', ko: '최근 방문' },
   'th.workDate': { id: 'Tanggal', ko: '작업일' },
   'th.customer': { id: 'Customer', ko: '장착고객' },
@@ -89,7 +88,7 @@ const messages: Record<string, { id: string; ko: string }> = {
   'form.customer.add': { id: 'Tambah Customer', ko: '고객 등록' },
   'form.customer.edit': { id: 'Edit Info Customer', ko: '고객 정보 수정' },
   'form.companyName': { id: 'Nama Perusahaan *', ko: '회사명 *' },
-  'form.businessType': { id: 'Jenis Bisnis', ko: '업종' },
+  'form.businessType': { id: 'Jenis Bisnis', ko: '' },
   'form.contactName': { id: 'PIC / Kontak', ko: '담당자' },
   'form.area': { id: 'Area', ko: '지역' },
   'form.branchInfo': { id: 'Cabang / Catatan', ko: '지점/비고' },
