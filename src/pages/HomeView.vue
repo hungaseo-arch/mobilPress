@@ -186,14 +186,18 @@ onMounted(() => {
       <template v-else>
         <!-- 검색 + (실적 분석) 서브탭 + 등록 — 한 행 정리 -->
         <div class="mb-5 flex flex-wrap items-center gap-2" :class="activeTab === 'revenue' ? 'justify-between' : 'justify-end'">
-          <!-- 실적 분석 서브탭 (왼쪽) -->
-          <div v-if="activeTab === 'revenue'" class="flex w-fit gap-1 rounded-lg border border-border bg-card p-1">
+          <!-- 실적 분석 서브탭 (왼쪽) — 운영자료 탭과 동일 스타일 -->
+          <div v-if="activeTab === 'revenue'" class="flex flex-wrap gap-1.5">
             <button
               v-for="rt in revenueTabs"
               :key="rt.key"
               type="button"
-              class="whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-medium transition"
-              :class="revenueTab === rt.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+              class="whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition"
+              :class="
+                revenueTab === rt.key
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground'
+              "
               @click="revenueTab = rt.key"
             >
               {{ rt.label }}
