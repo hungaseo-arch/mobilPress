@@ -2,6 +2,17 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-11 — 비밀번호 재설정 기능 + 권한 관리 SQL 문서
+
+- `docs/ROLES.md` **신규**: 계정별 권한 부여/회수/현황 조회 SQL 모음
+  (콘솔 "Make admin" 은 앱 권한과 무관하다는 주의 포함)
+- 비밀번호 재설정 (이메일 링크 방식):
+  - `neon-auth.ts`: `requestPasswordReset` / `resetPassword` 헬퍼 추가
+  - `AuthGate.vue`: 로그인 화면에 "비밀번호를 잊으셨나요?" 모드 추가 (이메일 입력 → 링크 발송)
+  - `ResetPasswordView.vue` **신규** (`/reset-password` 라우트): 링크의 token 으로 새 비밀번호 설정,
+    만료/무효 토큰 안내 처리. AuthGate 는 이 라우트를 로그인 없이 통과시킴
+- ⚠️ 재설정 메일이 오지 않으면 스팸함 확인. 발신은 Neon Auth 관리형 메일
+
 ## 2026-07-11 — GitHub Pages 배포 설정 (npm run deploy)
 
 - `gh-pages` 패키지 추가, `npm run deploy` 스크립트 구성 (빌드 → 404.html 복사 → gh-pages 브랜치 푸시)

@@ -54,3 +54,17 @@ export async function signOut(): Promise<void> {
   if (!neon) return
   await neon.auth.signOut()
 }
+
+/** 비밀번호 재설정 링크를 이메일로 발송합니다. 링크는 redirectTo?token=... 으로 옵니다. */
+export async function requestPasswordReset(email: string, redirectTo: string): Promise<void> {
+  if (!neon) throw new Error('Neon 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.')
+  const { error } = await neon.auth.requestPasswordReset({ email, redirectTo })
+  if (error) throw new Error(error.message ?? '재설정 메일 발송에 실패했습니다.')
+}
+
+/** 이메일 링크의 token 으로 새 비밀번호를 설정합니다. */
+export async function resetPassword(newPassword: string, token: string): Promise<void> {
+  if (!neon) throw new Error('Neon 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.')
+  const { error } = await neon.auth.resetPassword({ newPassword, token })
+  if (error) throw new Error(error.message ?? '비밀번호 재설정에 실패했습니다.')
+}
