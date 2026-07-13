@@ -54,7 +54,7 @@ const tabsKo: OpsTab[] = [
             ['Arun', '운영팀', '까라왕', '운영 · 유지보수 · 작업 보고', 'SIM A'],
           ],
         },
-        note: '면허 취득 예산 집행: SIM A 2명 + SIM B1 Umum 3명 (Rp 4,572,000) | 매주 월요일 Sales Meeting 후 Mobil Press Review 진행 | 시험 운영 1개월: 하루 1개소 목표 (20개소)',
+        note: 매주 월요일 Sales Meeting 후 Mobil Press Review 진행 | 시험 운영 1개월: 하루 1개소 목표 (20개소)',
       },
     ],
   },
@@ -292,14 +292,25 @@ const tabsKo: OpsTab[] = [
         note: '최소 청구: Rp 500,000/방문 | 기존 고객 할인: Rp 50,000 | 폐타이어 처리: Rp 50,000–100,000/개',
       },
       {
-        title: '출동비 & 긴급 요금',
+        title: '출동비 (Zone별)',
         table: {
-          headers: ['Zone', '거리', '출동비 (Rp)', '긴급 조건', '추가 요금 (Rp)'],
+          headers: ['Zone', '거리', '출동비 (Rp)'],
           rows: [
-            ['Zone 1', '0~20 km', '100,000', '업무시간 외 (18:00–06:00)', '+500,000'],
-            ['Zone 2', '20~50 km', '150,000', '주말·공휴일', '+750,000'],
-            ['Zone 3', '50~100 km', '300,000', '긴급 호출 4시간 이내', '+1,000,000'],
-            ['Zone 4', '>100 km', '협의', '', ''],
+            ['Zone 1', '0~20 km', '100,000'],
+            ['Zone 2', '20~50 km', '150,000'],
+            ['Zone 3', '50~100 km', '300,000'],
+            ['Zone 4', '>100 km', '협의'],
+          ],
+        },
+      },
+      {
+        title: '긴급 요금',
+        table: {
+          headers: ['긴급 조건', '추가 요금 (Rp)'],
+          rows: [
+            ['업무시간 외 (18:00–06:00)', '+500,000'],
+            ['주말·공휴일', '+750,000'],
+            ['긴급 호출 4시간 이내', '+1,000,000'],
           ],
         },
       },
@@ -641,14 +652,25 @@ const tabsId: OpsTab[] = [
         note: 'Minimum charge: Rp 500,000/kunjungan | Diskon pelanggan lama: Rp 50,000',
       },
       {
-        title: 'Biaya Mobilisasi & Urgent',
+        title: 'Biaya Mobilisasi (per Zone)',
         table: {
-          headers: ['Zone', 'Jarak', 'Mobilisasi (Rp)', 'Kondisi Urgent', 'Tambahan (Rp)'],
+          headers: ['Zone', 'Jarak', 'Mobilisasi (Rp)'],
           rows: [
-            ['Zone 1', '0~20 km', '100,000', 'Diluar jam kerja (18:00–06:00)', '+500,000'],
-            ['Zone 2', '20~50 km', '150,000', 'Akhir pekan · Libur Nasional', '+750,000'],
-            ['Zone 3', '50~100 km', '300,000', 'Panggilan darurat <4 jam', '+1,000,000'],
-            ['Zone 4', '>100 km', 'Nego', '', ''],
+            ['Zone 1', '0~20 km', '100,000'],
+            ['Zone 2', '20~50 km', '150,000'],
+            ['Zone 3', '50~100 km', '300,000'],
+            ['Zone 4', '>100 km', 'Nego'],
+          ],
+        },
+      },
+      {
+        title: 'Biaya Urgent',
+        table: {
+          headers: ['Kondisi Urgent', 'Tambahan (Rp)'],
+          rows: [
+            ['Diluar jam kerja (18:00–06:00)', '+500,000'],
+            ['Akhir pekan · Libur Nasional', '+750,000'],
+            ['Panggilan darurat <4 jam', '+1,000,000'],
           ],
         },
       },
