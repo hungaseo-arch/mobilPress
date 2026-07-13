@@ -161,6 +161,10 @@ const messages: Record<string, { id: string; ko: string }> = {
   'reset.mismatch': { id: 'Kata sandi tidak cocok.', ko: '비밀번호가 서로 일치하지 않습니다.' },
   'reset.done': { id: 'Kata sandi berhasil diubah. Masuk dengan kata sandi baru.', ko: '비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.' },
   'reset.fail': { id: 'Gagal mereset kata sandi.', ko: '비밀번호 재설정에 실패했습니다.' },
+  // 404
+  'notfound.title': { id: 'Halaman tidak ditemukan', ko: '페이지를 찾을 수 없습니다' },
+  'notfound.desc': { id: 'Alamat salah atau halaman telah dihapus.', ko: '주소가 잘못되었거나 삭제된 페이지입니다.' },
+  'notfound.home': { id: 'Kembali ke beranda', ko: '홈으로 돌아가기' },
   'gantt.done': { id: 'Selesai', ko: '완료' },
   'gantt.progress': { id: 'Sedang berjalan', ko: '진행 중' },
   'gantt.waiting': { id: 'Menunggu', ko: '대기' },
