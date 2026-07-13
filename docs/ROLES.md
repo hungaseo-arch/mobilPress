@@ -25,6 +25,23 @@ select id, 'admin' from neon_auth."user" where email = 'jhseo@ptascendo.com'
 on conflict (user_id) do update set role = excluded.role;
 ```
 
+### 운영팀 staff 일괄 부여 (2026-07-13)
+
+```sql
+insert into public.user_roles (user_id, role)
+select id, 'staff' from neon_auth."user"
+where email in (
+  'firmanoey99@gmail.com',
+  'arunzaelani26@gmail.com',
+  'likevape8@gmail.com',
+  'harunallrasyid123@gmail.com'
+)
+on conflict (user_id) do update set role = excluded.role;
+```
+
+> ⚠️ 대상 4명이 **먼저 앱에서 회원가입**되어 있어야 `neon_auth."user"` 에 존재합니다.
+> 아직 가입 전이면 이 쿼리는 해당 계정을 건너뜁니다(가입 후 재실행). 실행 후 아래 현황 조회로 4명이 `staff` 인지 확인하세요.
+
 ## USER ID 로 권한 부여
 
 콘솔 Auth → Users → 사용자 클릭 → User Details 의 **ID** 복사:
