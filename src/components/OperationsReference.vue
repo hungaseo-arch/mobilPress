@@ -102,7 +102,7 @@ function todayPct(gantt: OpsGantt): number | null {
 // ── 열 정렬 규칙 (전체 표 공통) ──────────────────
 /** 여러 값이 나열되는 긴 텍스트 열(시장 가격 목록·인사이트 등) — 균등폭/줄바꿈금지 대상에서 제외 */
 function isLongTextHeader(header: string): boolean {
-  return /시장 가격|Harga Pasar|인사이트|Insight|경쟁사|Kompetitor|주요/i.test(header)
+  return /시장 가격|Harga Pasar|인사이트|Insight|경쟁사|Kompetitor|주요|긴급 조건|Kondisi Urgent/i.test(header)
 }
 
 /** 금액 열 → 오른쪽 정렬 + 줄바꿈 금지 (시장 가격 같은 목록형은 제외) */
@@ -121,11 +121,10 @@ function isDateHeader(header: string): boolean {
   return /날짜|Tanggal|Tgl|Bulan|일자/i.test(header)
 }
 
-/** 정렬 규칙: 금액·수량 → 오른쪽 | 비고 → 가운데 | 그 외 텍스트 → 왼쪽 */
+/** 정렬 규칙: 금액 → 오른쪽 | 그 외(텍스트·수량·비고 등) → 왼쪽 */
 function alignClass(headers: string[], index: number): string {
   const header = headers[index] ?? ''
   if (isAmountHeader(header)) return 'text-right'
-  if (isQtyHeader(header) || /비고|Keterangan|pcs|긴급 조건|Kondisi Urgent|규격|Ukuran/i.test(header)) return 'text-center'
   return 'text-left'
 }
 

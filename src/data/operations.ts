@@ -391,7 +391,7 @@ const tabsId: OpsTab[] = [
     label: '① Tim',
     sections: [
       {
-        title: 'Struktur Tim (Penanggung Jawab: Mr. SEO JH — Direktur)',
+        title: 'Struktur Tim (Penanggung Jawab: Mr. SEO JH)',
         table: {
           headers: ['Nama', 'Tim', 'Lokasi Kerja', 'Tugas', 'Lisensi (SIM)'],
           rows: [
