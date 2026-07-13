@@ -52,7 +52,31 @@ function moneyModel(key: 'serviceFee' | 'mobilizationFee' | 'receivedAmount') {
 
 const serviceFeeText = moneyModel('serviceFee')
 const mobilizationFeeText = moneyModel('mobilizationFee')
-const receivedAmountText = moneyModel('receivedAmount')
+
+// 수령액 자동 계산: 서비스 비용 × 할인율(%) + 출장비.
+// 사용자가 직접 수정하면 자동 계산을 멈추고(수동 override), '자동 계산' 버튼으로 되돌립니다.
+const autoReceived = computed(
+  () => Math.round((Number(form.serviceFee) || 0) * ((Number(form.discountRate) || 0) / 100)) + (Number(form.mobilizationFee) || 0),
+)
+// 신규 등록은 자동, 기존 값이 공식과 다르면(수동 조정분) 수동 모드로 시작
+const receivedManual = ref(Boolean(props.editing) && props.editing!.receivedAmount !== autoReceived.value)
+
+watch([() => form.serviceFee, () => form.discountRate, () => form.mobilizationFee], () => {
+  if (!receivedManual.value) form.receivedAmount = autoReceived.value
+})
+if (!receivedManual.value) form.receivedAmount = autoReceived.value
+
+const receivedAmountText = computed({
+  get: () => (form.receivedAmount ? Number(form.receivedAmount).toLocaleString('en-US') : ''),
+  set: (value: string) => {
+    form.receivedAmount = Number(value.replace(/[^\d]/g, '')) || 0
+    receivedManual.value = true // 직접 입력 → 수동 모드
+  },
+})
+function resetReceivedAuto() {
+  receivedManual.value = false
+  form.receivedAmount = autoReceived.value
+}
 
 // 시리얼 번호: 수량(qty)과 동일한 개수의 개별 입력란으로 관리.
 // 저장 시에는 기존과 같은 쉼표 연결 문자열로 합칩니다.
@@ -204,7 +228,18 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           <input id="discountRate" v-model.number="form.discountRate" type="number" min="0" max="100" :class="inputClass" />
         </div>
         <div>
-          <label :class="labelClass" for="receivedAmount">{{ t('form.receivedAmount') }}</label>
+          <div class="flex items-center justify-between">
+            <label :class="labelClass" for="receivedAmount">{{ t('form.receivedAmount') }}</label>
+            <button
+              v-if="receivedManual"
+              type="button"
+              class="text-xs text-primary underline-offset-2 hover:underline"
+              @click="resetReceivedAuto"
+            >
+              {{ t('form.autoCalc') }}
+            </button>
+            <span v-else class="text-xs text-muted-foreground">{{ t('form.autoCalcOn') }}</span>
+          </div>
           <input id="receivedAmount" v-model="receivedAmountText" type="text" inputmode="numeric" :class="inputClass" />
         </div>
         <div class="sm:col-span-2">

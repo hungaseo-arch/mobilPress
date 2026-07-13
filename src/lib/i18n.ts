@@ -117,6 +117,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'form.mobilizationFee': { id: 'Biaya Mobilisasi (Rp)', ko: '출장비 (Rp)' },
   'form.discountRate': { id: 'Diskon (%)', ko: '할인율 (%)' },
   'form.receivedAmount': { id: 'Jumlah Diterima (Rp)', ko: '수령액 (Rp)' },
+  'form.autoCalc': { id: 'Hitung otomatis', ko: '자동 계산' },
+  'form.autoCalcOn': { id: 'Otomatis', ko: '자동 계산됨' },
   'form.note': { id: 'Keterangan', ko: '비고' },
   'aria.close': { id: 'Tutup', ko: '닫기' },
   'btn.logout': { id: 'Logout', ko: '로그아웃' },

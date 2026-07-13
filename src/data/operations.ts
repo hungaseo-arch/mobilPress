@@ -638,7 +638,7 @@ const tabsId: OpsTab[] = [
             ['Rim 15"', '400,000', '-', '-', '-'],
           ],
         },
-        note: 'Minimum charge: Rp 500,000/kunjungan | Diskon pelanggan lama: Rp 50,000 | Buang ban bekas: Rp 50,000–100,000/pcs',
+        note: 'Minimum charge: Rp 500,000/kunjungan | Diskon pelanggan lama: Rp 50,000',
       },
       {
         title: 'Biaya Mobilisasi & Urgent',
@@ -646,7 +646,7 @@ const tabsId: OpsTab[] = [
           headers: ['Zone', 'Jarak', 'Mobilisasi (Rp)', 'Kondisi Urgent', 'Tambahan (Rp)'],
           rows: [
             ['Zone 1', '0~20 km', '100,000', 'Diluar jam kerja (18:00–06:00)', '+500,000'],
-            ['Zone 2', '20~50 km', '150,000', 'Akhir pekan / Libur Nasional', '+750,000'],
+            ['Zone 2', '20~50 km', '150,000', 'Akhir pekan · Libur Nasional', '+750,000'],
             ['Zone 3', '50~100 km', '300,000', 'Panggilan darurat <4 jam', '+1,000,000'],
             ['Zone 4', '>100 km', 'Nego', '', ''],
           ],
