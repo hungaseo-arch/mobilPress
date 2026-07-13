@@ -2,6 +2,15 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-13 — 인니어 번역 적합성 검증 + 수정
+
+- KO/ID 구조 완전 대칭 확인(탭 7·제목 19·표 열수/행수 모두 일치), 최적화 감사: 미사용 import/로컬/i18n 키 0건
+- 번역 수정:
+  - i18n `form.businessType` 한국어 값 누락(빈칸) → '업종'
+  - operations.ts: 'Elektrik Kompresor'→'Kompresor Listrik'(어순), 'Ring Pass'→'Ring Pas'(표기),
+    'Inggris'→'Kunci Inggris'(용어), 방문 인사이트 'pelek'→'velg'(용어 일관성)
+- ⚠️ 미결: 팀 섹션 note 가 KO(간소화됨)와 ID(SIM 배분 확인요청·Harun/Arun 합류 문구 포함)로 내용이 다름 — 어느 쪽 기준으로 통일할지 결정 필요
+
 ## 2026-07-13 — 요금 탭 표 3열 배치
 
 - pairSections 그리드를 반응형으로: sm 2열 / xl(넓은 화면) 3열 (기존 lg 2열)

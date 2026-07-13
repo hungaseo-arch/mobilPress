@@ -453,13 +453,13 @@ const tabsId: OpsTab[] = [
         table: {
           headers: ['Item', 'Budget (Rp)'],
           rows: [
-            ['Elektrik Kompresor 5 HP', '21,289,489'],
+            ['Kompresor Listrik 5 HP', '21,289,489'],
             ['Air Impact 1" + Selang Angin', '2,850,000'],
             ['Sendok / Congkel Ban (3 pcs)', '267,000'],
             ['Kunci 1 Set + Kacamata + Sarung Tangan', '1,403,500'],
             ['Dongkrak Botol 10 Ton', '580,000'],
             ['Palu Bodem 5 Kg', '435,000'],
-            ['Kunci Palang, Palu Karet, Ring Pass, Tang, Inggris', '485,500'],
+            ['Kunci Palang, Palu Karet, Ring Pas, Tang, Kunci Inggris', '485,500'],
             ['Kabel Eterna 25m (baru)', '660,000'],
             ['Kunci Sok 24 pcs (baru)', '780,000'],
             ['WD40 (baru)', '77,500'],
@@ -714,7 +714,7 @@ const tabsId: OpsTab[] = [
               'Rental & Jual Ban Forklift, Distributor Diamond',
               'Wisma Ban, Surya Mas Agung (Cikarang)',
               'Rim 8-9: 150K | Rim 10-12: 250K | Rim 15: 350K | Rim 20: 500K',
-              '50 pcs/bulan · Banyak order diluar jam kerja & Sabtu-Minggu · Risiko baut slek/doll/patah → customer minta ganti pelek · Bongkar pasang di Forklift: +50K · Durasi 4 pcs: 30 menit',
+              '50 pcs/bulan · Banyak order diluar jam kerja & Sabtu-Minggu · Risiko baut slek/doll/patah → customer minta ganti velg · Bongkar pasang di Forklift: +50K · Durasi 4 pcs: 30 menit',
             ],
             [
               '2026-04-14',
