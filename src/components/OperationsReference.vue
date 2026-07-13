@@ -203,7 +203,7 @@ const barClass: Record<GanttRow['status'], string> = {
     <template v-for="tab in operationsTabs" :key="tab.key">
       <div
         v-if="activeKey === tab.key"
-        :class="tab.pairSections ? 'grid gap-4 lg:grid-cols-2 lg:items-start' : 'space-y-4'"
+        :class="tab.pairSections ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3 lg:items-start' : 'space-y-4'"
       >
         <section
           v-for="(section, sectionIndex) in tab.sections"
