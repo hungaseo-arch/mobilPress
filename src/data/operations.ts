@@ -47,11 +47,11 @@ const tabsKo: OpsTab[] = [
           headers: ['이름', '소속', '근무지', '역할', '자격 (면허증)'],
           rows: [
             ['Riski', '영업팀 (Manager Sales)', '자카르타', '수주 영업 · 방문 일정 관리 · 가격 책정 · 코디네이터', 'SIM A'],
-            ['Ranggi', '영업팀', '자카르타', '고객 방문 · 현장 조율', 'SIM A'],
+            ['Ranggi', '영업팀', '자카르타', '고객 방문 · 현장 조율', 'SIM B1'],
             ['Wisnu', '영업팀', '자카르타', '문서화 · 영업 지원', '-'],
-            ['Firman', '운영팀 (General Manager)', '까라왕', '모빌 프레스 운영 · 차량/기계 유지보수 · 작업 보고', 'SIM B1 Umum'],
+            ['Firman', '운영팀 (General Manager)', '까라왕', '모빌 프레스 운영 · 차량/기계 유지보수 · 작업 보고', 'SIM A'],
             ['Harun', '운영팀', '까라왕', '운영 · 유지보수 · 작업 보고', 'SIM B1 Umum'],
-            ['Arun', '운영팀', '까라왕', '운영 · 유지보수 · 작업 보고', 'SIM B1 Umum'],
+            ['Arun', '운영팀', '까라왕', '운영 · 유지보수 · 작업 보고', 'SIM A'],
           ],
         },
         note: '면허 취득 예산 집행: SIM A 2명 + SIM B1 Umum 3명 (Rp 4,572,000) | 매주 월요일 Sales Meeting 후 Mobil Press Review 진행 | 시험 운영 1개월: 하루 1개소 목표 (20개소)',
@@ -645,9 +645,9 @@ const tabsId: OpsTab[] = [
         table: {
           headers: ['Zone', 'Jarak', 'Mobilisasi (Rp)', 'Kondisi Urgent', 'Tambahan (Rp)'],
           rows: [
-            ['Zone 1', '0~20 km', '100,000', 'Diluar jam kerja (18:00–06:00)', '+500,000'],
+            ['Zone 1', '0~20 km', '100,000', 'Diluar jam kerja (18:00–06:00)', '+500,000'],
             ['Zone 2', '20~50 km', '150,000', 'Akhir pekan · Libur Nasional', '+750,000'],
-            ['Zone 3', '50~100 km', '300,000', 'Panggilan darurat <4 jam', '+1,000,000'],
+            ['Zone 3', '50~100 km', '300,000', 'Panggilan darurat <4 jam', '+1,000,000'],
             ['Zone 4', '>100 km', 'Nego', '', ''],
           ],
         },
