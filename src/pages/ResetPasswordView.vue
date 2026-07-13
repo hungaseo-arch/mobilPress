@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { t } from '@/lib/i18n'
 import { resetPassword } from '@/lib/neon-auth'
 
 const route = useRoute()
@@ -22,19 +23,19 @@ const done = ref(false)
 async function submit() {
   if (submitting.value) return
   if (password.value !== passwordConfirm.value) {
-    toast.error('비밀번호가 서로 일치하지 않습니다.')
+    toast.error(t('reset.mismatch'))
     return
   }
   submitting.value = true
   try {
     await resetPassword(password.value, token.value)
     done.value = true
-    toast.success('비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.')
+    toast.success(t('reset.done'))
     await router.replace('/')
     // AuthGate 가 로그인 화면을 다시 그리도록 새로고침
     window.location.reload()
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : '비밀번호 재설정에 실패했습니다.')
+    toast.error(error instanceof Error ? error.message : t('reset.fail'))
   } finally {
     submitting.value = false
   }
@@ -44,20 +45,16 @@ async function submit() {
 <template>
   <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
     <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 class="text-xl font-bold text-slate-900">비밀번호 재설정</h1>
+      <h1 class="text-xl font-bold text-slate-900">{{ t('reset.title') }}</h1>
 
       <div v-if="linkError || !token" class="mt-4 space-y-4">
-        <p class="text-sm text-red-600">
-          재설정 링크가 유효하지 않거나 만료되었습니다.
-        </p>
-        <p class="text-sm text-slate-500">
-          로그인 화면에서 "비밀번호를 잊으셨나요?" 를 눌러 새 링크를 요청해주세요.
-        </p>
+        <p class="text-sm text-red-600">{{ t('reset.invalid') }}</p>
+        <p class="text-sm text-slate-500">{{ t('reset.invalidHint') }}</p>
         <RouterLink
           to="/"
           class="block w-full rounded-lg bg-slate-900 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
         >
-          로그인 화면으로
+          {{ t('reset.toSignin') }}
         </RouterLink>
       </div>
 
@@ -67,7 +64,7 @@ async function submit() {
           type="password"
           required
           minlength="8"
-          placeholder="새 비밀번호 (8자 이상)"
+          :placeholder="t('reset.newPassword')"
           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
         />
         <input
@@ -75,7 +72,7 @@ async function submit() {
           type="password"
           required
           minlength="8"
-          placeholder="새 비밀번호 확인"
+          :placeholder="t('reset.confirmPassword')"
           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
         />
         <button
@@ -84,7 +81,7 @@ async function submit() {
           class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
         >
           <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
-          비밀번호 변경
+          {{ t('reset.submit') }}
         </button>
       </form>
     </div>

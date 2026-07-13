@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authEnabled, currentUser, refreshUser } from '@/lib/auth-state'
+import { lang, setLang, t } from '@/lib/i18n'
 import { requestPasswordReset, signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/neon-auth'
 
 const route = useRoute()
@@ -38,7 +39,7 @@ async function submit() {
       // 재설정 링크는 /reset-password?token=... 으로 돌아옵니다 (base 경로 포함).
       const redirectTo = new URL(`${import.meta.env.BASE_URL}reset-password`, window.location.origin).href
       await requestPasswordReset(email.value.trim(), redirectTo)
-      toast.success('재설정 링크를 이메일로 보냈습니다. 메일함을 확인하세요.')
+      toast.success(t('auth.resetSent'))
       mode.value = 'signin'
       return
     }
@@ -48,9 +49,9 @@ async function submit() {
       await signInWithEmail(email.value.trim(), password.value)
     }
     await refreshUser()
-    if (!currentUser.value) throw new Error('세션을 가져오지 못했습니다. 다시 시도해주세요.')
+    if (!currentUser.value) throw new Error(t('auth.sessionFail'))
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : '로그인에 실패했습니다.')
+    toast.error(error instanceof Error ? error.message : t('auth.signinFail'))
   } finally {
     submitting.value = false
   }
@@ -60,7 +61,7 @@ async function google() {
   try {
     await signInWithGoogle() // 성공 시 리다이렉트되므로 이후 코드는 실행되지 않을 수 있음
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Google 로그인에 실패했습니다.')
+    toast.error(error instanceof Error ? error.message : t('auth.googleFail'))
   }
 }
 </script>
@@ -75,15 +76,32 @@ async function google() {
   <div v-else class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
     <form class="w-full max-w-sm space-y-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm" @submit.prevent="submit">
       <div>
-        <h1 class="text-xl font-bold text-slate-900">MobilPress</h1>
+        <div class="flex items-start justify-between">
+          <h1 class="text-xl font-bold text-slate-900">MobilPress</h1>
+          <!-- 언어 전환 (기본: 인도네시아어) -->
+          <div class="flex gap-0.5 rounded-md border border-slate-200 p-0.5">
+            <button
+              type="button"
+              class="rounded px-1.5 py-1 text-xs font-semibold transition"
+              :class="lang === 'id' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-700'"
+              aria-label="Bahasa Indonesia"
+              @click="setLang('id')"
+            >
+              🇮🇩
+            </button>
+            <button
+              type="button"
+              class="rounded px-1.5 py-1 text-xs font-semibold transition"
+              :class="lang === 'ko' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-700'"
+              aria-label="한국어"
+              @click="setLang('ko')"
+            >
+              🇰🇷
+            </button>
+          </div>
+        </div>
         <p class="mt-1 text-sm text-slate-500">
-          {{
-            mode === 'signin'
-              ? '팀 계정으로 로그인하세요.'
-              : mode === 'signup'
-                ? '새 계정을 만듭니다.'
-                : '가입한 이메일로 재설정 링크를 보내드립니다.'
-          }}
+          {{ mode === 'signin' ? t('auth.subtitle.signin') : mode === 'signup' ? t('auth.subtitle.signup') : t('auth.subtitle.forgot') }}
         </p>
       </div>
 
@@ -92,14 +110,14 @@ async function google() {
         v-model="name"
         type="text"
         required
-        placeholder="이름"
+        :placeholder="t('auth.name')"
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
       />
       <input
         v-model="email"
         type="email"
         required
-        placeholder="이메일"
+        :placeholder="t('auth.email')"
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
       />
       <input
@@ -108,7 +126,7 @@ async function google() {
         type="password"
         required
         minlength="8"
-        placeholder="비밀번호 (8자 이상)"
+        :placeholder="t('auth.password')"
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
       />
 
@@ -118,7 +136,7 @@ async function google() {
         class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
       >
         <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
-        {{ mode === 'signin' ? '로그인' : mode === 'signup' ? '회원가입' : '재설정 링크 발송' }}
+        {{ mode === 'signin' ? t('auth.signin') : mode === 'signup' ? t('auth.signup') : t('auth.sendReset') }}
       </button>
 
       <button
@@ -127,24 +145,19 @@ async function google() {
         class="w-full rounded-lg border border-slate-300 py-2 text-sm text-slate-700 hover:bg-slate-50"
         @click="google"
       >
-        Google 로 계속하기
+        {{ t('auth.google') }}
       </button>
 
       <p class="flex justify-center gap-3 text-center text-xs text-slate-500">
-        <button
-          v-if="mode !== 'signin'"
-          type="button"
-          class="underline"
-          @click="mode = 'signin'"
-        >
-          로그인으로 돌아가기
+        <button v-if="mode !== 'signin'" type="button" class="underline" @click="mode = 'signin'">
+          {{ t('auth.backToSignin') }}
         </button>
         <template v-else>
           <button type="button" class="underline" @click="mode = 'signup'">
-            계정이 없나요? 회원가입
+            {{ t('auth.toSignup') }}
           </button>
           <button type="button" class="underline" @click="mode = 'forgot'">
-            비밀번호를 잊으셨나요?
+            {{ t('auth.forgot') }}
           </button>
         </template>
       </p>
