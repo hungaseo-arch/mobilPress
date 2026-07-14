@@ -312,7 +312,7 @@ const tabsKo: OpsTab[] = [
               '솔리드 타이어·트럭·로더 판매 · 취급 브랜드: Bridgestone, Ascendo, Dynamax, Gajah Tunggal',
               '스탠드 프레스 보유(이동 불가, 최대 20") · 고객 방문 또는 픽업',
               'Rim 12: 250K | Rim 15: 300K (Ascendo Rim 15 과다 평가)',
-              'Bu Tanti: Ascendo의 소량 주문·직거래 우려 · 탈착비 고객 부담 · 배송 H+1~2 불만 · 제안: Ascendo가 자체 모빌 프레스 대신 유통사 지원 필요',
+              'Bu Tanti: Ascendo의 소량 주문·직거래 우려 · 탈착비 고객 부담 · 배송 H+1~2 불만 · Wisma Ban은 이미 Ascendo 분쟁 사례 · 제안: Ascendo가 자체 모빌 프레스 대신 유통사 지원 필요 ⚠️ 채널 갈등 경보',
             ],
             [
               '2026-05-21',
@@ -320,7 +320,7 @@ const tabsKo: OpsTab[] = [
               '포크리프트 렌탈·솔리드 타이어/트럭/로더/튜브/오일/부품 판매 · 렌탈 30대(TCM·Komatsu·Mitsubishi, 최대 23톤) · 솔리드 타이어 Bridgestone·GT·Ascendo',
               '스탠드 프레스 보유(이동 불가, 최대 20") - 전동 3상',
               'Rim 12: 250K | Rim 15: 300K (Ascendo Rim 15 과다)',
-              'Ascendo 솔리드 타이어 수명 창고 기준 약 8개월(Achilles는 1년) · 과부하 시 Ascendo 모빌 프레스 지원 가능(VAS 방문, 고객 직접 방문 아님)',
+              'Ascendo 솔리드 타이어 수명 창고 기준 약 8개월(Achilles는 1년) · 과부하 시 Ascendo 모빌 프레스 지원 가능(VAS 방문, 고객 직접 방문 아님) · 공압 타이어 9.00-20 V-lug/U-lug 50개/월 요청 · Tube/Flap Ascendo 직접 구매 희망',
             ],
             [
               '2026-05-26',
@@ -328,7 +328,7 @@ const tabsKo: OpsTab[] = [
               '포크리프트 유닛·부품·타이어 판매 · 렌탈 30대(Mitsubishi) · 솔리드 타이어 Ascendo·Diamond·Bridgestone·Michelin·Trelleborg',
               '스탠드 프레스 + 모빌 프레스 보유',
               '프레스 공임이 타이어 가격에 포함(장착 포함) · 가격표 Pak Suryadi에 제출·검토 중',
-              '일일 프레스 수량 미확정(담당 부서 협의 필요)',
+              '일일 프레스 수량 미확정(담당 부서 협의 필요) · 서비스 수수료보다 타이어 판매 공략이 적합',
             ],
           ],
         },
@@ -612,7 +612,7 @@ const tabsId: OpsTab[] = [
               'Penjualan ban solid, truk & loader · Merk: Bridgestone, Ascendo, Dynamax, Gajah Tunggal',
               'Sudah ada stand press (tidak mobile, max 20") · Customer datang atau dijemput ke lokasi',
               'Rim 12: 250K | Rim 15: 300K (Ascendo Rim 15 terlalu mahal)',
-              'Bu Tanti khawatir Ascendo terima order eceran & customer langsung ke Ascendo · Biaya bongkar pasang dibebankan ke customer · Keluhan Delivery Order H+1-2 · Usulan: Ascendo support distributor buat mobil press, bukan bikin sendiri',
+              'Bu Tanti khawatir Ascendo terima order eceran & customer langsung ke Ascendo · Biaya bongkar pasang dibebankan ke customer · Keluhan Delivery Order H+1-2 · Wisma Ban sudah ada konflik dengan Ascendo · Usulan: Ascendo support distributor buat mobil press, bukan bikin sendiri ⚠️ Channel conflict',
             ],
             [
               '2026-05-21',
@@ -620,7 +620,7 @@ const tabsId: OpsTab[] = [
               'Rental forklift & jual ban solid, truk, loader, tube, oli, sparepart · Rental 30 unit (TCM, Komatsu, Mitsubishi) s/d 23 Ton · Ban solid Bridgestone, GT, Ascendo',
               'Sudah ada stand press (tidak mobile, max 20") - Elektrik Power 3 Phase',
               'Rim 12: 250K | Rim 15: 300K (Ascendo Rim 15 terlalu mahal)',
-              'Masa pakai ban solid Ascendo ±8 bulan di gudang (Achilles s/d 1 tahun) · Jika overload, bisa dibantu mobil press Ascendo (datang ke VAS, bukan ke customer)',
+              'Masa pakai ban solid Ascendo ±8 bulan di gudang (Achilles s/d 1 tahun) · Jika overload, bisa dibantu mobil press Ascendo (datang ke VAS, bukan ke customer) · Ban pneumatik 9.00-20 V-lug/U-lug diminta 50 pcs/bulan · Tube/Flap ingin beli langsung dari Ascendo',
             ],
             [
               '2026-05-26',
@@ -628,7 +628,7 @@ const tabsId: OpsTab[] = [
               'Jual unit forklift, sparepart & ban forklift · Rental forklift 30 unit (Mitsubishi) · Ban solid Ascendo, Diamond, Bridgestone, Michelin, Trelleborg',
               'Punya mesin stand press & mobile press',
               'Harga jasa press sudah include di harga ban (include pasang) · Pricelist sedang diajukan ke Pak Suryadi (dipelajari)',
-              'Jumlah press ban per hari belum bisa dipastikan (ada divisi terkait)',
+              'Jumlah press ban per hari belum bisa dipastikan (ada divisi terkait) · Lebih cocok pendekatan jualan ban daripada jasa press',
             ],
           ],
         },

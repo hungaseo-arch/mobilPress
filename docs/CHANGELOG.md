@@ -2,6 +2,14 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-14 — 0713 델타 리포트 반영: 고객 방문 인텔리전스 보강
+
+- Berkat Abadi: "Wisma Ban 이미 Ascendo 분쟁 사례" + 채널 갈등 경보(⚠️) 추가
+- Vilicindo: 공압 타이어 9.00-20 V-lug/U-lug 50개/월 요청 · Tube/Flap Ascendo 직접 구매 희망 추가
+- Prime Forklift: "서비스 수수료보다 타이어 판매 공략 적합" 추가
+- KO/ID 양쪽 반영. 팀(Eri GM)·예산 실집행 항목(Recoil Hose·Seal Tape·병합/분리)은 기존 반영분과 일치 확인
+- ⚠️ 미결: 예산 요약 총액(리포트 Tools 37,920,989 / Grand Total 359,352,629) — DB 총액 계산 방식·Tools 예산 세부내역 확인 필요(아래 대화 참조)
+
 ## 2026-07-14 — 장착 실적 행 클릭 시 수정 모달 + 좁은 표 폭 축소
 
 - 장착 실적 표: 행 전체 클릭 시 수정 모달 오픈(canEdit 시), 삭제/연필 버튼은 `@click.stop`으로 전파 차단, `installations.rowHint` 추가
