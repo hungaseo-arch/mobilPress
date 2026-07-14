@@ -61,6 +61,14 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     return Array.from(result.entries()).sort((a, b) => b[1].revenue - a[1].revenue)
   })
 
+  // 초기 시드가 아직 완료되지 않았는지(부분 시드 포함) — 시드 버튼 노출 조건.
+  const needsSeed = computed(
+    () =>
+      customers.value.length < seedCustomers.length ||
+      installations.value.length < seedInstallations.length ||
+      budgetEntries.value.length < seedBudgetEntries.length,
+  )
+
   const revenueByMonth = computed(() => {
     const result = new Map<string, { count: number; qty: number; revenue: number }>()
     installations.value.forEach((item: Installation) => {
@@ -191,13 +199,30 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   }
 
   async function seedFromReport(): Promise<void> {
-    if (customers.value.length || installations.value.length || budgetEntries.value.length) {
+    // 이미 세 종류 모두 채워져 있으면 재실행 불필요.
+    // (부분 시드 상태 — 일부만 등록됨 — 에서는 누락분만 이어서 등록)
+    const customerCount = customers.value.length
+    const installationCount = installations.value.length
+    const budgetCount = budgetEntries.value.length
+    if (
+      customerCount >= seedCustomers.length &&
+      installationCount >= seedInstallations.length &&
+      budgetCount >= seedBudgetEntries.length
+    ) {
       toast.info(t('toast.seedExists'))
       return
     }
     saving.value = true
     try {
+      // 중복 방지용 자연키 — 이미 존재하는 항목은 건너뜁니다.
+      const existingCompanies = new Set(customers.value.map((c) => c.companyName))
+      const instKey = (i: InstallationForm) => `${i.workDate}|${i.customerName}|${i.product}|${i.serialNumbers}`
+      const existingInst = new Set(installations.value.map(instKey))
+      const budKey = (b: BudgetEntryForm) => `${b.category}|${b.item}|${b.entryDate}`
+      const existingBudget = new Set(budgetEntries.value.map(budKey))
+
       for (const customer of seedCustomers) {
+        if (existingCompanies.has(customer.companyName)) continue
         await parseApi(
           await apiFetch('/mobil-press/customers', {
             method: 'POST',
@@ -207,6 +232,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
         )
       }
       for (const installation of seedInstallations) {
+        if (existingInst.has(instKey(installation))) continue
         await parseApi(
           await apiFetch('/mobil-press/installations', {
             method: 'POST',
@@ -216,6 +242,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
         )
       }
       for (const entry of seedBudgetEntries) {
+        if (existingBudget.has(budKey(entry))) continue
         await parseApi(
           await apiFetch('/mobil-press/budget_entries', {
             method: 'POST',
@@ -244,6 +271,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     filteredInstallations,
     revenueByCustomer,
     revenueByMonth,
+    needsSeed,
     loadData,
     saveCustomer,
     saveInstallation,

@@ -165,7 +165,7 @@ onMounted(() => {
     <div class="mx-auto max-w-300 px-4 py-8 sm:px-6">
       <!-- 초기 데이터 등록 -->
       <div
-        v-if="canEdit && !store.loading && !store.customers.length && !store.installations.length && activeTab !== 'operations'"
+        v-if="canEdit && !store.loading && store.needsSeed && activeTab !== 'operations'"
         class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4"
       >
         <p class="text-sm text-muted-foreground">{{ t('seed.empty') }}</p>
