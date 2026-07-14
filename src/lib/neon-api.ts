@@ -5,7 +5,7 @@
 import { AuthRequiredError } from '@neondatabase/neon-js'
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import { neon } from '@/lib/neon-auth'
-import type { Customer, Installation, MobilPressData } from '@/lib/types'
+import type { BudgetEntry, Customer, Installation, MobilPressData } from '@/lib/types'
 
 // ── snake_case(DB) ↔ camelCase(앱) 매핑 ─────────────────────
 type Row = Record<string, unknown>
@@ -59,7 +59,7 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
     const client = requireClient()
 
     if (path === '/mobil-press/data' && method === 'GET') {
-      const [customers, installations] = await Promise.all([
+      const [customers, installations, budgetEntries] = await Promise.all([
         client
           .from('customers')
           .select('*')
@@ -70,18 +70,24 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
           .select('*')
           .order('work_date', { ascending: false })
           .then((r) => unwrap<Installation>(r)),
+        client
+          .from('budget_entries')
+          .select('*')
+          .order('entry_date', { ascending: true })
+          .then((r) => unwrap<BudgetEntry>(r)),
       ])
       const data: MobilPressData = {
         customers,
         installations,
+        budgetEntries,
         summary: buildSummary(customers, installations),
       }
       return json(data)
     }
 
-    for (const table of ['customers', 'installations'] as const) {
+    for (const table of ['customers', 'installations', 'budget_entries'] as const) {
       if (path === `/mobil-press/${table}` && method === 'POST') {
-        const rows = unwrap<Customer | Installation>(
+        const rows = unwrap<Customer | Installation | BudgetEntry>(
           await client.from(table).insert(formToSnake(body ?? {})).select(),
         )
         return json(rows[0], 201)
@@ -91,7 +97,7 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
       if (match) {
         const id = match[1]
         if (method === 'PATCH') {
-          const rows = unwrap<Customer | Installation>(
+          const rows = unwrap<Customer | Installation | BudgetEntry>(
             await client.from(table).update(formToSnake(body ?? {})).eq('id', id).select(),
           )
           return json(rows[0] ?? { error: '대상을 찾을 수 없습니다.' }, rows[0] ? 200 : 404)

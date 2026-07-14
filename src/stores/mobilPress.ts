@@ -5,8 +5,10 @@ import { apiFetch } from '@/lib/api'
 import { currentUser } from '@/lib/auth-state'
 import { parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
-import { seedCustomers, seedInstallations } from '@/data/seed'
+import { seedBudgetEntries, seedCustomers, seedInstallations } from '@/data/seed'
 import type {
+  BudgetEntry,
+  BudgetEntryForm,
   Customer,
   CustomerForm,
   Installation,
@@ -33,6 +35,7 @@ const emptySummary: Summary = {
 export const useMobilPressStore = defineStore('mobilPress', () => {
   const customers = ref<Customer[]>([])
   const installations = ref<Installation[]>([])
+  const budgetEntries = ref<BudgetEntry[]>([])
   const summary = ref<Summary>({ ...emptySummary })
   const query = ref('')
   const loading = ref(true)
@@ -79,6 +82,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
       const nextData = await parseApi<MobilPressData>(await apiFetch('/mobil-press/data'))
       customers.value = nextData.customers
       installations.value = nextData.installations
+      budgetEntries.value = nextData.budgetEntries ?? []
       summary.value = nextData.summary
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('toast.loadFail'))
@@ -143,7 +147,37 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     }
   }
 
-  async function deleteRecord(kind: 'customers' | 'installations', id: string): Promise<void> {
+  async function saveBudgetEntry(form: BudgetEntryForm, editingId: string | null): Promise<boolean> {
+    saving.value = true
+    try {
+      // 입력자: 신규 등록 시 로그인 사용자 이름으로 자동 기록 (수정 시에는 원본 유지)
+      const payload: BudgetEntryForm = editingId
+        ? form
+        : { ...form, enteredBy: currentUser.value?.name || currentUser.value?.email || '' }
+      const response = editingId
+        ? await apiFetch(`/mobil-press/budget_entries/${editingId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        : await apiFetch('/mobil-press/budget_entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+      await parseApi(response)
+      toast.success(editingId ? t('toast.budgetUpdated') : t('toast.budgetSaved'))
+      await loadData()
+      return true
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('toast.saveFail'))
+      return false
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function deleteRecord(kind: 'customers' | 'installations' | 'budget_entries', id: string): Promise<void> {
     saving.value = true
     try {
       await parseApi(await apiFetch(`/mobil-press/${kind}/${id}`, { method: 'DELETE' }))
@@ -157,7 +191,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   }
 
   async function seedFromReport(): Promise<void> {
-    if (customers.value.length || installations.value.length) {
+    if (customers.value.length || installations.value.length || budgetEntries.value.length) {
       toast.info(t('toast.seedExists'))
       return
     }
@@ -181,6 +215,15 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
           }),
         )
       }
+      for (const entry of seedBudgetEntries) {
+        await parseApi(
+          await apiFetch('/mobil-press/budget_entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entry),
+          }),
+        )
+      }
       toast.success(t('toast.seedDone'))
       await loadData()
     } catch (error) {
@@ -193,6 +236,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   return {
     customers,
     installations,
+    budgetEntries,
     summary,
     query,
     loading,
@@ -203,6 +247,7 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     loadData,
     saveCustomer,
     saveInstallation,
+    saveBudgetEntry,
     deleteRecord,
     seedFromReport,
   }

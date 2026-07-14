@@ -50,6 +50,36 @@ export interface InstallationForm {
   receivedAmount: number
 }
 
+/** 예산 집행 구분 — 인도네시아어 정본(고정 3종) */
+export type BudgetCategory = 'Kendaraan & Mesin' | 'Tools & Perlengkapan' | 'Anggaran Operasional'
+
+export const BUDGET_CATEGORIES: BudgetCategory[] = [
+  'Kendaraan & Mesin',
+  'Tools & Perlengkapan',
+  'Anggaran Operasional',
+]
+
+export interface BudgetEntry extends BudgetEntryForm {
+  id: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BudgetEntryForm {
+  /** 구분 (Kendaraan & Mesin / Tools & Perlengkapan / Anggaran Operasional) */
+  category: string
+  /** 날짜 (YYYY-MM-DD, 없을 수 있음) */
+  entryDate: string
+  /** 항목 (인도네시아어) */
+  item: string
+  /** 금액 (Rp) */
+  amount: number
+  /** 비고 (인도네시아어) */
+  note: string
+  /** 입력자 — 저장 시 로그인 사용자 이름으로 자동 기록 */
+  enteredBy: string
+}
+
 export interface Summary {
   totalCustomers: number
   activeCustomers: number
@@ -62,5 +92,6 @@ export interface Summary {
 export interface MobilPressData {
   customers: Customer[]
   installations: Installation[]
+  budgetEntries: BudgetEntry[]
   summary: Summary
 }

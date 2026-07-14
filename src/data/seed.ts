@@ -1,4 +1,4 @@
-import type { CustomerForm, InstallationForm } from '@/lib/types'
+import type { BudgetEntryForm, CustomerForm, InstallationForm } from '@/lib/types'
 
 export const emptyCustomer: CustomerForm = {
   companyName: '',
@@ -123,4 +123,66 @@ export const seedInstallations: InstallationForm[] = [
     discountRate: 50,
     receivedAmount: 500000,
   },
+]
+
+// 예산 집행 초기 데이터 — 인도네시아어 정본(구분/날짜/항목/금액/비고).
+// 소계·합계 행은 화면에서 자동 집계하므로 포함하지 않습니다.
+export const emptyBudgetEntry: BudgetEntryForm = {
+  category: 'Anggaran Operasional',
+  entryDate: '',
+  item: '',
+  amount: 0,
+  note: '',
+  enteredBy: '',
+}
+
+export const seedBudgetEntries: BudgetEntryForm[] = [
+  // ── Kendaraan & Mesin ──
+  { category: 'Kendaraan & Mesin', entryDate: '2026-03-01', item: 'Pembelian Mobil Colt Diesel Box (Proban)', amount: 157761640, note: 'Selesai', enteredBy: '' },
+  { category: 'Kendaraan & Mesin', entryDate: '2026-03-01', item: 'Pembuatan & Pemasangan Mesin Press', amount: 135120000, note: 'Selesai', enteredBy: '' },
+  { category: 'Kendaraan & Mesin', entryDate: '2026-03-01', item: 'Ring & Spacer (termasuk mesin press)', amount: 0, note: 'Termasuk mesin press', enteredBy: '' },
+  { category: 'Kendaraan & Mesin', entryDate: '2026-03-01', item: 'Perbaikan Per Mobil', amount: 800000, note: 'Selesai', enteredBy: '' },
+  { category: 'Kendaraan & Mesin', entryDate: '2026-03-01', item: 'Perbaikan Karoseri (cat, stiker, plafon, dinding)', amount: 27750000, note: 'Selesai', enteredBy: '' },
+  // ── Tools & Perlengkapan ──
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Kompresor Listrik 5 HP', amount: 21289489, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Air Impact 1" + Selang Angin', amount: 2850000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Sendok / Congkel Ban (3 pcs)', amount: 267000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Kunci 1 Set + Kacamata + Sarung Tangan', amount: 1403500, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Dongkrak Botol 10 Ton', amount: 580000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Palu Bodem 5 Kg', amount: 435000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Kunci Palang, Palu Karet, Ring Pas, Tang, Kunci Inggris', amount: 485500, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Kabel Eterna 25m (baru)', amount: 660000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Kunci Sok 24 pcs (baru)', amount: 780000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'WD40 (baru)', amount: 77500, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Helm Putih 2 pcs (baru)', amount: 50000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Steker Fort 3 Phase (baru)', amount: 25000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'APD (Helmet, Rompi, Safety Tool)', amount: 1332000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Wearpack (3 pcs)', amount: 555000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Stiker Reflektor Merah & Kuning (baru)', amount: 1260000, note: '', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'Safety Shoes (sudah ada)', amount: 0, note: 'Sudah ada', enteredBy: '' },
+  { category: 'Tools & Perlengkapan', entryDate: '2026-04-01', item: 'SIM A (2 org) + SIM B1 Umum (3 org)', amount: 4572000, note: '', enteredBy: '' },
+  // ── Anggaran Operasional ──
+  { category: 'Anggaran Operasional', entryDate: '2026-04-10', item: 'Congkel Ban (20", 24", 24")', amount: 267000, note: 'Untuk buka pasang ban dari velg', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-04-16', item: 'Impact + Selang Angin', amount: 2850000, note: 'Untuk buka baut ban', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-04-17', item: 'Pertamina Dex', amount: 200000, note: 'Untuk BBM Mobil', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-05-05', item: 'Mata Sock 33·30·32·27·26·24·21·20·19·17 mm', amount: 700000, note: 'Untuk bongkar pasang ban', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-05-05', item: 'Kaca Mata Bening, Adaptor Socket 1"×3/4", Tenka Toolbox No.125 (2 susun), Sarung Tangan Benang (1 lusin), Extention Bar Socket 8" 200mm, Deep Impact Socket 3/4" 6PT 34mm', amount: 703500, note: 'Untuk bongkar pasang ban', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-05-13', item: 'Sikat Gagang Plastik, Rompi Jaring Orange, Helm Proyek Putih, Gagang L Handle Socket 3/4", Rachet Handle 3/4" Auto Quick Release', amount: 1332000, note: 'Untuk perlengkapan operator', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-05-18', item: 'Dongkrak 10 Ton, Palu Bodem 5 Kg', amount: 1015000, note: 'Angkat beban forklift', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-05-18', item: 'Wearpack', amount: 555000, note: 'Seragam kerja', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-05', item: 'Cargo Lashing 35mm × 2000kg × 6mtr', amount: 525000, note: 'Untuk ikat kompresor', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-05', item: 'Ring Pas 12~24mm, Tang Buaya 10", Kunci Inggris 12", Palu Karet 12oz, Kunci Palang 4', amount: 486000, note: 'Untuk keperluan bongkar pasang ban', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-18', item: 'Pertamina Dex', amount: 250000, note: 'Untuk BBM Mobil', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-18', item: 'E-Toll', amount: 100000, note: 'Untuk transaksi tol', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-25', item: 'Kabel Eterna 3×2.5mm, Solasi Nitto', amount: 663000, note: 'Untuk listrik kompresor', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-29', item: 'Pertamina Dex', amount: 501000, note: 'Untuk BBM Mobil', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-29', item: 'Print Standing Banner + Poster SOP', amount: 555500, note: 'SOP · Standing banner', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-29', item: 'Pertalite', amount: 33000, note: 'BBM motor', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-29', item: 'Parkir', amount: 2000, note: 'Parkir motor', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-29', item: 'Tekiro Recoil Hose, Isian Angin 3 Fungsi', amount: 175000, note: 'Untuk keperluan isi angin dari kompresor', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-29', item: 'Seal Tape, Obeng, Cincin Claim', amount: 40000, note: 'Untuk keperluan isi angin dari kompresor', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-30', item: 'Kunci Shock 1 Set 24 Pcs, WD40 333ml', amount: 857500, note: 'Untuk buka baut velg', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-30', item: 'Helm', amount: 50000, note: 'Alat Pelindung Diri (untuk visit)', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-06-30', item: 'Steker 3 Phase', amount: 25000, note: 'Untuk sambungan listrik ke stop kontak', enteredBy: '' },
+  { category: 'Anggaran Operasional', entryDate: '2026-07-04', item: 'Stiker Reflektor', amount: 1260000, note: 'Untuk memenuhi standar kendaraan box', enteredBy: '' },
 ]

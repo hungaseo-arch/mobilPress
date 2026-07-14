@@ -121,6 +121,18 @@ const messages: Record<string, { id: string; ko: string }> = {
   'form.autoCalc': { id: 'Hitung otomatis', ko: '자동 계산' },
   'form.autoCalcOn': { id: 'Otomatis', ko: '자동 계산됨' },
   'form.note': { id: 'Keterangan', ko: '비고' },
+
+  // 예산 집행 폼 / 표
+  'form.budget.add': { id: 'Tambah Anggaran', ko: '예산 항목 등록' },
+  'form.budget.edit': { id: 'Edit Anggaran', ko: '예산 항목 수정' },
+  'form.category': { id: 'Kategori', ko: '구분' },
+  'form.entryDate': { id: 'Tanggal', ko: '날짜' },
+  'form.item': { id: 'Item', ko: '항목' },
+  'form.amount': { id: 'Jumlah (Rp)', ko: '금액 (Rp)' },
+  'budget.addEntry': { id: 'Tambah Anggaran', ko: '예산 등록' },
+  'budget.subtotal': { id: 'Subtotal', ko: '소계' },
+  'budget.grandTotal': { id: 'Grand Total', ko: '총 집행액' },
+  'budget.empty': { id: 'Belum ada data anggaran.', ko: '예산 데이터가 없습니다.' },
   'aria.close': { id: 'Tutup', ko: '닫기' },
   'btn.logout': { id: 'Logout', ko: '로그아웃' },
 
@@ -177,6 +189,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'toast.customerSaved': { id: 'Customer berhasil didaftarkan.', ko: '고객 정보를 등록했습니다.' },
   'toast.installationUpdated': { id: 'Info pemasangan diperbarui.', ko: '타이어 장착 정보를 수정했습니다.' },
   'toast.installationSaved': { id: 'Pemasangan berhasil didaftarkan.', ko: '타이어 장착 정보를 등록했습니다.' },
+  'toast.budgetUpdated': { id: 'Data anggaran diperbarui.', ko: '예산 항목을 수정했습니다.' },
+  'toast.budgetSaved': { id: 'Anggaran berhasil didaftarkan.', ko: '예산 항목을 등록했습니다.' },
   'toast.saveFail': { id: 'Gagal menyimpan.', ko: '저장에 실패했습니다.' },
   'toast.deleted': { id: 'Berhasil dihapus.', ko: '삭제했습니다.' },
   'toast.deleteFail': { id: 'Gagal menghapus.', ko: '삭제에 실패했습니다.' },

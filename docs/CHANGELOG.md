@@ -2,6 +2,18 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-14 — 예산 집행 탭 DB화 (전체 CRUD, 인니어 단일)
+
+- 예산 집행을 정적 데이터 → DB 기반 CRUD로 전환 (장착실적과 동일 패턴)
+- 새 테이블 `budget_entries` (category/entry_date/item/amount/note/entered_by) + RLS(조회 전원·쓰기 staff·삭제 admin) + updated_at·audit 트리거
+- 신규 컴포넌트: `BudgetReference.vue`(구분별 접이식 그룹 + 소계·총 집행액 + 등록/수정/삭제), `BudgetFormModal.vue`
+- 타입 `BudgetEntry`/`BudgetEntryForm`/`BUDGET_CATEGORIES`, `MobilPressData.budgetEntries` 추가
+- store: budgetEntries 상태 + `saveBudgetEntry` + deleteRecord('budget_entries') + seedFromReport 확장
+- mock-api / neon-api 양쪽에 budget_entries 라우팅 추가, seed.ts에 `seedBudgetEntries`(인니어 45건)
+- 구분 3종(Kendaraan & Mesin / Tools & Perlengkapan / Anggaran Operasional)은 저장값 인니어, KO 화면은 라벨만 현지화(차량·설비/공구·장비/운영 예산)
+- operations.ts의 정적 budget 표 제거(KO/ID `sections: []`) — 데이터는 DB로 이전
+- ⚠️ 배포 후 Neon 콘솔에서 db/schema.sql의 budget_entries 테이블·RLS 생성 SQL 실행 필요
+
 ## 2026-07-14 — 예산 집행 3개 표를 '집행 내역' 단일 표로 병합(구분 열 추가)
 
 - 차량·설비/공구·장비/운영 예산 3개 섹션 → '집행 내역' 1개 섹션으로 병합

@@ -62,6 +62,22 @@ alter table public.installations add column if not exists worker text not null d
 alter table public.installations add column if not exists entered_by text not null default '';
 alter table public.installations add column if not exists odometer text not null default '';
 
+-- ─────────────────────────────────────────────
+-- 2b. 예산 집행 (budget_entries) — 인도네시아어 정본
+-- ─────────────────────────────────────────────
+create table if not exists public.budget_entries (
+  id          uuid primary key default gen_random_uuid(),
+  category    text not null default '',   -- 구분 (Kendaraan & Mesin / Tools & Perlengkapan / Anggaran Operasional)
+  entry_date  date,                        -- 날짜 (없을 수 있음)
+  item        text not null default '',    -- 항목
+  amount      bigint not null default 0,   -- 금액 (Rp)
+  note        text not null default '',    -- 비고
+  entered_by  text not null default '',    -- 입력자 (앱이 로그인 사용자 이름으로 자동 기록)
+  owner_id    text not null default (auth.user_id()),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
 -- updated_at 자동 갱신 트리거
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -78,6 +94,11 @@ create trigger customers_set_updated_at
 drop trigger if exists installations_set_updated_at on public.installations;
 create trigger installations_set_updated_at
   before update on public.installations
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists budget_entries_set_updated_at on public.budget_entries;
+create trigger budget_entries_set_updated_at
+  before update on public.budget_entries
   for each row execute function public.set_updated_at();
 
 -- ─────────────────────────────────────────────
@@ -173,12 +194,18 @@ create trigger installations_audit
   after insert or update or delete on public.installations
   for each row execute function public.log_changes();
 
+drop trigger if exists budget_entries_audit on public.budget_entries;
+create trigger budget_entries_audit
+  after insert or update or delete on public.budget_entries
+  for each row execute function public.log_changes();
+
 -- ─────────────────────────────────────────────
 -- 5. RLS (Row Level Security)
 --    조회: 로그인 사용자 전원 / 입력·수정: staff 이상 / 삭제: admin 만
 -- ─────────────────────────────────────────────
 alter table public.customers enable row level security;
 alter table public.installations enable row level security;
+alter table public.budget_entries enable row level security;
 alter table public.user_roles enable row level security;
 alter table public.audit_logs enable row level security;
 
@@ -220,6 +247,23 @@ drop policy if exists installations_delete on public.installations;
 create policy installations_delete on public.installations
   for delete to authenticated using (public.is_admin());
 
+-- budget_entries: 조회는 전원, 쓰기는 staff, 삭제는 admin
+drop policy if exists budget_entries_select on public.budget_entries;
+create policy budget_entries_select on public.budget_entries
+  for select to authenticated using (true);
+
+drop policy if exists budget_entries_insert on public.budget_entries;
+create policy budget_entries_insert on public.budget_entries
+  for insert to authenticated with check (public.is_staff());
+
+drop policy if exists budget_entries_update on public.budget_entries;
+create policy budget_entries_update on public.budget_entries
+  for update to authenticated using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists budget_entries_delete on public.budget_entries;
+create policy budget_entries_delete on public.budget_entries
+  for delete to authenticated using (public.is_admin());
+
 -- user_roles: 본인 역할만 조회 가능, API 로는 쓰기 불가 (SQL Editor 로만 관리)
 drop policy if exists user_roles_select_own on public.user_roles;
 create policy user_roles_select_own on public.user_roles
@@ -233,5 +277,5 @@ create policy audit_logs_select on public.audit_logs
 -- 익명(anonymous) 접근은 정책을 만들지 않음 → 기본 차단.
 
 grant usage on schema public to authenticated;
-grant all on public.customers, public.installations to authenticated;
+grant all on public.customers, public.installations, public.budget_entries to authenticated;
 grant select on public.user_roles, public.audit_logs to authenticated;

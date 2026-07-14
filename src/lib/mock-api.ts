@@ -2,6 +2,8 @@
 // /api/mobil-press/* 요청을 브라우저 localStorage 기반 저장소로 처리합니다.
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import type {
+  BudgetEntry,
+  BudgetEntryForm,
   Customer,
   CustomerForm,
   Installation,
@@ -14,16 +16,24 @@ const STORAGE_KEY = 'mobilpress-data-v1'
 interface StoredData {
   customers: Customer[]
   installations: Installation[]
+  budgetEntries: BudgetEntry[]
 }
 
 function loadStore(): StoredData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as StoredData
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<StoredData>
+      return {
+        customers: parsed.customers ?? [],
+        installations: parsed.installations ?? [],
+        budgetEntries: parsed.budgetEntries ?? [],
+      }
+    }
   } catch {
     // 손상된 데이터는 무시하고 빈 저장소로 시작
   }
-  return { customers: [], installations: [] }
+  return { customers: [], installations: [], budgetEntries: [] }
 }
 
 function saveStore(data: StoredData): void {
@@ -50,6 +60,7 @@ export async function mockFetch(path: string, options?: RequestInit): Promise<Re
     const data: MobilPressData = {
       customers: [...store.customers].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
       installations: [...store.installations].sort((a, b) => b.workDate.localeCompare(a.workDate)),
+      budgetEntries: [...store.budgetEntries].sort((a, b) => (a.entryDate || '').localeCompare(b.entryDate || '')),
       summary: buildSummary(store.customers, store.installations),
     }
     return json(data)
@@ -100,6 +111,33 @@ export async function mockFetch(path: string, options?: RequestInit): Promise<Re
     }
     if (method === 'DELETE') {
       store.installations.splice(index, 1)
+      saveStore(store)
+      return json({ ok: true })
+    }
+  }
+
+  if (path === '/mobil-press/budget_entries' && method === 'POST') {
+    const entry: BudgetEntry = { ...(body as BudgetEntryForm), id: createId(), createdAt: now, updatedAt: now }
+    store.budgetEntries.push(entry)
+    saveStore(store)
+    return json(entry, 201)
+  }
+
+  const budgetMatch = path.match(/^\/mobil-press\/budget_entries\/([^/]+)$/)
+  if (budgetMatch) {
+    const index = store.budgetEntries.findIndex((b) => b.id === budgetMatch[1])
+    if (index === -1) return json({ error: '예산 항목을 찾을 수 없습니다.' }, 404)
+    if (method === 'PATCH') {
+      store.budgetEntries[index] = {
+        ...store.budgetEntries[index],
+        ...(body as Partial<BudgetEntryForm>),
+        updatedAt: now,
+      }
+      saveStore(store)
+      return json(store.budgetEntries[index])
+    }
+    if (method === 'DELETE') {
+      store.budgetEntries.splice(index, 1)
       saveStore(store)
       return json({ ok: true })
     }
