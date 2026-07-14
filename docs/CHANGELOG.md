@@ -2,6 +2,12 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-14 — 장착 실적: user 등급도 행 클릭 시 조회 모달(읽기 전용)
+
+- 편집 권한 없는 user 등급도 행 클릭 시 모달이 열리도록 변경(기존엔 canEdit만)
+- InstallationFormModal에 `readonly` prop 추가 — `<fieldset :disabled>`로 전 입력 비활성, 저장 버튼 숨김, 제목 '장착 정보'(`form.installation.view`), 닫기 버튼만 표시
+- HomeView: 행 클릭 무조건 오픈 + `:readonly="!canEdit"` 전달, 툴팁 `installations.rowHintView` 추가
+
 ## 향후 업데이트 계획 (남은 작업)
 
 - **공구(Tools) 예산 reconciliation**: 0713 리포트의 Tools 소계 37,920,989 ↔ 현재 36,622,489 (차이 +1,298,500). 설명된 신규분은 215,000(Recoil Hose·Seal Tape)뿐이고 나머지 ~1,083,500은 세부내역 미확보 → **0713 기준 공구·장비 항목별 목록 확보 시** DB `budget_entries`(category='Tools & Perlengkapan') 갱신 → Grand Total이 리포트값 359,352,629와 일치. (2026-07-14 사용자 결정: 현 상태 유지 + 향후 반영)

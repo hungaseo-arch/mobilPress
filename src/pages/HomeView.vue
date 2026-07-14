@@ -262,10 +262,9 @@ onMounted(() => {
               <tr
                 v-for="item in instPage.paged.value"
                 :key="item.id"
-                class="border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
-                :class="canEdit ? 'cursor-pointer' : ''"
-                :title="canEdit ? t('installations.rowHint') : ''"
-                @click="canEdit && openInstallationModal(item)"
+                class="cursor-pointer border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
+                :title="canEdit ? t('installations.rowHint') : t('installations.rowHintView')"
+                @click="openInstallationModal(item)"
               >
                 <td class="px-4 py-3 text-muted-foreground">
                   <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
@@ -470,6 +469,7 @@ onMounted(() => {
       :editing="editingInstallation"
       :saving="store.saving"
       :customer-names="customerNames"
+      :readonly="!canEdit"
       @close="installationModalOpen = false"
       @submit="submitInstallation"
     />

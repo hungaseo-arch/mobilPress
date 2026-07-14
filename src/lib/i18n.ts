@@ -36,6 +36,7 @@ const messages: Record<string, { id: string; ko: string }> = {
   'th.requestCustomer': { id: 'Customer Pemohon', ko: '요청고객' },
   'tab.budget': { id: 'Anggaran', ko: '예산 집행' },
   'installations.rowHint': { id: 'Klik untuk edit', ko: '클릭하면 수정할 수 있습니다' },
+  'installations.rowHintView': { id: 'Klik untuk lihat detail', ko: '클릭하면 상세 정보를 볼 수 있습니다' },
   'tab.operations': { id: 'Data Operasional', ko: '운영자료' },
 
   'seed.empty': {
@@ -104,6 +105,7 @@ const messages: Record<string, { id: string; ko: string }> = {
   // 장착 폼
   'form.installation.add': { id: 'Tambah Pemasangan Ban', ko: '타이어 장착 등록' },
   'form.installation.edit': { id: 'Edit Info Pemasangan', ko: '장착 정보 수정' },
+  'form.installation.view': { id: 'Detail Pemasangan', ko: '장착 정보' },
   'form.workDate': { id: 'Tanggal Kerja *', ko: '작업일 *' },
   'form.distributor': { id: 'Distributor', ko: '요청고객' },
   'form.customerName': { id: 'Customer *', ko: '장착고객 *' },

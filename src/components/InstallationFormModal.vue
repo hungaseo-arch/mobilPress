@@ -10,6 +10,8 @@ const props = defineProps<{
   editing: Installation | null
   saving: boolean
   customerNames: string[]
+  /** true 면 읽기 전용(조회) 모드 — 편집 권한 없는 사용자용 */
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -134,8 +136,9 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
 </script>
 
 <template>
-  <BaseModal :title="editing ? t('form.installation.edit') : t('form.installation.add')" @close="emit('close')">
+  <BaseModal :title="readonly ? t('form.installation.view') : editing ? t('form.installation.edit') : t('form.installation.add')" @close="emit('close')">
     <form class="space-y-4" @submit.prevent="onSubmit">
+      <fieldset :disabled="readonly" class="contents">
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label :class="labelClass" for="workDate">{{ t('form.workDate') }}</label>
@@ -252,6 +255,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           <textarea id="note" v-model="form.note" rows="3" :class="inputClass" />
         </div>
       </div>
+      </fieldset>
 
       <div class="flex justify-end gap-2 border-t border-border pt-4">
         <button
@@ -259,9 +263,10 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           @click="emit('close')"
         >
-          {{ t('btn.cancel') }}
+          {{ readonly ? t('aria.close') : t('btn.cancel') }}
         </button>
         <button
+          v-if="!readonly"
           type="submit"
           :disabled="saving"
           class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
