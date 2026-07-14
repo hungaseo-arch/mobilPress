@@ -66,18 +66,6 @@ const tabsKo: OpsTab[] = [
     label: '② 예산 집행',
     sections: [
       {
-        title: '예산 요약',
-        table: {
-          headers: ['구분', '금액 (Rp)', '비고'],
-          rows: [
-            ['Grand Total 집행액', '358,054,129', '차량 + 공구'],
-            ['차량·설비', '321,431,640', '완료 100%'],
-            ['공구 (운영 예산)', '36,622,489', '—'],
-            ['운영 예산 합계', '17,130,474', '사용 13,145,500 | 잔액 3,984,974'],
-          ],
-        },
-      },
-      {
         title: '차량·설비',
         table: {
           headers: ['No', '항목', '예산 (Rp)', '실적 (Rp)'],
@@ -92,7 +80,7 @@ const tabsKo: OpsTab[] = [
         },
       },
       {
-        title: '공구·장비 (운영 예산)',
+        title: '공구·장비',
         table: {
           headers: ['항목', '예산 (Rp)'],
           rows: [
@@ -119,7 +107,7 @@ const tabsKo: OpsTab[] = [
         note: '✔ 운영 예산 합계 Rp 17,130,474 | 사용 Rp 13,145,500 | 잔액 Rp 3,984,974',
       },
       {
-        title: '운영 예산 지출 내역 (연료·통행료 등)',
+        title: '운영 예산',
         table: {
           headers: ['날짜', '항목', '금액 (Rp)', '비고'],
           rows: [
@@ -147,6 +135,18 @@ const tabsKo: OpsTab[] = [
             ['2026-06-30', 'Steker 3 Phase', '25,000', '전원 연결'],
             ['2026-07-04', 'Stiker Reflektor', '1,260,000', '박스 차량 규정'],
             ['', '운영 실적 합계', '13,145,500', ''],
+          ],
+        },
+      },
+      {
+        title: '합계',
+        table: {
+          headers: ['구분', '금액 (Rp)', '비고'],
+          rows: [
+            ['Grand Total 집행액', '358,054,129', '차량 + 공구'],
+            ['차량·설비', '321,431,640', '완료 100%'],
+            ['공구·장비', '36,622,489', '—'],
+            ['운영 예산 합계', '17,130,474', '사용 13,145,500 | 잔액 3,984,974'],
           ],
         },
       },
@@ -457,18 +457,6 @@ const tabsId: OpsTab[] = [
     label: '② Anggaran',
     sections: [
       {
-        title: 'Ringkasan Anggaran',
-        table: {
-          headers: ['Kategori', 'Jumlah (Rp)', 'Keterangan'],
-          rows: [
-            ['Grand Total Realisasi', '358,054,129', 'Kendaraan + Tools'],
-            ['Kendaraan & Mesin', '321,431,640', 'Selesai 100%'],
-            ['Tools (Budget Ops)', '36,622,489', '—'],
-            ['Total Budget Ops', '17,130,474', 'Terpakai 13,145,500 | Sisa 3,984,974'],
-          ],
-        },
-      },
-      {
         title: 'Kendaraan & Mesin',
         table: {
           headers: ['No', 'Item', 'Budget (Rp)', 'Realisasi (Rp)'],
@@ -483,7 +471,7 @@ const tabsId: OpsTab[] = [
         },
       },
       {
-        title: 'Tools & Perlengkapan (Budget Operasional)',
+        title: 'Tools & Perlengkapan',
         table: {
           headers: ['Item', 'Budget (Rp)'],
           rows: [
@@ -510,7 +498,7 @@ const tabsId: OpsTab[] = [
         note: '✔ Total Budget Ops Rp 17,130,474 | Terpakai Rp 13,145,500 | Sisa Saldo Rp 3,984,974',
       },
       {
-        title: 'Realisasi Anggaran Operasional (BBM, Tol, dll)',
+        title: 'Anggaran Operasional',
         table: {
           headers: ['Tanggal', 'Item', 'Total (Rp)', 'Keterangan'],
           rows: [
@@ -538,6 +526,18 @@ const tabsId: OpsTab[] = [
             ['2026-06-30', 'Steker 3 Phase', '25,000', 'Untuk sambungan listrik ke stop kontak'],
             ['2026-07-04', 'Stiker Reflektor', '1,260,000', 'Untuk memenuhi standar kendaraan box'],
             ['', 'Total Realisasi Ops', '13,145,500', ''],
+          ],
+        },
+      },
+      {
+        title: 'Total',
+        table: {
+          headers: ['Kategori', 'Jumlah (Rp)', 'Keterangan'],
+          rows: [
+            ['Grand Total Realisasi', '358,054,129', 'Kendaraan + Tools'],
+            ['Kendaraan & Mesin', '321,431,640', 'Selesai 100%'],
+            ['Tools & Perlengkapan', '36,622,489', '—'],
+            ['Total Budget Ops', '17,130,474', 'Terpakai 13,145,500 | Sisa 3,984,974'],
           ],
         },
       },
