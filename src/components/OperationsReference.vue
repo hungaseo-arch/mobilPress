@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { BookOpen, ChevronDown } from 'lucide-vue-next'
 import BaseModal from '@/components/BaseModal.vue'
-import BudgetReference from '@/components/BudgetReference.vue'
 import { getOperationsTabs } from '@/data/operations'
 import type { OpsGantt, OpsSection, OpsTab } from '@/data/operations'
 import { lang, t } from '@/lib/i18n'
@@ -227,10 +226,7 @@ const barClass: Record<GanttRow['status'], string> = {
     </nav>
 
     <template v-for="tab in operationsTabs" :key="tab.key">
-      <div v-if="activeKey === tab.key">
-        <!-- 예산 집행: DB 기반 CRUD -->
-        <BudgetReference v-if="tab.key === 'budget'" />
-        <div v-else class="space-y-4">
+      <div v-if="activeKey === tab.key" class="space-y-4">
         <div v-for="(row, rowIdx) in sectionGroups(tab)" :key="rowIdx" :class="groupClass(tab, row.sections.length)">
         <section
           v-for="(section, localIndex) in row.sections"
@@ -324,8 +320,11 @@ const barClass: Record<GanttRow['status'], string> = {
             <!-- 일반 표 (3열 표는 각 1/3 균등 배분) -->
             <div v-else-if="section.table" class="overflow-x-auto">
               <table
-                class="w-full min-w-140 text-left text-sm"
-                :class="{ 'table-fixed': eqWidthEnabled(section.table.headers) }"
+                class="w-full text-left text-sm"
+                :class="[
+                  { 'table-fixed': eqWidthEnabled(section.table.headers) },
+                  section.table.headers.length > 3 ? 'min-w-140' : 'min-w-0',
+                ]"
               >
                 <thead>
                   <tr class="border-b border-border text-xs text-muted-foreground">
@@ -457,7 +456,6 @@ const barClass: Record<GanttRow['status'], string> = {
             </p>
           </template>
         </section>
-        </div>
         </div>
       </div>
     </template>

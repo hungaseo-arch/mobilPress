@@ -11,18 +11,20 @@ import RevenueHistoryModal from '@/components/RevenueHistoryModal.vue'
 import MonthlyHistoryModal from '@/components/MonthlyHistoryModal.vue'
 import RequestHistoryModal from '@/components/RequestHistoryModal.vue'
 import OperationsReference from '@/components/OperationsReference.vue'
+import BudgetReference from '@/components/BudgetReference.vue'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
 
 const store = useMobilPressStore()
 
-type Tab = 'installations' | 'revenue' | 'operations'
+type Tab = 'installations' | 'revenue' | 'budget' | 'operations'
 const activeTab = ref<Tab>('installations')
 
 const tabs = computed<{ key: Tab; label: string }[]>(() => [
   { key: 'installations', label: t('tab.installations') },
   { key: 'revenue', label: t('tab.revenue') },
+  { key: 'budget', label: t('tab.budget') },
   { key: 'operations', label: t('tab.operations') },
 ])
 
@@ -165,7 +167,7 @@ onMounted(() => {
     <div class="mx-auto max-w-300 px-4 py-8 sm:px-6">
       <!-- 초기 데이터 등록 -->
       <div
-        v-if="canEdit && !store.loading && store.needsSeed && activeTab !== 'operations'"
+        v-if="canEdit && !store.loading && store.needsSeed && activeTab !== 'operations' && activeTab !== 'budget'"
         class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4"
       >
         <p class="text-sm text-muted-foreground">{{ t('seed.empty') }}</p>
@@ -182,6 +184,9 @@ onMounted(() => {
 
       <!-- 운영자료 (정적 참조 자료) -->
       <OperationsReference v-if="activeTab === 'operations'" />
+
+      <!-- 예산 집행 (DB 기반 CRUD) -->
+      <BudgetReference v-else-if="activeTab === 'budget'" />
 
       <template v-else>
         <!-- 검색 + (실적 분석) 서브탭 + 등록 — 한 행 정리 -->
@@ -258,6 +263,9 @@ onMounted(() => {
                 v-for="item in instPage.paged.value"
                 :key="item.id"
                 class="border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
+                :class="canEdit ? 'cursor-pointer' : ''"
+                :title="canEdit ? t('installations.rowHint') : ''"
+                @click="canEdit && openInstallationModal(item)"
               >
                 <td class="px-4 py-3 text-muted-foreground">
                   <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
@@ -283,7 +291,7 @@ onMounted(() => {
                       type="button"
                       class="rounded-md p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                       :aria-label="t('btn.edit')"
-                      @click="openInstallationModal(item)"
+                      @click.stop="openInstallationModal(item)"
                     >
                       <Pencil class="h-4 w-4" />
                     </button>
@@ -292,7 +300,7 @@ onMounted(() => {
                       type="button"
                       class="rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
                       :aria-label="t('btn.delete')"
-                      @click="confirmDelete('installations', item.id, item.customerName)"
+                      @click.stop="confirmDelete('installations', item.id, item.customerName)"
                     >
                       <Trash2 class="h-4 w-4" />
                     </button>

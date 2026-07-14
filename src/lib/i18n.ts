@@ -34,6 +34,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'month.rowHint': { id: 'Klik untuk melihat riwayat pemakaian', ko: '클릭하면 이용 내역을 볼 수 있습니다' },
   'th.userCustomer': { id: 'Customer Pengguna', ko: '장착고객' },
   'th.requestCustomer': { id: 'Customer Pemohon', ko: '요청고객' },
+  'tab.budget': { id: 'Anggaran', ko: '예산 집행' },
+  'installations.rowHint': { id: 'Klik untuk edit', ko: '클릭하면 수정할 수 있습니다' },
   'tab.operations': { id: 'Data Operasional', ko: '운영자료' },
 
   'seed.empty': {

@@ -62,13 +62,8 @@ const tabsKo: OpsTab[] = [
     ],
   },
   {
-    key: 'budget',
-    label: '② 예산 집행',
-    sections: [],
-  },
-  {
     key: 'tools',
-    label: '③ 공구',
+    label: '② 공구',
     sections: [
       {
         title: '공구 전체 목록',
@@ -117,7 +112,7 @@ const tabsKo: OpsTab[] = [
   },
   {
     key: 'schedule',
-    label: '④ 일정표',
+    label: '③ 일정표',
     sections: [
       {
         title: '진행 일정 간트차트 — 소요 시간 기준',
@@ -143,7 +138,7 @@ const tabsKo: OpsTab[] = [
   },
   {
     key: 'sop',
-    label: '⑤ SOP',
+    label: '④ SOP',
     sections: [
       {
         title: '작업 절차 SOP — 유압 프레스 솔리드 타이어 교체',
@@ -189,7 +184,7 @@ const tabsKo: OpsTab[] = [
   },
   {
     key: 'pricing',
-    label: '⑥ 서비스 요금',
+    label: '⑤ 서비스 요금',
     rowLayout: [2, 3],
     sections: [
       {
@@ -256,7 +251,7 @@ const tabsKo: OpsTab[] = [
   },
   {
     key: 'visits',
-    label: '⑦ 고객 방문',
+    label: '⑥ 고객 방문',
     sections: [
       {
         title: '고객 방문 인텔리전스 (잠재 고객)',
@@ -367,13 +362,8 @@ const tabsId: OpsTab[] = [
     ],
   },
   {
-    key: 'budget',
-    label: '② Anggaran',
-    sections: [],
-  },
-  {
     key: 'tools',
-    label: '③ Tools',
+    label: '② Tools',
     sections: [
       {
         title: 'Daftar Lengkap Peralatan',
@@ -422,7 +412,7 @@ const tabsId: OpsTab[] = [
   },
   {
     key: 'schedule',
-    label: '④ Jadwal',
+    label: '③ Jadwal',
     sections: [
       {
         title: 'Gantt Chart Jadwal — Fokus Durasi',
@@ -448,7 +438,7 @@ const tabsId: OpsTab[] = [
   },
   {
     key: 'sop',
-    label: '⑤ SOP',
+    label: '④ SOP',
     sections: [
       {
         title: 'Prosedur Kerja (SOP) — Penggantian Ban Solid dengan Mesin Press Hidrolik',
@@ -494,7 +484,7 @@ const tabsId: OpsTab[] = [
   },
   {
     key: 'pricing',
-    label: '⑥ Harga Jasa',
+    label: '⑤ Harga Jasa',
     rowLayout: [2, 3],
     sections: [
       {
@@ -561,7 +551,7 @@ const tabsId: OpsTab[] = [
   },
   {
     key: 'visits',
-    label: '⑦ Visit Customer',
+    label: '⑥ Visit Customer',
     sections: [
       {
         title: 'Rekap Kunjungan Customer (Intelligence Pasar)',
