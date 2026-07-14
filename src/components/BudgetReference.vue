@@ -38,7 +38,16 @@ const groups = computed(() => {
 function subtotal(entries: BudgetEntry[]): number {
   return entries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0)
 }
-const grandTotal = computed(() => subtotal(store.budgetEntries))
+// Grand Total = 투자성 예산(차량·설비 + 공구·장비)만 합산.
+// 운영 예산(Anggaran Operasional)은 공구 예산과 항목이 중복되는 실집행 로그라 총액에서 제외하고 별도 표시.
+const GRAND_TOTAL_CATEGORIES = ['Kendaraan & Mesin', 'Tools & Perlengkapan']
+const grandTotal = computed(() =>
+  subtotal(store.budgetEntries.filter((entry) => GRAND_TOTAL_CATEGORIES.includes(entry.category))),
+)
+const opsRealisasi = computed(() =>
+  subtotal(store.budgetEntries.filter((entry) => entry.category === 'Anggaran Operasional')),
+)
+const hasOps = computed(() => store.budgetEntries.some((entry) => entry.category === 'Anggaran Operasional'))
 
 // ── CRUD 모달 ──
 const modalOpen = ref(false)
@@ -162,10 +171,19 @@ async function confirmDelete(entry: BudgetEntry) {
         </section>
       </div>
 
-      <!-- 총 집행액 -->
-      <div class="mt-4 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-5 py-4">
-        <span class="text-sm font-bold text-foreground">{{ t('budget.grandTotal') }}</span>
-        <span class="text-base font-bold tabular-nums text-primary">{{ formatIDR(grandTotal) }}</span>
+      <!-- 총 집행액 (차량·설비 + 공구·장비) -->
+      <div class="mt-4 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold text-foreground">
+            {{ t('budget.grandTotal') }}
+            <span class="ml-1 text-xs font-normal text-muted-foreground">({{ t('budget.grandTotalScope') }})</span>
+          </span>
+          <span class="text-base font-bold tabular-nums text-primary">{{ formatIDR(grandTotal) }}</span>
+        </div>
+        <div v-if="hasOps" class="mt-2 flex items-center justify-between border-t border-primary/20 pt-2">
+          <span class="text-xs font-medium text-muted-foreground">{{ t('budget.opsRealisasi') }}</span>
+          <span class="text-sm font-semibold tabular-nums text-foreground">{{ formatIDR(opsRealisasi) }}</span>
+        </div>
       </div>
     </template>
 

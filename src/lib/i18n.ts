@@ -134,6 +134,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'budget.addEntry': { id: 'Tambah Anggaran', ko: '예산 등록' },
   'budget.subtotal': { id: 'Subtotal', ko: '소계' },
   'budget.grandTotal': { id: 'Grand Total', ko: '총 집행액' },
+  'budget.grandTotalScope': { id: 'Kendaraan + Tools', ko: '차량·설비 + 공구·장비' },
+  'budget.opsRealisasi': { id: 'Realisasi Anggaran Operasional (terpisah)', ko: '운영 예산 실집행 (별도)' },
   'budget.empty': { id: 'Belum ada data anggaran.', ko: '예산 데이터가 없습니다.' },
   'aria.close': { id: 'Tutup', ko: '닫기' },
   'btn.logout': { id: 'Logout', ko: '로그아웃' },
