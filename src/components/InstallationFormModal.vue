@@ -28,6 +28,7 @@ const form = reactive<InstallationForm>(
         qty: props.editing.qty,
         serialNumbers: props.editing.serialNumbers,
         workTime: props.editing.workTime,
+        odometer: props.editing.odometer,
         worker: props.editing.worker,
         enteredBy: props.editing.enteredBy,
         status: props.editing.status,
@@ -180,6 +181,10 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         <div>
           <label :class="labelClass" for="workTime">{{ t('form.workTime') }}</label>
           <input id="workTime" v-model="form.workTime" :class="inputClass" placeholder="13.30–16.30" />
+        </div>
+        <div>
+          <label :class="labelClass" for="odometer">{{ t('form.odometer') }}</label>
+          <input id="odometer" v-model="form.odometer" type="text" inputmode="numeric" :class="inputClass" placeholder="1234" />
         </div>
         <div>
           <span :class="labelClass">{{ t('form.worker') }}</span>

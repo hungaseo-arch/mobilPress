@@ -111,6 +111,7 @@ const messages: Record<string, { id: string; ko: string }> = {
   'form.serialNumbers': { id: 'Serial Number', ko: '시리얼 번호' },
   'form.serialPlaceholder': { id: 'contoh: AJ220626269', ko: '예: AJ220626269' },
   'form.workTime': { id: 'Waktu Kerja', ko: '작업 시간' },
+  'form.odometer': { id: 'Odometer (hr)', ko: '주행거리계 (hr)' },
   'form.worker': { id: 'Petugas', ko: '작업자' },
   'form.enteredBy': { id: 'Diinput oleh', ko: '입력자' },
   'form.serviceFee': { id: 'Biaya Jasa (Rp)', ko: '서비스 비용 (Rp)' },

@@ -262,6 +262,7 @@ onMounted(() => {
                 <td class="px-4 py-3 text-muted-foreground">
                   <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
                   <p v-if="item.workTime" class="mt-0.5 text-xs">{{ item.workTime }}</p>
+                  <p v-if="item.odometer" class="mt-0.5 text-xs">{{ t('form.odometer') }}: {{ item.odometer }}</p>
                   <p v-if="item.worker" class="mt-0.5 text-xs">{{ t('form.worker') }}: {{ item.worker }}</p>
                 </td>
                 <td class="px-4 py-3">

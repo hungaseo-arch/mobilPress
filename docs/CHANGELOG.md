@@ -2,6 +2,14 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-14 — 장착 정보에 주행거리계(Odometer, hr) 필드 추가
+
+- 장착 등록/수정 폼에 '주행거리계 (hr)' / 'Odometer (hr)' 입력란 추가 (작업 시간 옆)
+- `InstallationForm.odometer` 필드 추가 (types.ts), i18n `form.odometer` 키 추가
+- HomeView 장착 목록에 주행거리계 값 표시
+- DB: installations.odometer text 컬럼 + 재실행 안전 ALTER (schema.sql) — Neon 콘솔에서 ALTER 실행 필요
+- seed.ts emptyInstallation·샘플 3건에 odometer 기본값 추가
+
 ## 2026-07-14 — 서비스 요금 탭 행별 열 배치(rowLayout)
 
 - ⑥ 서비스 요금 탭을 1행 2열(서비스 요금표·출동비) + 2행 3열(긴급 요금·시험 운영·프로모션)로 재배치
