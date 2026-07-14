@@ -2,6 +2,13 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-14 — 운영자료 갱신(팀·예산·고객방문) 반영
+
+- ① 팀 구성: 영업팀 GM **Eri** 추가 (KO/ID) — 조직도(Eri=Sales GM, Riski=Manager) 반영
+- ② 예산 집행: 운영 실적 표를 최신 Realisasi(23개 항목)로 교체, 수량 열 제거·비고(용도) 정비
+  - 합계 12,967,000 → **13,145,500**, 잔액 4,163,474 → **3,984,974** (예산 요약·공구 note·실적 합계 3곳 동기화)
+- ③ 고객 방문: 5/13~5/26 방문 4건 추가 (HD Forklift Indonesia, Berkat Abadi Liftindo, Vilicindo Anugerah Sejahtera, Prime Forklift Service) — KO/ID 이중 작성
+
 ## 2026-07-14 — 장착 정보에 주행거리계(Odometer, hr) 필드 추가
 
 - 장착 등록/수정 폼에 '주행거리계 (hr)' / 'Odometer (hr)' 입력란 추가 (작업 시간 옆)
