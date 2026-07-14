@@ -2,6 +2,13 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-07-14 — 서비스 요금 탭 행별 열 배치(rowLayout)
+
+- ⑥ 서비스 요금 탭을 1행 2열(서비스 요금표·출동비) + 2행 3열(긴급 요금·시험 운영·프로모션)로 재배치
+- `OpsTab.rowLayout?: number[]` 필드 추가([2,3] → 행별 섹션 개수 지정, `pairSections`보다 우선)
+- OperationsReference.vue: `sectionGroups()`/`groupClass()` 헬퍼로 행 그룹 단위 그리드 렌더링, 아코디언 인덱스는 `row.offset + localIndex`로 보정
+- KO/ID 두 pricing 탭 모두 `pairSections: true` → `rowLayout: [2, 3]`로 교체
+
 ## 2026-07-13 — 인니어 번역 적합성 검증 + 수정
 
 - KO/ID 구조 완전 대칭 확인(탭 7·제목 19·표 열수/행수 모두 일치), 최적화 감사: 미사용 import/로컬/i18n 키 0건

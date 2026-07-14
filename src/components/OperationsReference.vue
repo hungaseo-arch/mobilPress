@@ -3,8 +3,33 @@ import { computed, ref } from 'vue'
 import { BookOpen, ChevronDown } from 'lucide-vue-next'
 import BaseModal from '@/components/BaseModal.vue'
 import { getOperationsTabs } from '@/data/operations'
-import type { OpsGantt, OpsSection } from '@/data/operations'
+import type { OpsGantt, OpsSection, OpsTab } from '@/data/operations'
 import { lang, t } from '@/lib/i18n'
+
+// ── 섹션 행 배치 (rowLayout / pairSections) ──────
+/** rowLayout 이 있으면 지정한 개수만큼 행으로 분할, 없으면 전체를 한 그룹으로 반환. */
+function sectionGroups(tab: OpsTab): { sections: OpsSection[]; offset: number }[] {
+  if (!tab.rowLayout?.length) return [{ sections: tab.sections, offset: 0 }]
+  const groups: { sections: OpsSection[]; offset: number }[] = []
+  let offset = 0
+  for (const n of tab.rowLayout) {
+    if (offset >= tab.sections.length) break
+    groups.push({ sections: tab.sections.slice(offset, offset + n), offset })
+    offset += n
+  }
+  if (offset < tab.sections.length) groups.push({ sections: tab.sections.slice(offset), offset })
+  return groups
+}
+
+/** 그룹(행) 컨테이너 클래스: rowLayout=열 개수 기준 그리드, pairSections=2/3 반응형, 그 외=세로 스택. */
+function groupClass(tab: OpsTab, count: number): string {
+  if (tab.rowLayout?.length) {
+    const cols = count >= 3 ? 'sm:grid-cols-2 xl:grid-cols-3' : count === 2 ? 'sm:grid-cols-2' : ''
+    return `grid gap-4 lg:items-start ${cols}`.trim()
+  }
+  if (tab.pairSections) return 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3 lg:items-start'
+  return 'space-y-4'
+}
 
 const operationsTabs = computed(() => getOperationsTabs(lang.value))
 const activeKey = ref(operationsTabs.value[0].key)
@@ -201,12 +226,10 @@ const barClass: Record<GanttRow['status'], string> = {
     </nav>
 
     <template v-for="tab in operationsTabs" :key="tab.key">
-      <div
-        v-if="activeKey === tab.key"
-        :class="tab.pairSections ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3 lg:items-start' : 'space-y-4'"
-      >
+      <div v-if="activeKey === tab.key" class="space-y-4">
+        <div v-for="(row, rowIdx) in sectionGroups(tab)" :key="rowIdx" :class="groupClass(tab, row.sections.length)">
         <section
-          v-for="(section, sectionIndex) in tab.sections"
+          v-for="(section, localIndex) in row.sections"
           :key="section.title"
           class="rounded-xl border border-border bg-card"
         >
@@ -215,8 +238,8 @@ const barClass: Record<GanttRow['status'], string> = {
             :is="isAccordionTab(tab.key) ? 'button' : 'div'"
             :type="isAccordionTab(tab.key) ? 'button' : undefined"
             class="flex w-full flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-left"
-            :class="isSectionOpen(tab.key, sectionIndex) ? 'border-b border-border' : ''"
-            @click="isAccordionTab(tab.key) && toggleBudget(sectionIndex)"
+            :class="isSectionOpen(tab.key, row.offset + localIndex) ? 'border-b border-border' : ''"
+            @click="isAccordionTab(tab.key) && toggleBudget(row.offset + localIndex)"
           >
             <h3 class="text-sm font-bold text-foreground">{{ section.title }}</h3>
             <span class="flex items-center gap-2">
@@ -232,12 +255,12 @@ const barClass: Record<GanttRow['status'], string> = {
               <ChevronDown
                 v-if="isAccordionTab(tab.key)"
                 class="h-4 w-4 text-muted-foreground transition-transform"
-                :class="{ 'rotate-180': isSectionOpen(tab.key, sectionIndex) }"
+                :class="{ 'rotate-180': isSectionOpen(tab.key, row.offset + localIndex) }"
               />
             </span>
           </component>
 
-          <template v-if="isSectionOpen(tab.key, sectionIndex)">
+          <template v-if="isSectionOpen(tab.key, row.offset + localIndex)">
             <!-- 분류(첫 열) 기준 아코디언 표 -->
             <div v-if="section.table && section.groupByFirstColumn" class="divide-y divide-border">
               <details
@@ -430,6 +453,7 @@ const barClass: Record<GanttRow['status'], string> = {
             </p>
           </template>
         </section>
+        </div>
       </div>
     </template>
 

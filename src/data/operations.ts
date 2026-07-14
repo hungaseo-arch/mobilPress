@@ -34,6 +34,8 @@ export interface OpsTab {
   sections: OpsSection[]
   /** true 면 섹션(표)을 넓은 화면에서 한 행에 2개씩 배치 */
   pairSections?: boolean
+  /** 행별 섹션(열) 개수 지정 (예: [2, 3] → 1행 2열 + 2행 3열). pairSections 보다 우선 */
+  rowLayout?: number[]
 }
 
 const tabsKo: OpsTab[] = [
@@ -54,7 +56,7 @@ const tabsKo: OpsTab[] = [
             ['Arun', '운영팀', '까라왕', '운영 · 유지보수 · 작업 보고', 'SIM A'],
           ],
         },
-        note: '매주 월요일 Sales Meeting 후 Mobil Press Review 진행 | 시험 운영 1개월: 하루 1개소 목표 (20개소)',
+        note: '매주 월요일 Sales Meeting 후 Mobil Press Review 진행',
       },
     ],
   },
@@ -222,7 +224,7 @@ const tabsKo: OpsTab[] = [
             { label: '⑩ BPKB 발급', start: '2026-06-15', end: '2026-09-15', duration: '약 3개월 (운행 지장 없음)', status: 'progress' },
           ],
         },
-        note: '✔ 정식 운영 개시 완료 — 2026년 6월 말부터 서비스 가동 | ⚠️ STNK 명의변경 완료 후 KIR · IBM 순차 진행',
+        note: '⚠️ STNK 명의변경 완료 후 KIR · IBM 순차 진행',
       },
     ],
   },
@@ -275,7 +277,7 @@ const tabsKo: OpsTab[] = [
   {
     key: 'pricing',
     label: '⑥ 서비스 요금',
-    pairSections: true,
+    rowLayout: [2, 3],
     sections: [
       {
         title: '서비스 요금표',
@@ -386,11 +388,11 @@ const tabsKo: OpsTab[] = [
               '렌탈·판매, 전 브랜드 100 pcs/월',
               'Solid King Bekasi (이동), Maxam Tangerang (이동)',
               'Rim 8-9: 150K | Rim 10: 200K | Rim 12-15: 250K | Rim 20: 500K (+50K 출동 시)',
-              '최소 주문 4 pcs · 스파어파츠 판매 · Ascendo 가격: 스마랑 경쟁 가능, 자카르타는 어려움',
+              '최소 주문 4 pcs · 스페어파트 판매 · Ascendo 가격: 스마랑 경쟁 가능, 자카르타는 어려움',
             ],
           ],
         },
-        note: '📊 경쟁사 분석: 시장 가격 대비 Ascendo 30~50K 높음 → 프리미엄 + 방문 서비스로 포지셔닝 | 대부분 고정 press (이동 불가) → Ascendo 핵심 강점: 현장 방문 | 일부 모빌 프레스는 컴프레셔 없음 → Ascendo가 더 완비 | 주요 리스크: 벨그·볼트 손상 → SOP·기술 숙련도 철저 관리 필요',
+        note: '주요 리스크: 림 및 볼트 손상 → SOP·기술 숙련도 철저 관리 필요',
       },
     ],
   },
@@ -635,7 +637,7 @@ const tabsId: OpsTab[] = [
   {
     key: 'pricing',
     label: '⑥ Harga Jasa',
-    pairSections: true,
+    rowLayout: [2, 3],
     sections: [
       {
         title: 'Daftar Harga Jasa',
