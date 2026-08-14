@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ClipboardList, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
+import { ClipboardList, FileText, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
-import { authEnabled, canDelete, canEdit, currentUser, isAdmin, logout } from '@/lib/auth-state'
+import { authEnabled, canDelete, canEdit, canViewReport, currentUser, isAdmin, logout } from '@/lib/auth-state'
 import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
 import { lang, setLang, t } from '@/lib/i18n'
 import CustomerFormModal from '@/components/CustomerFormModal.vue'
@@ -10,6 +10,7 @@ import InstallationFormModal from '@/components/InstallationFormModal.vue'
 import RevenueHistoryModal from '@/components/RevenueHistoryModal.vue'
 import MonthlyHistoryModal from '@/components/MonthlyHistoryModal.vue'
 import RequestHistoryModal from '@/components/RequestHistoryModal.vue'
+import ReportPreviewModal from '@/components/ReportPreviewModal.vue'
 import OperationsReference from '@/components/OperationsReference.vue'
 import BudgetReference from '@/components/BudgetReference.vue'
 import AccessLogTable from '@/components/AccessLogTable.vue'
@@ -50,6 +51,12 @@ const editingInstallation = ref<Installation | null>(null)
 const revenueDetailCustomer = ref<string | null>(null)
 const monthDetail = ref<string | null>(null)
 const requestDetail = ref<string | null>(null)
+// 작업보고서 미리보기 (Drive 임베드)
+const reportPreview = ref<{ fileId: string; fileName: string } | null>(null)
+
+function openReportPreview(fileId: string, fileName = '') {
+  if (fileId) reportPreview.value = { fileId, fileName }
+}
 
 const customerNames = computed(() => store.customers.map((c) => c.companyName))
 
@@ -254,12 +261,13 @@ onMounted(() => {
                 <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.discount') }}</th>
                 <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.mobFee') }}</th>
                 <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th class="whitespace-nowrap px-4 py-3 text-center font-medium">{{ t('th.report') }}</th>
                 <th class="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               <tr v-if="!store.filteredInstallations.length">
-                <td colspan="9" class="px-4 py-14 text-center text-muted-foreground">
+                <td colspan="10" class="px-4 py-14 text-center text-muted-foreground">
                   <ClipboardList class="mx-auto mb-2 h-8 w-8 opacity-40" />
                   {{ t('installations.empty') }}
                 </td>
@@ -289,6 +297,19 @@ onMounted(() => {
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ item.discountRate }}%</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.mobilizationFee) }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(item.receivedAmount) }}</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    v-if="item.reportFileId && canViewReport"
+                    type="button"
+                    class="rounded-md p-1.5 text-primary transition hover:bg-secondary"
+                    :title="t('report.rowHint')"
+                    :aria-label="t('report.rowHint')"
+                    @click.stop="openReportPreview(item.reportFileId, item.reportFileName)"
+                  >
+                    <FileText class="h-4 w-4" />
+                  </button>
+                  <span v-else class="text-xs text-muted-foreground">-</span>
+                </td>
                 <td class="px-4 py-3">
                   <div v-if="canEdit" class="flex justify-end gap-1">
                     <button
@@ -477,6 +498,13 @@ onMounted(() => {
       :readonly="!canEdit"
       @close="installationModalOpen = false"
       @submit="submitInstallation"
+      @preview="openReportPreview"
+    />
+    <ReportPreviewModal
+      v-if="reportPreview"
+      :file-id="reportPreview.fileId"
+      :file-name="reportPreview.fileName"
+      @close="reportPreview = null"
     />
     <RevenueHistoryModal
       v-if="revenueDetailCustomer"

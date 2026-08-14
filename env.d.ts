@@ -10,6 +10,9 @@ interface ImportMetaEnv {
   // Neon Auth (Stack Auth) 클라이언트 키
   readonly VITE_STACK_PROJECT_ID?: string
   readonly VITE_STACK_PUBLISHABLE_CLIENT_KEY?: string
+  // 작업보고서 업로드용 Apps Script 웹앱 URL (docs/DRIVE-REPORT-SETUP.md)
+  readonly VITE_DRIVE_UPLOAD_URL?: string
+  readonly VITE_DRIVE_UPLOAD_TOKEN?: string
 }
 
 interface ImportMeta {

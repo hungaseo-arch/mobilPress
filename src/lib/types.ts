@@ -44,6 +44,10 @@ export interface InstallationForm {
   enteredBy: string
   status: InstallationStatus
   note: string
+  /** 작업보고서 스캔 파일 — Google Drive 파일 ID (없으면 빈 문자열) */
+  reportFileId: string
+  /** 작업보고서 파일명 (표시용) */
+  reportFileName: string
   serviceFee: number
   mobilizationFee: number
   discountRate: number

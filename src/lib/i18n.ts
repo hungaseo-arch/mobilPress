@@ -152,6 +152,30 @@ const messages: Record<string, { id: string; ko: string }> = {
   'budget.opsRealisasi': { id: 'Realisasi Anggaran Operasional (terpisah)', ko: '운영 예산 실집행 (별도)' },
   'budget.empty': { id: 'Belum ada data anggaran.', ko: '예산 데이터가 없습니다.' },
   'aria.close': { id: 'Tutup', ko: '닫기' },
+
+  // 작업보고서 (Laporan Kerja scan)
+  'form.report': { id: 'Laporan Kerja (scan)', ko: '작업보고서 (스캔)' },
+  'th.report': { id: 'Laporan', ko: '보고서' },
+  'report.attach': { id: 'Lampirkan file', ko: '파일 첨부' },
+  'report.uploading': { id: 'Mengunggah...', ko: '업로드 중...' },
+  'report.uploadFailed': { id: 'Gagal mengunggah.', ko: '업로드에 실패했습니다.' },
+  'report.preview': { id: 'Pratinjau', ko: '미리보기' },
+  'report.download': { id: 'Unduh', ko: '다운로드' },
+  'report.unlink': { id: 'Lepas tautan', ko: '첨부 해제' },
+  'report.none': { id: 'Belum ada laporan.', ko: '첨부된 보고서가 없습니다.' },
+  'report.disabled': { id: 'Unggah belum diaktifkan (VITE_DRIVE_UPLOAD_URL).', ko: '업로드가 설정되지 않았습니다 (VITE_DRIVE_UPLOAD_URL).' },
+  'report.modalTitle': { id: 'Laporan Kerja', ko: '작업보고서' },
+  'report.previewHint': {
+    id: 'Jika pratinjau kosong, buka file dengan akun Google yang punya akses ke folder Drive.',
+    ko: '미리보기가 비어 있으면 Drive 폴더 접근 권한이 있는 Google 계정으로 로그인 후 다시 열어주세요.',
+  },
+  'report.rowHint': { id: 'Klik untuk lihat laporan', ko: '클릭하면 보고서를 볼 수 있습니다' },
+  'report.replace': { id: 'Ganti file', ko: '파일 교체' },
+  'report.noUploadPerm': { id: 'Tidak ada izin unggah.', ko: '업로드 권한이 없습니다.' },
+  'report.viewOnly': {
+    id: 'Akun Anda hanya bisa melihat. Unduhan dibatasi untuk staff ke atas.',
+    ko: '열람 전용 계정입니다. 다운로드는 staff 이상만 가능합니다.',
+  },
   'btn.logout': { id: 'Logout', ko: '로그아웃' },
 
   // 로그인 / 인증

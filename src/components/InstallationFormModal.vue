@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
+import ReportUploadField from '@/components/ReportUploadField.vue'
 import { emptyInstallation } from '@/data/seed'
 import { operationTeam } from '@/lib/format'
 import { t } from '@/lib/i18n'
@@ -17,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   submit: [form: InstallationForm]
+  preview: [fileId: string, fileName: string]
 }>()
 
 const form = reactive<InstallationForm>(
@@ -35,6 +37,8 @@ const form = reactive<InstallationForm>(
         enteredBy: props.editing.enteredBy,
         status: props.editing.status,
         note: props.editing.note,
+        reportFileId: props.editing.reportFileId ?? '',
+        reportFileName: props.editing.reportFileName ?? '',
         serviceFee: props.editing.serviceFee,
         mobilizationFee: props.editing.mobilizationFee,
         discountRate: props.editing.discountRate,
@@ -114,6 +118,11 @@ function toggleWorker(name: string) {
   const idx = selectedWorkers.value.indexOf(name)
   if (idx >= 0) selectedWorkers.value.splice(idx, 1)
   else selectedWorkers.value.push(name)
+}
+
+function onReportChange(value: { fileId: string; fileName: string }) {
+  form.reportFileId = value.fileId
+  form.reportFileName = value.fileName
 }
 
 function onSubmit() {
@@ -256,6 +265,16 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         </div>
       </div>
       </fieldset>
+
+      <ReportUploadField
+        :file-id="form.reportFileId"
+        :file-name="form.reportFileName"
+        :work-date="form.workDate"
+        :customer-name="form.customerName"
+        :qty="form.qty"
+        @change="onReportChange"
+        @preview="emit('preview', form.reportFileId, form.reportFileName)"
+      />
 
       <div class="flex justify-end gap-2 border-t border-border pt-4">
         <button

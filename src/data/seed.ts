@@ -28,6 +28,8 @@ export const emptyInstallation: InstallationForm = {
   enteredBy: '',
   status: 'completed',
   note: '',
+  reportFileId: '',
+  reportFileName: '',
   serviceFee: 0,
   mobilizationFee: 0,
   discountRate: 50,
@@ -65,7 +67,8 @@ export const seedCustomers: CustomerForm[] = [
   },
 ]
 
-export const seedInstallations: InstallationForm[] = [
+// 새 필드가 추가돼도 시드가 깨지지 않도록 emptyInstallation 기본값을 병합합니다.
+const seedInstallationRows: Partial<InstallationForm>[] = [
   {
     workDate: '2026-06-29',
     distributor: 'PT. Total Tire Bank',
@@ -124,6 +127,11 @@ export const seedInstallations: InstallationForm[] = [
     receivedAmount: 500000,
   },
 ]
+
+export const seedInstallations: InstallationForm[] = seedInstallationRows.map((row) => ({
+  ...emptyInstallation,
+  ...row,
+}))
 
 // 예산 집행 초기 데이터 — 인도네시아어 정본(구분/날짜/항목/금액/비고).
 // 소계·합계 행은 화면에서 자동 집계하므로 포함하지 않습니다.

@@ -22,6 +22,34 @@ export const canDelete = computed(() => !authEnabled || userRole.value === 'admi
 /** 로그 조회 등 관리자 전용 화면 노출 여부. mock/proxy 모드에서는 항상 허용. */
 export const isAdmin = computed(() => !authEnabled || userRole.value === 'admin')
 
+/** 현재 역할. 로그인 게이트가 꺼진 mock/proxy 모드에서는 admin 으로 간주합니다. */
+export const role = computed<Role>(() => (authEnabled ? userRole.value : 'admin'))
+
+// ── 작업보고서(스캔 PDF) 권한 정책 ──────────────────────────
+// 정책을 바꿀 때는 아래 표만 수정하면 화면 전체에 반영됩니다.
+//   view     : 미리보기(Drive 임베드 뷰어)로 열람
+//   download : 파일 내려받기 — 파일이 사외로 반출되므로 staff 이상
+//   upload   : 신규 첨부 / 교체
+//   unlink   : 첨부 해제 (Drive 원본은 보존, DB 링크만 해제) — admin 전용
+export interface ReportPermissions {
+  view: boolean
+  download: boolean
+  upload: boolean
+  unlink: boolean
+}
+
+const REPORT_POLICY: Record<Role, ReportPermissions> = {
+  admin: { view: true, download: true, upload: true, unlink: true },
+  staff: { view: true, download: true, upload: true, unlink: false },
+  user: { view: true, download: false, upload: false, unlink: false },
+}
+
+export const reportPerms = computed<ReportPermissions>(() => REPORT_POLICY[role.value])
+export const canViewReport = computed(() => reportPerms.value.view)
+export const canDownloadReport = computed(() => reportPerms.value.download)
+export const canUploadReport = computed(() => reportPerms.value.upload)
+export const canUnlinkReport = computed(() => reportPerms.value.unlink)
+
 export async function refreshUser(): Promise<void> {
   if (!authEnabled) return
   currentUser.value = await getCurrentUser()

@@ -32,6 +32,25 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   return user ? { id: user.id, email: user.email, name: user.name } : null
 }
 
+/**
+ * Data API 호출에 쓰이는 JWT 를 반환합니다. Apps Script 가 이 토큰으로
+ * user_roles 를 조회해 서버 측에서 역할을 재검증합니다(화면 권한은 UX 일 뿐).
+ * neon-js 가 토큰을 내부에서만 다루므로 방어적으로 접근하고, 실패 시 null 입니다.
+ */
+export async function getAuthToken(): Promise<string | null> {
+  if (!neon) return null
+  try {
+    const auth = neon.auth as unknown as {
+      getToken?: () => Promise<{ data?: { token?: string } | null }>
+    }
+    if (typeof auth.getToken !== 'function') return null
+    const result = await auth.getToken()
+    return result?.data?.token ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<void> {
   if (!neon) throw new Error('Neon 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.')
   const { error } = await neon.auth.signIn.email({ email, password })
