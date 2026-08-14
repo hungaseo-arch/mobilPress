@@ -2,6 +2,18 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-08-14 — 접속기록·변경이력 조회 기능 추가 (admin 전용)
+
+- 신규 최상위 탭 **로그**(`tab.logs`) 추가 — admin 역할에게만 노출(`isAdmin`), staff·user 계정에는 탭 자체가 배열에서 제외되어 보이지 않음
+- 접속 기록(`access_logs`): 로그인 시 `neon_auth."session"` insert 트리거(`log_login`)가 자동 기록(누가·언제·IP·기기). Data API 로는 조회만 가능
+- 변경 이력: 기존 `public.audit_logs` 를 화면에 노출, `public.user_directory` 뷰로 `changed_by`(UUID) → 이메일 보강
+- 신규 컴포넌트 `AccessLogTable.vue`: 서브탭(접속 기록/변경 이력) + 계정·기간 필터 + 페이지네이션(15건)
+- `db/schema.sql`: `access_logs` 테이블·인덱스·트리거, `user_directory` 뷰, RLS(본인 기록은 전원, 전체 조회는 admin 만) 추가
+- `types.ts`/`neon-api.ts`/`mock-api.ts`/`auth-state.ts`: `AccessLog`/`AuditLog` 타입, `/mobil-press/access-logs`·`/mobil-press/audit-logs` 라우팅(neon+mock 양쪽), `isAdmin` computed 추가
+- ⚠️ `user_directory` 뷰는 뷰 소유자 권한으로 동작하므로 로그인 사용자 전원에게 직원 이메일이 노출됨(§ROLES.md 참고)
+- ⚠️ IP·User-Agent 는 개인정보 — 보관기간 정책(잠정 12개월)만 문서화, 자동 삭제 잡은 이번 범위에서 미구현
+- ✅ 2026-08-14 검증 완료: `schema.sql` Neon 콘솔 재실행, `neon_auth."session"` 컬럼명 camelCase 확인, `session_access_log` 트리거 설치·활성화 확인, 실 로그인으로 `access_logs` 자동 기록 확인(jhseo@ptascendo.com)
+
 ## 2026-07-14 — 장착 실적: user 등급도 행 클릭 시 조회 모달(읽기 전용)
 
 - 편집 권한 없는 user 등급도 행 클릭 시 모달이 열리도록 변경(기존엔 canEdit만)

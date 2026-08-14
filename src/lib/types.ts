@@ -95,3 +95,27 @@ export interface MobilPressData {
   budgetEntries: BudgetEntry[]
   summary: Summary
 }
+
+/** 접속(로그인) 기록 — 트리거가 기록하며 앱에서는 조회만 한다. */
+export interface AccessLog {
+  id: number
+  userId: string
+  email: string
+  userName: string
+  event: 'login' | 'logout'
+  ipAddress: string
+  userAgent: string
+  occurredAt: string
+}
+
+/** 데이터 변경 이력 — public.audit_logs */
+export interface AuditLog {
+  id: number
+  tableName: string
+  recordId: string
+  action: 'insert' | 'update' | 'delete'
+  changedBy: string
+  /** 조회 시 user_directory 로 보강 (DB 컬럼 아님) */
+  changedByEmail?: string
+  changedAt: string
+}

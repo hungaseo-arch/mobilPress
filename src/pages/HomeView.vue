@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ClipboardList, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
-import { authEnabled, canDelete, canEdit, currentUser, logout } from '@/lib/auth-state'
+import { authEnabled, canDelete, canEdit, currentUser, isAdmin, logout } from '@/lib/auth-state'
 import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
 import { lang, setLang, t } from '@/lib/i18n'
 import CustomerFormModal from '@/components/CustomerFormModal.vue'
@@ -12,13 +12,14 @@ import MonthlyHistoryModal from '@/components/MonthlyHistoryModal.vue'
 import RequestHistoryModal from '@/components/RequestHistoryModal.vue'
 import OperationsReference from '@/components/OperationsReference.vue'
 import BudgetReference from '@/components/BudgetReference.vue'
+import AccessLogTable from '@/components/AccessLogTable.vue'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
 
 const store = useMobilPressStore()
 
-type Tab = 'installations' | 'revenue' | 'budget' | 'operations'
+type Tab = 'installations' | 'revenue' | 'budget' | 'operations' | 'logs'
 const activeTab = ref<Tab>('installations')
 
 const tabs = computed<{ key: Tab; label: string }[]>(() => [
@@ -26,6 +27,7 @@ const tabs = computed<{ key: Tab; label: string }[]>(() => [
   { key: 'revenue', label: t('tab.revenue') },
   { key: 'budget', label: t('tab.budget') },
   { key: 'operations', label: t('tab.operations') },
+  ...(isAdmin.value ? [{ key: 'logs' as const, label: t('tab.logs') }] : []),
 ])
 
 // 실적 분석 서브탭: 고객별 매출 / 월별 매출
@@ -167,7 +169,7 @@ onMounted(() => {
     <div class="mx-auto max-w-300 px-4 py-8 sm:px-6">
       <!-- 초기 데이터 등록 -->
       <div
-        v-if="canEdit && !store.loading && store.needsSeed && activeTab !== 'operations' && activeTab !== 'budget'"
+        v-if="canEdit && !store.loading && store.needsSeed && activeTab !== 'operations' && activeTab !== 'budget' && activeTab !== 'logs'"
         class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4"
       >
         <p class="text-sm text-muted-foreground">{{ t('seed.empty') }}</p>
@@ -187,6 +189,9 @@ onMounted(() => {
 
       <!-- 예산 집행 (DB 기반 CRUD) -->
       <BudgetReference v-else-if="activeTab === 'budget'" />
+
+      <!-- 접속기록 / 변경이력 (admin 전용) -->
+      <AccessLogTable v-else-if="activeTab === 'logs'" />
 
       <template v-else>
         <!-- 검색 + (실적 분석) 서브탭 + 등록 — 한 행 정리 -->

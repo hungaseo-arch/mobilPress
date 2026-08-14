@@ -200,6 +200,54 @@ create trigger budget_entries_audit
   for each row execute function public.log_changes();
 
 -- ─────────────────────────────────────────────
+-- 4b. 접속 기록 (access_logs) — 로그인 시 자동 기록
+--     neon_auth."session" 은 로그아웃/만료 시 행이 삭제되므로
+--     영구 이력 보관을 위해 별도 테이블에 복사한다.
+-- ─────────────────────────────────────────────
+create table if not exists public.access_logs (
+  id          bigint generated always as identity primary key,
+  user_id     text not null,
+  email       text not null default '',
+  user_name   text not null default '',
+  event       text not null default 'login' check (event in ('login', 'logout')),
+  ip_address  text not null default '',
+  user_agent  text not null default '',
+  occurred_at timestamptz not null default now()
+);
+
+create index if not exists access_logs_user_idx on public.access_logs (user_id, occurred_at desc);
+create index if not exists access_logs_time_idx on public.access_logs (occurred_at desc);
+
+-- security definer: authenticated 에 insert 권한을 주지 않아도 기록되도록.
+create or replace function public.log_login()
+returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_email text;
+  v_name  text;
+begin
+  select email, name into v_email, v_name from neon_auth."user" where id = new."userId";
+  insert into public.access_logs (user_id, email, user_name, event, ip_address, user_agent, occurred_at)
+  values (new."userId", coalesce(v_email, ''), coalesce(v_name, ''), 'login',
+          coalesce(new."ipAddress", ''), coalesce(new."userAgent", ''),
+          coalesce(new."createdAt", now()));
+  return new;
+end $$;
+
+drop trigger if exists session_access_log on neon_auth."session";
+create trigger session_access_log
+  after insert on neon_auth."session"
+  for each row execute function public.log_login();
+
+-- ─────────────────────────────────────────────
+-- 4c. 사용자 디렉터리 뷰 — audit_logs.changed_by(UUID) → 이메일 표시용
+-- ─────────────────────────────────────────────
+create or replace view public.user_directory as
+  select id as user_id, email, name from neon_auth."user";
+
+-- ─────────────────────────────────────────────
 -- 5. RLS (Row Level Security)
 --    조회: 로그인 사용자 전원 / 입력·수정: staff 이상 / 삭제: admin 만
 -- ─────────────────────────────────────────────
@@ -273,6 +321,16 @@ create policy user_roles_select_own on public.user_roles
 drop policy if exists audit_logs_select on public.audit_logs;
 create policy audit_logs_select on public.audit_logs
   for select to authenticated using (true);
+
+alter table public.access_logs enable row level security;
+
+-- access_logs: 본인 기록은 누구나, 전체 조회는 admin 만. API 로는 쓰기 불가(트리거가 기록).
+drop policy if exists access_logs_select on public.access_logs;
+create policy access_logs_select on public.access_logs
+  for select to authenticated
+  using (user_id = auth.user_id() or public.is_admin());
+
+grant select on public.access_logs, public.user_directory to authenticated;
 
 -- 익명(anonymous) 접근은 정책을 만들지 않음 → 기본 차단.
 

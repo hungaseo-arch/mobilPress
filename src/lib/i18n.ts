@@ -38,6 +38,18 @@ const messages: Record<string, { id: string; ko: string }> = {
   'installations.rowHint': { id: 'Klik untuk edit', ko: '클릭하면 수정할 수 있습니다' },
   'installations.rowHintView': { id: 'Klik untuk lihat detail', ko: '클릭하면 상세 정보를 볼 수 있습니다' },
   'tab.operations': { id: 'Data Operasional', ko: '운영자료' },
+  'tab.logs': { id: 'Log Akses', ko: '접속 기록' },
+  'log.access': { id: 'Log Akses', ko: '접속 기록' },
+  'log.audit': { id: 'Log Perubahan Data', ko: '데이터 변경 이력' },
+  'log.filterAccount': { id: 'Semua Akun', ko: '전체 계정' },
+  'log.from': { id: 'Dari', ko: '시작일' },
+  'log.to': { id: 'Sampai', ko: '종료일' },
+  'th.occurredAt': { id: 'Waktu', ko: '일시' },
+  'th.account': { id: 'Akun', ko: '계정' },
+  'th.device': { id: 'Perangkat', ko: '기기' },
+  'th.targetTable': { id: 'Tabel', ko: '대상' },
+  'th.action': { id: 'Aksi', ko: '작업' },
+  'log.empty': { id: 'Belum ada log.', ko: '기록이 없습니다.' },
 
   'seed.empty': {
     id: 'Belum ada data. Anda bisa mulai dengan data awal dari laporan.',

@@ -52,6 +52,8 @@ Neon 에 가입하고 아래 절차를 완료하면 실제 Postgres DB + 로그�
      `https://ep-damp-night-ao9k667h.apirest.c-2.ap-southeast-1.aws.neon.tech/neondb/rest/v1`
 3. 스키마를 변경한 뒤 API 에 바로 반영하려면 같은 화면의 **Refresh schema cache** 버튼을 누르세요.
 
+> `schema.sql` 재적용 후 Neon 콘솔 → **Data API → Refresh schema cache** 를 반드시 실행해야 `access_logs` / `user_directory` 조회가 동작합니다.
+
 ## 5. 테이블 생성
 
 1. 왼쪽 메뉴 **SQL Editor** 열기

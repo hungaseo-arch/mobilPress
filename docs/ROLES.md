@@ -86,3 +86,12 @@ order by u."createdAt";
   select changed_at, changed_by, table_name, action from public.audit_logs
   order by changed_at desc limit 30;
   ```
+- 계정별 접속(로그인) 기록은 `public.access_logs` 에서 확인 (트리거 설치 시점 이후부터 기록됨):
+  ```sql
+  select occurred_at, email, event, ip_address from public.access_logs
+  order by occurred_at desc limit 50;
+  ```
+  <!-- 보관기간 정책(잠정 12개월): IP·User-Agent 는 개인정보에 해당하므로 12개월 경과분은
+       주기적으로 삭제하는 것을 권장. 자동 삭제 잡은 아직 구현되어 있지 않음(수동 관리). -->
+  > ⚠️ `access_logs` 조회 시 계정 열은 `public.user_directory` 뷰(뷰 소유자 권한으로 동작)를 통해
+  > 로그인 사용자 전원에게 직원 이메일이 노출됩니다.

@@ -5,7 +5,7 @@
 import { AuthRequiredError } from '@neondatabase/neon-js'
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import { neon } from '@/lib/neon-auth'
-import type { BudgetEntry, Customer, Installation, MobilPressData } from '@/lib/types'
+import type { AccessLog, AuditLog, BudgetEntry, Customer, Installation, MobilPressData } from '@/lib/types'
 
 // ── snake_case(DB) ↔ camelCase(앱) 매핑 ─────────────────────
 type Row = Record<string, unknown>
@@ -83,6 +83,34 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
         summary: buildSummary(customers, installations),
       }
       return json(data)
+    }
+
+    if (path === '/mobil-press/access-logs' && method === 'GET') {
+      const rows = unwrap<AccessLog>(
+        await client
+          .from('access_logs')
+          .select('*')
+          .order('occurred_at', { ascending: false })
+          .limit(500),
+      )
+      return json(rows)
+    }
+
+    if (path === '/mobil-press/audit-logs' && method === 'GET') {
+      const [logs, users] = await Promise.all([
+        client
+          .from('audit_logs')
+          .select('id,table_name,record_id,action,changed_by,changed_at')
+          .order('changed_at', { ascending: false })
+          .limit(500)
+          .then((r) => unwrap<AuditLog>(r)),
+        client
+          .from('user_directory')
+          .select('*')
+          .then((r) => unwrap<{ userId: string; email: string; name: string }>(r)),
+      ])
+      const byId = new Map(users.map((u) => [u.userId, u.email]))
+      return json(logs.map((l) => ({ ...l, changedByEmail: byId.get(l.changedBy) ?? l.changedBy })))
     }
 
     for (const table of ['customers', 'installations', 'budget_entries'] as const) {

@@ -2,6 +2,8 @@
 // /api/mobil-press/* 요청을 브라우저 localStorage 기반 저장소로 처리합니다.
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import type {
+  AccessLog,
+  AuditLog,
   BudgetEntry,
   BudgetEntryForm,
   Customer,
@@ -10,6 +12,80 @@ import type {
   InstallationForm,
   MobilPressData,
 } from '@/lib/types'
+
+// mock 모드 전용 더미 로그 — 로그 탭이 비어 보이지 않도록 화면 확인용으로만 사용합니다.
+const mockAccessLogs: AccessLog[] = [
+  {
+    id: 1,
+    userId: 'mock-user-1',
+    email: 'admin@ptascendo.com',
+    userName: 'Admin Demo',
+    event: 'login',
+    ipAddress: '203.0.113.10',
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/128.0',
+    occurredAt: '2026-08-14T02:15:00.000Z',
+  },
+  {
+    id: 2,
+    userId: 'mock-user-2',
+    email: 'firman@ptascendo.com',
+    userName: 'Firman',
+    event: 'login',
+    ipAddress: '203.0.113.24',
+    userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/128.0 Mobile',
+    occurredAt: '2026-08-13T23:40:00.000Z',
+  },
+  {
+    id: 3,
+    userId: 'mock-user-2',
+    email: 'firman@ptascendo.com',
+    userName: 'Firman',
+    event: 'logout',
+    ipAddress: '203.0.113.24',
+    userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/128.0 Mobile',
+    occurredAt: '2026-08-13T18:05:00.000Z',
+  },
+  {
+    id: 4,
+    userId: 'mock-user-3',
+    email: 'arun@ptascendo.com',
+    userName: 'Arun',
+    event: 'login',
+    ipAddress: '203.0.113.31',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Safari/604.1',
+    occurredAt: '2026-08-12T09:12:00.000Z',
+  },
+]
+
+const mockAuditLogs: AuditLog[] = [
+  {
+    id: 1,
+    tableName: 'installations',
+    recordId: 'mock-installation-1',
+    action: 'insert',
+    changedBy: 'mock-user-2',
+    changedByEmail: 'firman@ptascendo.com',
+    changedAt: '2026-08-13T18:00:00.000Z',
+  },
+  {
+    id: 2,
+    tableName: 'budget_entries',
+    recordId: 'mock-budget-1',
+    action: 'update',
+    changedBy: 'mock-user-1',
+    changedByEmail: 'admin@ptascendo.com',
+    changedAt: '2026-08-12T11:30:00.000Z',
+  },
+  {
+    id: 3,
+    tableName: 'customers',
+    recordId: 'mock-customer-1',
+    action: 'insert',
+    changedBy: 'mock-user-1',
+    changedByEmail: 'admin@ptascendo.com',
+    changedAt: '2026-08-10T08:20:00.000Z',
+  },
+]
 
 const STORAGE_KEY = 'mobilpress-data-v1'
 
@@ -55,6 +131,14 @@ export async function mockFetch(path: string, options?: RequestInit): Promise<Re
   const body = typeof options?.body === 'string' ? JSON.parse(options.body) : undefined
   const store = loadStore()
   const now = new Date().toISOString()
+
+  if (path === '/mobil-press/access-logs' && method === 'GET') {
+    return json(mockAccessLogs)
+  }
+
+  if (path === '/mobil-press/audit-logs' && method === 'GET') {
+    return json(mockAuditLogs)
+  }
 
   if (path === '/mobil-press/data' && method === 'GET') {
     const data: MobilPressData = {

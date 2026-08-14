@@ -19,6 +19,9 @@ export const canEdit = computed(() => !authEnabled || userRole.value !== 'user')
 /** 데이터 삭제 가능 여부 (admin 만). mock/proxy 모드에서는 항상 허용. */
 export const canDelete = computed(() => !authEnabled || userRole.value === 'admin')
 
+/** 로그 조회 등 관리자 전용 화면 노출 여부. mock/proxy 모드에서는 항상 허용. */
+export const isAdmin = computed(() => !authEnabled || userRole.value === 'admin')
+
 export async function refreshUser(): Promise<void> {
   if (!authEnabled) return
   currentUser.value = await getCurrentUser()
