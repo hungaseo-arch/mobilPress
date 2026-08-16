@@ -84,6 +84,22 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     return Array.from(result.entries()).sort((a, b) => b[0].localeCompare(a[0]))
   })
 
+  // Neon Data API의 PATCH 직후 세션 토큰이 만료 경계를 막 넘으면, RLS 검사가 순간적으로
+  // 행을 찾지 못해 "대상을 찾을 수 없습니다" 오류가 뜰 수 있다(실제 삭제가 아니라 토큰 재발급
+  // 타이밍 문제 — 즉시 재시도하면 통과한다). 방금 불러온 id를 그대로 다시 보내는 PATCH에 한해
+  // 한 번만 조용히 재시도한다.
+  const SESSION_RACE_ERROR = '대상을 찾을 수 없습니다.'
+  async function patchWithRetry<T>(request: () => Promise<Response>): Promise<T> {
+    try {
+      return await parseApi<T>(await request())
+    } catch (error) {
+      if (error instanceof Error && error.message === SESSION_RACE_ERROR) {
+        return await parseApi<T>(await request())
+      }
+      throw error
+    }
+  }
+
   async function loadData() {
     loading.value = true
     try {
@@ -102,18 +118,23 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   async function saveCustomer(form: CustomerForm, editingId: string | null): Promise<boolean> {
     saving.value = true
     try {
-      const response = editingId
-        ? await apiFetch(`/mobil-press/customers/${editingId}`, {
+      if (editingId) {
+        await patchWithRetry(() =>
+          apiFetch(`/mobil-press/customers/${editingId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form),
-          })
-        : await apiFetch('/mobil-press/customers', {
+          }),
+        )
+      } else {
+        await parseApi(
+          await apiFetch('/mobil-press/customers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form),
-          })
-      await parseApi(response)
+          }),
+        )
+      }
       toast.success(editingId ? t('toast.customerUpdated') : t('toast.customerSaved'))
       await loadData()
       return true
@@ -132,18 +153,23 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
       const payload: InstallationForm = editingId
         ? form
         : { ...form, enteredBy: currentUser.value?.name || currentUser.value?.email || '' }
-      const response = editingId
-        ? await apiFetch(`/mobil-press/installations/${editingId}`, {
+      if (editingId) {
+        await patchWithRetry(() =>
+          apiFetch(`/mobil-press/installations/${editingId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-          })
-        : await apiFetch('/mobil-press/installations', {
+          }),
+        )
+      } else {
+        await parseApi(
+          await apiFetch('/mobil-press/installations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-          })
-      await parseApi(response)
+          }),
+        )
+      }
       toast.success(editingId ? t('toast.installationUpdated') : t('toast.installationSaved'))
       await loadData()
       return true
@@ -162,18 +188,23 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
       const payload: BudgetEntryForm = editingId
         ? form
         : { ...form, enteredBy: currentUser.value?.name || currentUser.value?.email || '' }
-      const response = editingId
-        ? await apiFetch(`/mobil-press/budget_entries/${editingId}`, {
+      if (editingId) {
+        await patchWithRetry(() =>
+          apiFetch(`/mobil-press/budget_entries/${editingId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-          })
-        : await apiFetch('/mobil-press/budget_entries', {
+          }),
+        )
+      } else {
+        await parseApi(
+          await apiFetch('/mobil-press/budget_entries', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-          })
-      await parseApi(response)
+          }),
+        )
+      }
       toast.success(editingId ? t('toast.budgetUpdated') : t('toast.budgetSaved'))
       await loadData()
       return true
