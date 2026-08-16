@@ -1,23 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import { ClipboardList, FileText, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
 import { authEnabled, canDelete, canEdit, canViewReport, currentUser, isAdmin, logout } from '@/lib/auth-state'
 import { deleteReport } from '@/lib/drive-report'
 import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
 import { lang, setLang, t } from '@/lib/i18n'
-import CustomerFormModal from '@/components/CustomerFormModal.vue'
-import InstallationFormModal from '@/components/InstallationFormModal.vue'
-import RevenueHistoryModal from '@/components/RevenueHistoryModal.vue'
-import MonthlyHistoryModal from '@/components/MonthlyHistoryModal.vue'
-import RequestHistoryModal from '@/components/RequestHistoryModal.vue'
 import ReportPreviewModal from '@/components/ReportPreviewModal.vue'
-import OperationsReference from '@/components/OperationsReference.vue'
-import BudgetReference from '@/components/BudgetReference.vue'
-import AccessLogTable from '@/components/AccessLogTable.vue'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
+
+// 탭 전환/모달 오픈 시점에만 로드되는 컴포넌트 — 초기 번들에서 분리.
+const CustomerFormModal = defineAsyncComponent(() => import('@/components/CustomerFormModal.vue'))
+const InstallationFormModal = defineAsyncComponent(() => import('@/components/InstallationFormModal.vue'))
+const RevenueHistoryModal = defineAsyncComponent(() => import('@/components/RevenueHistoryModal.vue'))
+const MonthlyHistoryModal = defineAsyncComponent(() => import('@/components/MonthlyHistoryModal.vue'))
+const RequestHistoryModal = defineAsyncComponent(() => import('@/components/RequestHistoryModal.vue'))
+const OperationsReference = defineAsyncComponent(() => import('@/components/OperationsReference.vue'))
+const BudgetReference = defineAsyncComponent(() => import('@/components/BudgetReference.vue'))
+const AccessLogTable = defineAsyncComponent(() => import('@/components/AccessLogTable.vue'))
 
 const store = useMobilPressStore()
 
