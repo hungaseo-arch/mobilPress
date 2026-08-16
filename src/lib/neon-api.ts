@@ -4,7 +4,7 @@
 // DB 컬럼은 snake_case, 앱 타입은 camelCase 이므로 여기서 양방향 매핑합니다.
 import { AuthRequiredError } from '@neondatabase/neon-js'
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
-import { neon } from '@/lib/neon-auth'
+import { getNeonClient } from '@/lib/neon-auth'
 import type { AccessLog, AuditLog, BudgetEntry, Customer, Installation, MobilPressData } from '@/lib/types'
 
 // ── snake_case(DB) ↔ camelCase(앱) 매핑 ─────────────────────
@@ -35,12 +35,13 @@ function formToSnake(form: Row): Row {
 
 // ── Data API 호출 ────────────────────────────────────────────
 function requireClient() {
-  if (!neon) {
+  const client = getNeonClient()
+  if (!client) {
     throw new Error(
       'VITE_NEON_DATA_API_URL / VITE_NEON_AUTH_URL 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.',
     )
   }
-  return neon
+  return client
 }
 
 function unwrap<T>(result: { data: unknown; error: { message?: string } | null }): T[] {
