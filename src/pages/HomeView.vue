@@ -77,12 +77,26 @@ const revenueDetailCustomerObj = computed(
   () => store.customers.find((c) => c.companyName === revenueDetailCustomer.value) ?? null,
 )
 
-// 해당 장착고객의 요청고객(요청고객) — 장착 실적에서 중복 없이 수집
+// 고객별 요청고객(distributor) 목록 — installations 전체를 단 한 번만 순회해 미리 구성.
+// (기존에는 requestCustomersOf 가 매출 테이블의 각 행마다, 그것도 행당 2번씩 호출되며
+//  매번 installations 전체를 filter+map 했음)
+const requestCustomersByCustomer = computed(() => {
+  const result = new Map<string, string[]>()
+  for (const item of store.installations) {
+    if (!item.distributor) continue
+    const list = result.get(item.customerName)
+    if (list) {
+      if (!list.includes(item.distributor)) list.push(item.distributor)
+    } else {
+      result.set(item.customerName, [item.distributor])
+    }
+  }
+  return result
+})
+
+// 해당 장착고객의 요청고객(요청고객) — 중복 없이, 최초 등장 순서대로
 function requestCustomersOf(companyName: string): string[] {
-  const names = store.installations
-    .filter((i) => i.customerName === companyName && i.distributor)
-    .map((i) => i.distributor)
-  return [...new Set(names)]
+  return requestCustomersByCustomer.value.get(companyName) ?? []
 }
 
 function openCustomerModal(customer: Customer | null = null) {
