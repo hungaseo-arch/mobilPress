@@ -2,6 +2,57 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-08-15 — 수정 저장 시 "대상을 찾을 수 없습니다" 첫 클릭 실패(2번째 클릭엔 정상) 완화
+
+- **증상**: 첨부 파일을 삭제한 뒤 곧바로 "수정"을 누르면 오류 토스트가 뜨고, 바로 다시 누르면 정상 저장됨
+- **추정 원인**: `window.confirm()` 등으로 화면이 잠시 멈춰있는 동안 로그인 세션 토큰 캐시의 유효시간(TTL) 경계를 넘으면,
+  그 직후의 첫 PATCH 요청에서 RLS 검사가 순간적으로 행을 찾지 못해 `neon-api.ts`가 404로 응답하는 것으로 보임
+  (실제 삭제가 아니라 토큰 재발급 타이밍 문제 — 완전히 검증된 것은 아니며, "재시도하면 통과한다"는 관찰과 일치하는 가장 유력한 설명)
+- **수정**: `stores/mobilPress.ts`에 `patchWithRetry()` 추가 — 수정(PATCH) 요청에서 이 특정 오류 메시지가 뜨면
+  화면에 노출하기 전에 한 번 더 조용히 재시도. `saveCustomer`/`saveInstallation`/`saveBudgetEntry` 세 곳 모두 적용, 신규 등록(POST)은 영향 없음
+- ⚠️ SQL 마이그레이션 없음(순수 앱 코드 수정)
+
+## 2026-08-14 — 장착 실적 삭제 시 첨부 보고서 Drive 정리 누락 버그 수정 + 데이터 1건 복구
+
+- **문제**: 장착 실적(행)을 삭제해도 첨부된 구글 드라이브 보고서 파일은 정리되지 않아,
+  Drive에는 파일이 남고 DB 행만 사라지는 불일치 발생. 사용자가 `PT. Raja Part Indonesia`(2026-08-14, 2 pcs) 건을
+  실수로 삭제하면서 실제로 이 문제로 데이터 유실 발생
+- 원인 2가지, 모두 수정:
+  - `HomeView.vue`의 `confirmDelete()`가 DB 행만 삭제하고 `reportFileId`/`2`/`3`에 대해 `deleteReport()`를 호출하지 않음
+    → 삭제 시 첨부된 최대 3개 보고서 파일도 함께 Drive 휴지통으로 이동하도록 수정 (`item` 인자 추가)
+  - `InstallationFormModal.vue`: 파일 첨부는 폼 저장 전에 즉시 Drive 업로드가 이뤄지는 구조라,
+    업로드 후 저장하지 않고 "취소"하면 방금 올린 파일이 Drive에 고아로 남던 문제
+    → `handleClose()` 추가: 이번 편집 세션에서 새로 업로드됐지만 저장 안 된 파일을 취소 시 자동 삭제
+- **데이터 복구**: `public.audit_logs.old_data`(delete 트리거가 `to_jsonb(old)`로 저장한 삭제 전 행 스냅샷, `log_changes()`)를 이용해
+  삭제된 행을 새 id로 재등록(INSERT ... SELECT FROM audit_logs). Drive 파일 자체는 버그 덕분에 지워지지 않고 남아있어 데이터 유실 없이 복구 완료
+- ⚠️ SQL 마이그레이션 없음(순수 앱 코드 수정). 향후 동일 상황 발생 시 `audit_logs`(table_name/action='delete'/old_data)로 언제든 복구 가능
+
+## 2026-08-14 — 접속 기록에 총 체류시간(로그인~로그아웃) 기록
+
+- **배경**: `neon_auth."session"` 행은 로그아웃/만료 시 삭제되는데, 기존엔 로그인만 기록되고 로그아웃은 기록되지 않아 체류시간 계산 불가
+- `db/schema.sql` + 신규 `sql/2026-08-14_access_logs_session_duration.sql`:
+  - `access_logs`에 `session_id` 컬럼 추가(로그인·로그아웃 쌍을 짝짓는 식별자, `userId || ':' || createdAt`으로 합성 —
+    `neon_auth."session"`의 PK 컬럼명이 불확실해 항상 존재가 보장되는 컬럼만으로 구성)
+  - 신규 `log_logout()` 함수 + `AFTER DELETE ON neon_auth."session"` 트리거(`session_access_logout`) 추가
+- `AccessLogTable.vue`: `sessionId`로 로그인·로그아웃 행을 짝지어 로그인 행마다 체류시간 표시(짝 없으면 "접속 중"),
+  현재 필터 기준 합계를 상단에 "총 체류시간"으로 표시
+- `types.ts`(`AccessLog.sessionId`), `i18n.ts`(`log.duration`/`log.durationTotal`/`log.stillActive`/`unit.hour`/`unit.minute`), `mock-api.ts`(mock 픽스처에 sessionId 반영)
+- ⚠️ 배포 후 위 SQL을 Neon SQL Editor에서 실행 + Data API 스키마 캐시 새로고침 필요
+- ⚠️ 한계: 마이그레이션 이전 로그인 기록·`neon_auth."session"` 행이 삭제되지 않는 세션(지연 만료 등)은 "접속 중"으로 표시되고 체류시간 계산 불가
+
+## 2026-08-14 — 장착 작업보고서 첨부 최대 3개로 확장 + 실제 삭제(Drive 휴지통) 전환 + 삭제 확인 절차
+
+- 보고서 첨부를 기존 1개 → **최대 3개**로 확장
+  - `sql/2026-08-14_installations_report_multi.sql`(+ `db/schema.sql`): `installations`에 `report_file_id2/3`, `report_file_name2/3` 컬럼 추가
+  - `types.ts`: `InstallationForm`에 4개 필드 추가, `ReportUploadField.vue`를 배열 기반(`files: ReportFileSlot[]`, `MAX_FILES=3`)으로 재작성 — 개별 미리보기/다운로드/교체/삭제 버튼
+  - `InstallationFormModal.vue`: 개별 필드 ↔ 배열 변환(`reportFiles` computed, `onReportChange`), `HomeView.vue` 표에는 첨부 개수만큼 아이콘 표시
+- **삭제(휴지통) 버튼 동작을 "DB 링크 해제만"에서 "Drive 원본도 실제 삭제(휴지통 이동)"로 변경**
+  - 기존엔 `deleteReport()`(Drive 삭제 함수)가 구현돼 있었지만 실제로 호출되는 곳이 없어 삭제해도 Drive에 파일이 그대로 남던 문제 발견(사용자 리포트)
+  - 사용자 확인 후(`AskUserQuestion`: "실제 삭제로 변경" 선택) `ReportUploadField.vue`의 `unlink()`에서 `deleteReport()` 호출하도록 연결
+  - **삭제 전 확인 절차 추가**: `unlink()`에서 `window.confirm(t('confirm.delete', ...))`로 확인 후에만 삭제 진행(즉시 삭제 방지)
+  - i18n `report.unlink` 라벨을 "첨부 해제" → "삭제 (Drive 파일 포함)"으로 변경해 동작 변화를 명시
+- ⚠️ 위 SQL 마이그레이션 실행 후 Data API 스키마 캐시 새로고침 필요(안 하면 `report_file_id2` 컬럼 못 찾는다는 오류 발생 — 실제로 겪음)
+
 ## 2026-08-14 — 접속기록·변경이력 조회 기능 추가 (admin 전용)
 
 - 신규 최상위 탭 **로그**(`tab.logs`) 추가 — admin 역할에게만 노출(`isAdmin`), staff·user 계정에는 탭 자체가 배열에서 제외되어 보이지 않음
