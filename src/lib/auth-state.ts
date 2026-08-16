@@ -1,5 +1,6 @@
 // AuthGate(로그인 화면)와 HomeView 헤더(로그아웃 버튼)가 공유하는 세션 상태.
 import { computed, ref } from 'vue'
+import { toast } from 'vue-sonner'
 import { type AuthUser, getCurrentUser, isNeonConfigured, neon, signOut } from '@/lib/neon-auth'
 import { dataMode } from '@/lib/api'
 
@@ -60,7 +61,6 @@ export async function refreshUser(): Promise<void> {
     if (error) {
       // 조용히 user 로 남으면 원인을 알 수 없으므로 화면에 노출합니다.
       // (흔한 원인: Data API 의 Refresh schema cache 미실행, schema.sql 미적용)
-      const { toast } = await import('vue-sonner')
       toast.error(`권한(user_roles) 조회 실패: ${error.message ?? JSON.stringify(error)}`)
       console.error('[auth-state] user_roles 조회 실패:', error)
       return
