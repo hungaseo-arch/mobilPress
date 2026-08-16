@@ -35,5 +35,18 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return
+            if (/[\\/](@neondatabase|@better-auth|zod)[\\/]/.test(id)) return 'neon'
+            if (/[\\/](vue|@vue|vue-router|pinia|vue-demi)[\\/]/.test(id)) return 'vue'
+            if (id.includes('lucide')) return 'icons'
+            return 'vendor'
+          },
+        },
+      },
+    },
   }
 })
