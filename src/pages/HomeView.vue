@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { ClipboardList, FileText, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
 import { authEnabled, canDelete, canEdit, canViewReport, currentUser, isAdmin, logout } from '@/lib/auth-state'
+import { deleteReport } from '@/lib/drive-report'
 import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
 import { lang, setLang, t } from '@/lib/i18n'
 import CustomerFormModal from '@/components/CustomerFormModal.vue'
@@ -58,6 +59,15 @@ function openReportPreview(fileId: string, fileName = '') {
   if (fileId) reportPreview.value = { fileId, fileName }
 }
 
+/** 장착 실적 1건에 첨부된 보고서(최대 3개) 목록 — 빈 슬롯은 제외 */
+function reportFilesOf(item: Installation): { fileId: string; fileName: string }[] {
+  return [
+    { fileId: item.reportFileId, fileName: item.reportFileName },
+    { fileId: item.reportFileId2, fileName: item.reportFileName2 },
+    { fileId: item.reportFileId3, fileName: item.reportFileName3 },
+  ].filter((f) => f.fileId)
+}
+
 const customerNames = computed(() => store.customers.map((c) => c.companyName))
 
 // 매출 모달에 표시할 고객 상세 (고객 정보 탭 삭제 → 모달에서 조회/수정)
@@ -93,8 +103,12 @@ async function submitInstallation(form: InstallationForm) {
   if (ok) installationModalOpen.value = false
 }
 
-async function confirmDelete(kind: 'customers' | 'installations', id: string, name: string) {
+async function confirmDelete(kind: 'customers' | 'installations', id: string, name: string, item?: Installation) {
   if (window.confirm(t('confirm.delete', { name }))) {
+    // 장착 실적 삭제 시 첨부된 보고서(최대 3개)도 Drive에서 함께 삭제(휴지통 이동)합니다.
+    if (kind === 'installations' && item) {
+      for (const f of reportFilesOf(item)) void deleteReport(f.fileId).catch(() => undefined)
+    }
     await store.deleteRecord(kind, id)
   }
 }
@@ -298,16 +312,19 @@ onMounted(() => {
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.mobilizationFee) }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(item.receivedAmount) }}</td>
                 <td class="px-4 py-3 text-center">
-                  <button
-                    v-if="item.reportFileId && canViewReport"
-                    type="button"
-                    class="rounded-md p-1.5 text-primary transition hover:bg-secondary"
-                    :title="t('report.rowHint')"
-                    :aria-label="t('report.rowHint')"
-                    @click.stop="openReportPreview(item.reportFileId, item.reportFileName)"
-                  >
-                    <FileText class="h-4 w-4" />
-                  </button>
+                  <div v-if="reportFilesOf(item).length && canViewReport" class="flex items-center justify-center gap-1">
+                    <button
+                      v-for="f in reportFilesOf(item)"
+                      :key="f.fileId"
+                      type="button"
+                      class="rounded-md p-1.5 text-primary transition hover:bg-secondary"
+                      :title="t('report.rowHint')"
+                      :aria-label="t('report.rowHint')"
+                      @click.stop="openReportPreview(f.fileId, f.fileName)"
+                    >
+                      <FileText class="h-4 w-4" />
+                    </button>
+                  </div>
                   <span v-else class="text-xs text-muted-foreground">-</span>
                 </td>
                 <td class="px-4 py-3">
@@ -325,7 +342,7 @@ onMounted(() => {
                       type="button"
                       class="rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
                       :aria-label="t('btn.delete')"
-                      @click.stop="confirmDelete('installations', item.id, item.customerName)"
+                      @click.stop="confirmDelete('installations', item.id, item.customerName, item)"
                     >
                       <Trash2 class="h-4 w-4" />
                     </button>

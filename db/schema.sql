@@ -212,11 +212,16 @@ create table if not exists public.access_logs (
   event       text not null default 'login' check (event in ('login', 'logout')),
   ip_address  text not null default '',
   user_agent  text not null default '',
-  occurred_at timestamptz not null default now()
+  occurred_at timestamptz not null default now(),
+  -- 같은 세션의 login/logout 행을 짝지어 체류시간을 계산하기 위한 식별자.
+  -- neon_auth."session" 은 PK 컬럼명이 확실치 않아, 항상 존재가 보장되는
+  -- userId + createdAt 조합으로 세션마다 고유한 값을 만든다.
+  session_id  text not null default ''
 );
 
 create index if not exists access_logs_user_idx on public.access_logs (user_id, occurred_at desc);
 create index if not exists access_logs_time_idx on public.access_logs (occurred_at desc);
+create index if not exists access_logs_session_idx on public.access_logs (session_id);
 
 -- security definer: authenticated 에 insert 권한을 주지 않아도 기록되도록.
 create or replace function public.log_login()
@@ -229,10 +234,10 @@ declare
   v_name  text;
 begin
   select email, name into v_email, v_name from neon_auth."user" where id = new."userId";
-  insert into public.access_logs (user_id, email, user_name, event, ip_address, user_agent, occurred_at)
+  insert into public.access_logs (user_id, email, user_name, event, ip_address, user_agent, occurred_at, session_id)
   values (new."userId", coalesce(v_email, ''), coalesce(v_name, ''), 'login',
           coalesce(new."ipAddress", ''), coalesce(new."userAgent", ''),
-          coalesce(new."createdAt", now()));
+          coalesce(new."createdAt", now()), new."userId" || ':' || new."createdAt"::text);
   return new;
 end $$;
 
@@ -240,6 +245,30 @@ drop trigger if exists session_access_log on neon_auth."session";
 create trigger session_access_log
   after insert on neon_auth."session"
   for each row execute function public.log_login();
+
+-- 로그아웃(세션 종료) 기록 — neon_auth."session" 행은 로그아웃/만료 시 삭제되므로
+-- AFTER DELETE 트리거로 종료 시점을 남겨 체류시간(로그인~로그아웃) 계산에 사용한다.
+create or replace function public.log_logout()
+returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_email text;
+  v_name  text;
+begin
+  select email, name into v_email, v_name from neon_auth."user" where id = old."userId";
+  insert into public.access_logs (user_id, email, user_name, event, ip_address, user_agent, occurred_at, session_id)
+  values (old."userId", coalesce(v_email, ''), coalesce(v_name, ''), 'logout',
+          coalesce(old."ipAddress", ''), coalesce(old."userAgent", ''),
+          now(), old."userId" || ':' || old."createdAt"::text);
+  return old;
+end $$;
+
+drop trigger if exists session_access_logout on neon_auth."session";
+create trigger session_access_logout
+  after delete on neon_auth."session"
+  for each row execute function public.log_logout();
 
 -- ─────────────────────────────────────────────
 -- 4c. 사용자 디렉터리 뷰 — audit_logs.changed_by(UUID) → 이메일 표시용

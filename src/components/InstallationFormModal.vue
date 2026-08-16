@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 import ReportUploadField from '@/components/ReportUploadField.vue'
 import { emptyInstallation } from '@/data/seed'
+import { deleteReport } from '@/lib/drive-report'
 import { operationTeam } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import type { Installation, InstallationForm } from '@/lib/types'
@@ -39,6 +40,10 @@ const form = reactive<InstallationForm>(
         note: props.editing.note,
         reportFileId: props.editing.reportFileId ?? '',
         reportFileName: props.editing.reportFileName ?? '',
+        reportFileId2: props.editing.reportFileId2 ?? '',
+        reportFileName2: props.editing.reportFileName2 ?? '',
+        reportFileId3: props.editing.reportFileId3 ?? '',
+        reportFileName3: props.editing.reportFileName3 ?? '',
         serviceFee: props.editing.serviceFee,
         mobilizationFee: props.editing.mobilizationFee,
         discountRate: props.editing.discountRate,
@@ -46,6 +51,19 @@ const form = reactive<InstallationForm>(
       }
     : { ...emptyInstallation },
 )
+
+// 저장 전에 취소하면, 이번 편집 세션 중 새로 업로드된(기존에 없던) 보고서는
+// Drive에 고아 파일로 남지 않도록 함께 삭제합니다.
+const initialFileIds = new Set(
+  [props.editing?.reportFileId, props.editing?.reportFileId2, props.editing?.reportFileId3].filter(Boolean),
+)
+
+function handleClose() {
+  for (const fileId of [form.reportFileId, form.reportFileId2, form.reportFileId3]) {
+    if (fileId && !initialFileIds.has(fileId)) void deleteReport(fileId).catch(() => undefined)
+  }
+  emit('close')
+}
 
 // 금액 입력: 천단위 콤마 표시용 텍스트 모델 (저장은 숫자)
 function moneyModel(key: 'serviceFee' | 'mobilizationFee' | 'receivedAmount') {
@@ -120,9 +138,23 @@ function toggleWorker(name: string) {
   else selectedWorkers.value.push(name)
 }
 
-function onReportChange(value: { fileId: string; fileName: string }) {
-  form.reportFileId = value.fileId
-  form.reportFileName = value.fileName
+// form 의 개별 reportFileId/reportFileId2/reportFileId3 필드를 슬롯 배열로 변환/역변환합니다.
+const reportFiles = computed<{ fileId: string; fileName: string }[]>(() =>
+  [
+    { fileId: form.reportFileId, fileName: form.reportFileName },
+    { fileId: form.reportFileId2, fileName: form.reportFileName2 },
+    { fileId: form.reportFileId3, fileName: form.reportFileName3 },
+  ].filter((f) => f.fileId),
+)
+
+function onReportChange(files: { fileId: string; fileName: string }[]) {
+  const slots = [...files, { fileId: '', fileName: '' }, { fileId: '', fileName: '' }, { fileId: '', fileName: '' }]
+  form.reportFileId = slots[0].fileId
+  form.reportFileName = slots[0].fileName
+  form.reportFileId2 = slots[1].fileId
+  form.reportFileName2 = slots[1].fileName
+  form.reportFileId3 = slots[2].fileId
+  form.reportFileName3 = slots[2].fileName
 }
 
 function onSubmit() {
@@ -145,7 +177,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
 </script>
 
 <template>
-  <BaseModal :title="readonly ? t('form.installation.view') : editing ? t('form.installation.edit') : t('form.installation.add')" @close="emit('close')">
+  <BaseModal :title="readonly ? t('form.installation.view') : editing ? t('form.installation.edit') : t('form.installation.add')" @close="handleClose">
     <form class="space-y-4" @submit.prevent="onSubmit">
       <fieldset :disabled="readonly" class="contents">
       <div class="grid gap-4 sm:grid-cols-2">
@@ -267,20 +299,19 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
       </fieldset>
 
       <ReportUploadField
-        :file-id="form.reportFileId"
-        :file-name="form.reportFileName"
+        :files="reportFiles"
         :work-date="form.workDate"
         :customer-name="form.customerName"
         :qty="form.qty"
         @change="onReportChange"
-        @preview="emit('preview', form.reportFileId, form.reportFileName)"
+        @preview="(fileId, fileName) => emit('preview', fileId, fileName)"
       />
 
       <div class="flex justify-end gap-2 border-t border-border pt-4">
         <button
           type="button"
           class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-          @click="emit('close')"
+          @click="handleClose"
         >
           {{ readonly ? t('aria.close') : t('btn.cancel') }}
         </button>

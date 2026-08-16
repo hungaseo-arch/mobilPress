@@ -44,10 +44,14 @@ export interface InstallationForm {
   enteredBy: string
   status: InstallationStatus
   note: string
-  /** 작업보고서 스캔 파일 — Google Drive 파일 ID (없으면 빈 문자열) */
+  /** 작업보고서 스캔 파일 1 — Google Drive 파일 ID (없으면 빈 문자열, 최대 3개까지 첨부) */
   reportFileId: string
-  /** 작업보고서 파일명 (표시용) */
+  /** 작업보고서 파일명 1 (표시용) */
   reportFileName: string
+  reportFileId2: string
+  reportFileName2: string
+  reportFileId3: string
+  reportFileName3: string
   serviceFee: number
   mobilizationFee: number
   discountRate: number
@@ -100,7 +104,7 @@ export interface MobilPressData {
   summary: Summary
 }
 
-/** 접속(로그인) 기록 — 트리거가 기록하며 앱에서는 조회만 한다. */
+/** 접속(로그인/로그아웃) 기록 — 트리거가 기록하며 앱에서는 조회만 한다. */
 export interface AccessLog {
   id: number
   userId: string
@@ -110,6 +114,8 @@ export interface AccessLog {
   ipAddress: string
   userAgent: string
   occurredAt: string
+  /** 로그인·로그아웃 쌍을 짝지어 체류시간을 계산하기 위한 세션 식별자 */
+  sessionId: string
 }
 
 /** 데이터 변경 이력 — public.audit_logs */

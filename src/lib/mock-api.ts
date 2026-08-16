@@ -24,6 +24,7 @@ const mockAccessLogs: AccessLog[] = [
     ipAddress: '203.0.113.10',
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/128.0',
     occurredAt: '2026-08-14T02:15:00.000Z',
+    sessionId: 'mock-user-1:2026-08-14T02:15:00.000Z',
   },
   {
     id: 2,
@@ -33,7 +34,8 @@ const mockAccessLogs: AccessLog[] = [
     event: 'login',
     ipAddress: '203.0.113.24',
     userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/128.0 Mobile',
-    occurredAt: '2026-08-13T23:40:00.000Z',
+    occurredAt: '2026-08-13T10:00:00.000Z',
+    sessionId: 'mock-user-2:2026-08-13T10:00:00.000Z',
   },
   {
     id: 3,
@@ -44,6 +46,7 @@ const mockAccessLogs: AccessLog[] = [
     ipAddress: '203.0.113.24',
     userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/128.0 Mobile',
     occurredAt: '2026-08-13T18:05:00.000Z',
+    sessionId: 'mock-user-2:2026-08-13T10:00:00.000Z',
   },
   {
     id: 4,
@@ -54,6 +57,7 @@ const mockAccessLogs: AccessLog[] = [
     ipAddress: '203.0.113.31',
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Safari/604.1',
     occurredAt: '2026-08-12T09:12:00.000Z',
+    sessionId: 'mock-user-3:2026-08-12T09:12:00.000Z',
   },
 ]
 

@@ -69,6 +69,36 @@ function formatDateTime(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+// 세션별 체류시간(로그인~로그아웃) 계산. 로그아웃 행은 필터 기간 밖에 있을 수 있으므로
+// 짝짓기는 전체 로그(accessLogs)를 기준으로 하고, 합계 표시만 필터된 목록을 사용한다.
+const logoutBySession = computed(() => {
+  const map = new Map<string, AccessLog>()
+  for (const log of accessLogs.value) {
+    if (log.event === 'logout' && log.sessionId) map.set(log.sessionId, log)
+  }
+  return map
+})
+
+function durationMsOf(log: AccessLog): number | null {
+  if (log.event !== 'login' || !log.sessionId) return null
+  const logout = logoutBySession.value.get(log.sessionId)
+  if (!logout) return null
+  const ms = new Date(logout.occurredAt).getTime() - new Date(log.occurredAt).getTime()
+  return ms >= 0 ? ms : null
+}
+
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.round(ms / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours > 0) return `${hours}${t('unit.hour')} ${minutes}${t('unit.minute')}`
+  return `${minutes}${t('unit.minute')}`
+}
+
+const totalDurationMs = computed(() =>
+  filteredAccessLogs.value.reduce((sum, log) => sum + (durationMsOf(log) ?? 0), 0),
+)
+
 async function load() {
   loading.value = true
   try {
@@ -140,6 +170,9 @@ onMounted(load)
 
     <!-- 접속 기록 -->
     <section v-else-if="subTab === 'access'" class="rounded-xl border border-border bg-card">
+      <div class="flex items-center justify-end border-b border-border px-4 py-2.5 text-sm text-muted-foreground">
+        {{ t('log.durationTotal') }}: <span class="ml-1 font-semibold text-foreground">{{ formatDuration(totalDurationMs) }}</span>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full min-w-220 text-left text-sm">
           <thead>
@@ -148,13 +181,14 @@ onMounted(load)
               <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
               <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('auth.name') }}</th>
               <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('form.category') }}</th>
+              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('log.duration') }}</th>
               <th class="whitespace-nowrap px-4 py-3 font-medium">IP</th>
               <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.device') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="!filteredAccessLogs.length">
-              <td colspan="6" class="px-4 py-14 text-center text-muted-foreground">
+              <td colspan="7" class="px-4 py-14 text-center text-muted-foreground">
                 <History class="mx-auto mb-2 h-8 w-8 opacity-40" />
                 {{ t('log.empty') }}
               </td>
@@ -168,6 +202,12 @@ onMounted(load)
               <td class="px-4 py-3 text-foreground">{{ log.email || '-' }}</td>
               <td class="px-4 py-3 text-muted-foreground">{{ log.userName || '-' }}</td>
               <td class="px-4 py-3 text-muted-foreground">{{ log.event }}</td>
+              <td class="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">
+                <template v-if="log.event === 'login'">
+                  {{ durationMsOf(log) !== null ? formatDuration(durationMsOf(log)!) : t('log.stillActive') }}
+                </template>
+                <template v-else>-</template>
+              </td>
               <td class="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">{{ log.ipAddress || '-' }}</td>
               <td class="max-w-55 truncate px-4 py-3 text-muted-foreground" :title="log.userAgent">{{ log.userAgent || '-' }}</td>
             </tr>

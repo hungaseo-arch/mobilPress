@@ -50,6 +50,11 @@ const messages: Record<string, { id: string; ko: string }> = {
   'th.targetTable': { id: 'Tabel', ko: '대상' },
   'th.action': { id: 'Aksi', ko: '작업' },
   'log.empty': { id: 'Belum ada log.', ko: '기록이 없습니다.' },
+  'log.duration': { id: 'Durasi', ko: '체류시간' },
+  'log.durationTotal': { id: 'Total Durasi', ko: '총 체류시간' },
+  'log.stillActive': { id: 'Sedang aktif', ko: '접속 중' },
+  'unit.hour': { id: 'jam', ko: '시간' },
+  'unit.minute': { id: 'menit', ko: '분' },
 
   'seed.empty': {
     id: 'Belum ada data. Anda bisa mulai dengan data awal dari laporan.',
@@ -161,7 +166,7 @@ const messages: Record<string, { id: string; ko: string }> = {
   'report.uploadFailed': { id: 'Gagal mengunggah.', ko: '업로드에 실패했습니다.' },
   'report.preview': { id: 'Pratinjau', ko: '미리보기' },
   'report.download': { id: 'Unduh', ko: '다운로드' },
-  'report.unlink': { id: 'Lepas tautan', ko: '첨부 해제' },
+  'report.unlink': { id: 'Hapus (termasuk file Drive)', ko: '삭제 (Drive 파일 포함)' },
   'report.none': { id: 'Belum ada laporan.', ko: '첨부된 보고서가 없습니다.' },
   'report.disabled': { id: 'Unggah belum diaktifkan (VITE_DRIVE_UPLOAD_URL).', ko: '업로드가 설정되지 않았습니다 (VITE_DRIVE_UPLOAD_URL).' },
   'report.modalTitle': { id: 'Laporan Kerja', ko: '작업보고서' },
