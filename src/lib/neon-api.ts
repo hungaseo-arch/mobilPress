@@ -7,6 +7,10 @@ import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import { getNeonClient } from '@/lib/neon-auth'
 import type { AccessLog, AuditLog, BudgetEntry, Customer, Installation, MobilPressData } from '@/lib/types'
 
+// 현재 데이터 규모(고객/작업 기록 수백 건, docs/NEON-SETUP.md)보다 10배 이상 여유를 둔 상한.
+// PostgREST 기본 응답 상한에 기대지 않고 명시적으로 방어하기 위함 — 화면 결과에는 영향 없음.
+const MAIN_TABLE_LIMIT = 5000
+
 // ── snake_case(DB) ↔ camelCase(앱) 매핑 ─────────────────────
 type Row = Record<string, unknown>
 
@@ -65,16 +69,19 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
           .from('customers')
           .select('*')
           .order('updated_at', { ascending: false })
+          .limit(MAIN_TABLE_LIMIT)
           .then((r) => unwrap<Customer>(r)),
         client
           .from('installations')
           .select('*')
           .order('work_date', { ascending: false })
+          .limit(MAIN_TABLE_LIMIT)
           .then((r) => unwrap<Installation>(r)),
         client
           .from('budget_entries')
           .select('*')
           .order('entry_date', { ascending: true })
+          .limit(MAIN_TABLE_LIMIT)
           .then((r) => unwrap<BudgetEntry>(r)),
       ])
       const data: MobilPressData = {
