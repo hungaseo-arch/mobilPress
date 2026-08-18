@@ -45,6 +45,17 @@ const instPage = usePagination(computed(() => store.filteredInstallations), 10)
 const custPage = usePagination(computed(() => store.revenueByCustomer), 10)
 const monthPage = usePagination(computed(() => store.revenueByMonth), 12)
 
+// 장착 실적 표 하단 합계 — 검색 필터가 적용된 전체 결과 기준(현재 페이지만이 아님)
+const installationsTotal = computed(() => {
+  let qty = 0
+  let received = 0
+  for (const item of store.filteredInstallations) {
+    qty += item.qty
+    received += item.receivedAmount
+  }
+  return { qty, received }
+})
+
 const customerModalOpen = ref(false)
 const editingCustomer = ref<Customer | null>(null)
 const installationModalOpen = ref(false)
@@ -350,6 +361,17 @@ onMounted(() => {
                 </td>
               </tr>
             </tbody>
+            <tfoot v-if="store.filteredInstallations.length">
+              <tr class="border-t border-border bg-secondary/50 font-semibold">
+                <td class="px-4 py-3 text-foreground" colspan="3">
+                  {{ t('revenue.total') }} ({{ store.filteredInstallations.length }} {{ t('unit.items') }})
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(installationsTotal.qty) }} pcs</td>
+                <td class="px-4 py-3" colspan="3" />
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(installationsTotal.received) }}</td>
+                <td class="px-4 py-3" colspan="2" />
+              </tr>
+            </tfoot>
           </table>
           </div>
           <TablePagination
