@@ -177,13 +177,13 @@ onMounted(load)
         <table class="w-full min-w-220 text-left text-sm">
           <thead>
             <tr class="border-b border-border text-xs text-muted-foreground">
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.occurredAt') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('auth.name') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('form.category') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('log.duration') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">IP</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.device') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.occurredAt') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('auth.name') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('form.category') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('log.duration') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">IP</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.device') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -230,10 +230,10 @@ onMounted(load)
         <table class="w-full min-w-140 text-left text-sm">
           <thead>
             <tr class="border-b border-border text-xs text-muted-foreground">
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.occurredAt') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.targetTable') }}</th>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.action') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.occurredAt') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.targetTable') }}</th>
+              <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.action') }}</th>
             </tr>
           </thead>
           <tbody>

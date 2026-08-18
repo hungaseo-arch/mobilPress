@@ -283,16 +283,16 @@ onMounted(() => {
           <table class="w-full min-w-260 text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.workDate') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.customer') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.productRim') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.serviceFee') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.discount') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.mobFee') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-center font-medium">{{ t('th.report') }}</th>
-                <th class="px-4 py-3" />
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.workDate') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.customer') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.productRim') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.serviceFee') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.discount') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.mobFee') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-center font-medium">{{ t('th.report') }}</th>
+                <th scope="col" class="px-4 py-3"><span class="sr-only">{{ t('th.action') }}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -390,11 +390,11 @@ onMounted(() => {
           <table class="w-full min-w-140 table-fixed text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.requestCustomer') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.requestCustomer') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -465,10 +465,10 @@ onMounted(() => {
           <table class="w-full min-w-140 text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.month') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.jobs') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.month') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.jobs') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
               </tr>
             </thead>
             <tbody>

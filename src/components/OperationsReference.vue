@@ -286,6 +286,7 @@ const barClass: Record<GanttRow['status'], string> = {
                         <th
                           v-for="(header, headerIndex) in section.table.headers.slice(1)"
                           :key="header"
+                          scope="col"
                           class="whitespace-nowrap px-5 py-2 font-medium"
                           :class="alignClass(section.table.headers.slice(1), headerIndex)"
                           :style="eqWidthStyle(section.table.headers.slice(1))"
@@ -331,6 +332,7 @@ const barClass: Record<GanttRow['status'], string> = {
                     <th
                       v-for="(header, headerIndex) in section.table.headers"
                       :key="header"
+                      scope="col"
                       class="whitespace-nowrap px-4 py-2.5 font-medium"
                       :class="alignClass(section.table.headers, headerIndex)"
                       :style="eqWidthStyle(section.table.headers)"
@@ -469,6 +471,7 @@ const barClass: Record<GanttRow['status'], string> = {
               <th
                 v-for="header in openModal.table.headers"
                 :key="header"
+                scope="col"
                 class="whitespace-nowrap px-3 py-2.5 font-medium"
                 :class="alignClass(openModal.table.headers, openModal.table.headers.indexOf(header))"
               >
