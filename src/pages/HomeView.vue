@@ -305,9 +305,13 @@ onMounted(() => {
               <tr
                 v-for="item in instPage.paged.value"
                 :key="item.id"
-                class="cursor-pointer border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
+                class="cursor-pointer border-b border-border/60 align-top outline-none transition last:border-0 hover:bg-secondary/40 focus-visible:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                 :title="canEdit ? t('installations.rowHint') : t('installations.rowHintView')"
+                role="button"
+                tabindex="0"
                 @click="openInstallationModal(item)"
+                @keydown.enter="openInstallationModal(item)"
+                @keydown.space.prevent="openInstallationModal(item)"
               >
                 <td class="px-4 py-3 text-muted-foreground">
                   <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
@@ -477,9 +481,13 @@ onMounted(() => {
               <tr
                 v-for="[month, value] in monthPage.paged.value"
                 :key="month"
-                class="cursor-pointer border-b border-border/60 transition last:border-0 hover:bg-secondary/40"
+                class="cursor-pointer border-b border-border/60 outline-none transition last:border-0 hover:bg-secondary/40 focus-visible:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                 :title="t('month.rowHint')"
+                role="button"
+                tabindex="0"
                 @click="monthDetail = month"
+                @keydown.enter="monthDetail = month"
+                @keydown.space.prevent="monthDetail = month"
               >
                 <td class="px-4 py-3 font-semibold text-foreground">{{ formatDate(month) }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatNumber(value.count) }} {{ t('unit.items') }}</td>
