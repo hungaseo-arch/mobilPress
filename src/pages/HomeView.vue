@@ -1,23 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import { ClipboardList, FileText, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
 import { authEnabled, canDelete, canEdit, canViewReport, currentUser, isAdmin, logout } from '@/lib/auth-state'
 import { deleteReport } from '@/lib/drive-report'
 import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
 import { lang, setLang, t } from '@/lib/i18n'
-import CustomerFormModal from '@/components/CustomerFormModal.vue'
-import InstallationFormModal from '@/components/InstallationFormModal.vue'
-import RevenueHistoryModal from '@/components/RevenueHistoryModal.vue'
-import MonthlyHistoryModal from '@/components/MonthlyHistoryModal.vue'
-import RequestHistoryModal from '@/components/RequestHistoryModal.vue'
 import ReportPreviewModal from '@/components/ReportPreviewModal.vue'
-import OperationsReference from '@/components/OperationsReference.vue'
-import BudgetReference from '@/components/BudgetReference.vue'
-import AccessLogTable from '@/components/AccessLogTable.vue'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
+
+// 탭 전환/모달 오픈 시점에만 로드되는 컴포넌트 — 초기 번들에서 분리.
+const CustomerFormModal = defineAsyncComponent(() => import('@/components/CustomerFormModal.vue'))
+const InstallationFormModal = defineAsyncComponent(() => import('@/components/InstallationFormModal.vue'))
+const RevenueHistoryModal = defineAsyncComponent(() => import('@/components/RevenueHistoryModal.vue'))
+const MonthlyHistoryModal = defineAsyncComponent(() => import('@/components/MonthlyHistoryModal.vue'))
+const RequestHistoryModal = defineAsyncComponent(() => import('@/components/RequestHistoryModal.vue'))
+const OperationsReference = defineAsyncComponent(() => import('@/components/OperationsReference.vue'))
+const BudgetReference = defineAsyncComponent(() => import('@/components/BudgetReference.vue'))
+const AccessLogTable = defineAsyncComponent(() => import('@/components/AccessLogTable.vue'))
 
 const store = useMobilPressStore()
 
@@ -86,12 +88,26 @@ const revenueDetailCustomerObj = computed(
   () => store.customers.find((c) => c.companyName === revenueDetailCustomer.value) ?? null,
 )
 
-// 해당 장착고객의 요청고객(요청고객) — 장착 실적에서 중복 없이 수집
+// 고객별 요청고객(distributor) 목록 — installations 전체를 단 한 번만 순회해 미리 구성.
+// (기존에는 requestCustomersOf 가 매출 테이블의 각 행마다, 그것도 행당 2번씩 호출되며
+//  매번 installations 전체를 filter+map 했음)
+const requestCustomersByCustomer = computed(() => {
+  const result = new Map<string, string[]>()
+  for (const item of store.installations) {
+    if (!item.distributor) continue
+    const list = result.get(item.customerName)
+    if (list) {
+      if (!list.includes(item.distributor)) list.push(item.distributor)
+    } else {
+      result.set(item.customerName, [item.distributor])
+    }
+  }
+  return result
+})
+
+// 해당 장착고객의 요청고객(요청고객) — 중복 없이, 최초 등장 순서대로
 function requestCustomersOf(companyName: string): string[] {
-  const names = store.installations
-    .filter((i) => i.customerName === companyName && i.distributor)
-    .map((i) => i.distributor)
-  return [...new Set(names)]
+  return requestCustomersByCustomer.value.get(companyName) ?? []
 }
 
 function openCustomerModal(customer: Customer | null = null) {
@@ -278,16 +294,16 @@ onMounted(() => {
           <table class="w-full min-w-260 text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.workDate') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.customer') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.productRim') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.serviceFee') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.discount') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.mobFee') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-center font-medium">{{ t('th.report') }}</th>
-                <th class="px-4 py-3" />
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.workDate') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.customer') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.productRim') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.serviceFee') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.discount') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.mobFee') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-center font-medium">{{ t('th.report') }}</th>
+                <th scope="col" class="px-4 py-3"><span class="sr-only">{{ t('th.action') }}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -300,9 +316,13 @@ onMounted(() => {
               <tr
                 v-for="item in instPage.paged.value"
                 :key="item.id"
-                class="cursor-pointer border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
+                class="cursor-pointer border-b border-border/60 align-top outline-none transition last:border-0 hover:bg-secondary/40 focus-visible:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                 :title="canEdit ? t('installations.rowHint') : t('installations.rowHintView')"
+                role="button"
+                tabindex="0"
                 @click="openInstallationModal(item)"
+                @keydown.enter="openInstallationModal(item)"
+                @keydown.space.prevent="openInstallationModal(item)"
               >
                 <td class="px-4 py-3 text-muted-foreground">
                   <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
@@ -392,11 +412,11 @@ onMounted(() => {
           <table class="w-full min-w-140 table-fixed text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.requestCustomer') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.requestCustomer') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -467,10 +487,10 @@ onMounted(() => {
           <table class="w-full min-w-140 text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.month') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.jobs') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.month') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.jobs') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -483,9 +503,13 @@ onMounted(() => {
               <tr
                 v-for="[month, value] in monthPage.paged.value"
                 :key="month"
-                class="cursor-pointer border-b border-border/60 transition last:border-0 hover:bg-secondary/40"
+                class="cursor-pointer border-b border-border/60 outline-none transition last:border-0 hover:bg-secondary/40 focus-visible:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                 :title="t('month.rowHint')"
+                role="button"
+                tabindex="0"
                 @click="monthDetail = month"
+                @keydown.enter="monthDetail = month"
+                @keydown.space.prevent="monthDetail = month"
               >
                 <td class="px-4 py-3 font-semibold text-foreground">{{ formatDate(month) }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatNumber(value.count) }} {{ t('unit.items') }}</td>

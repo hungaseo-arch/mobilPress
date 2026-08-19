@@ -118,11 +118,11 @@ async function confirmDelete(entry: BudgetEntry) {
               <table class="w-full min-w-160 text-left text-sm">
                 <thead>
                   <tr class="border-b border-border/60 text-xs text-muted-foreground">
-                    <th class="w-28 whitespace-nowrap px-4 py-2 font-medium">{{ t('form.entryDate') }}</th>
-                    <th class="px-4 py-2 font-medium">{{ t('form.item') }}</th>
-                    <th class="w-36 whitespace-nowrap px-4 py-2 text-right font-medium">{{ t('form.amount') }}</th>
-                    <th class="px-4 py-2 font-medium">{{ t('form.note') }}</th>
-                    <th v-if="canEdit" class="w-20 px-4 py-2" />
+                    <th scope="col" class="w-28 whitespace-nowrap px-4 py-2 font-medium">{{ t('form.entryDate') }}</th>
+                    <th scope="col" class="px-4 py-2 font-medium">{{ t('form.item') }}</th>
+                    <th scope="col" class="w-36 whitespace-nowrap px-4 py-2 text-right font-medium">{{ t('form.amount') }}</th>
+                    <th scope="col" class="px-4 py-2 font-medium">{{ t('form.note') }}</th>
+                    <th v-if="canEdit" scope="col" class="w-20 px-4 py-2"><span class="sr-only">{{ t('th.action') }}</span></th>
                   </tr>
                 </thead>
                 <tbody>

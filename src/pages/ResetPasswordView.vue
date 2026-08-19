@@ -6,7 +6,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { t } from '@/lib/i18n'
-import { resetPassword } from '@/lib/neon-auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +27,7 @@ async function submit() {
   }
   submitting.value = true
   try {
+    const { resetPassword } = await import('@/lib/neon-auth')
     await resetPassword(password.value, token.value)
     done.value = true
     toast.success(t('reset.done'))

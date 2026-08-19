@@ -8,7 +8,6 @@ import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authEnabled, currentUser, refreshUser } from '@/lib/auth-state'
 import { lang, setLang, t } from '@/lib/i18n'
-import { requestPasswordReset, signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/neon-auth'
 
 const route = useRoute()
 // 비밀번호 재설정 페이지는 이메일 링크로 진입하므로 로그인 없이 통과시킵니다.
@@ -35,6 +34,7 @@ async function submit() {
   if (submitting.value) return
   submitting.value = true
   try {
+    const { requestPasswordReset, signInWithEmail, signUpWithEmail } = await import('@/lib/neon-auth')
     if (mode.value === 'forgot') {
       // 재설정 링크는 /reset-password?token=... 으로 돌아옵니다 (base 경로 포함).
       const redirectTo = new URL(`${import.meta.env.BASE_URL}reset-password`, window.location.origin).href
@@ -59,6 +59,7 @@ async function submit() {
 
 async function google() {
   try {
+    const { signInWithGoogle } = await import('@/lib/neon-auth')
     await signInWithGoogle() // 성공 시 리다이렉트되므로 이후 코드는 실행되지 않을 수 있음
   } catch (error) {
     toast.error(error instanceof Error ? error.message : t('auth.googleFail'))

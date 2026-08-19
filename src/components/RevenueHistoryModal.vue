@@ -89,13 +89,13 @@ const totals = computed(() => ({
       <table class="w-full min-w-180 text-left text-sm">
         <thead>
           <tr class="border-b border-border text-xs text-muted-foreground">
-            <th class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.workDate') }}</th>
-            <th class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.productRim') }}</th>
-            <th class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.qty') }}</th>
-            <th class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.serviceFee') }}</th>
-            <th class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.discount') }}</th>
-            <th class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.mobFee') }}</th>
-            <th class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.received') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.workDate') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.productRim') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.qty') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.serviceFee') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.discount') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.mobFee') }}</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.received') }}</th>
           </tr>
         </thead>
         <tbody>

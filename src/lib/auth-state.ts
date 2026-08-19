@@ -1,7 +1,9 @@
 // AuthGate(로그인 화면)와 HomeView 헤더(로그아웃 버튼)가 공유하는 세션 상태.
 import { computed, ref } from 'vue'
-import { type AuthUser, getCurrentUser, isNeonConfigured, neon, signOut } from '@/lib/neon-auth'
+import { toast } from 'vue-sonner'
+import { isNeonConfigured } from '@/lib/neon-config'
 import { dataMode } from '@/lib/api'
+import type { AuthUser } from '@/lib/neon-auth'
 
 /** Neon 모드 + 설정 완료일 때만 로그인 게이트가 동작합니다. */
 export const authEnabled = dataMode === 'neon' && isNeonConfigured
@@ -52,15 +54,16 @@ export const canUnlinkReport = computed(() => reportPerms.value.unlink)
 
 export async function refreshUser(): Promise<void> {
   if (!authEnabled) return
+  const { getCurrentUser, getNeonClient } = await import('@/lib/neon-auth')
   currentUser.value = await getCurrentUser()
   userRole.value = 'user'
-  if (currentUser.value && neon) {
+  const client = currentUser.value ? getNeonClient() : null
+  if (client) {
     // RLS 가 본인 행만 보여주므로 필터 없이 첫 행을 읽으면 됩니다.
-    const { data, error } = await neon.from('user_roles').select('role').limit(1)
+    const { data, error } = await client.from('user_roles').select('role').limit(1)
     if (error) {
       // 조용히 user 로 남으면 원인을 알 수 없으므로 화면에 노출합니다.
       // (흔한 원인: Data API 의 Refresh schema cache 미실행, schema.sql 미적용)
-      const { toast } = await import('vue-sonner')
       toast.error(`권한(user_roles) 조회 실패: ${error.message ?? JSON.stringify(error)}`)
       console.error('[auth-state] user_roles 조회 실패:', error)
       return
@@ -71,6 +74,8 @@ export async function refreshUser(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+  if (!authEnabled) return
+  const { signOut } = await import('@/lib/neon-auth')
   await signOut()
   currentUser.value = null
   userRole.value = 'user'

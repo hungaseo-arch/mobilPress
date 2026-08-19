@@ -1,5 +1,5 @@
 // 경량 2개 국어 지원 (기본: 인도네시아어, 보조: 한국어) — 외부 라이브러리 없음.
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 export type Lang = 'id' | 'ko'
 
@@ -11,6 +11,9 @@ function initialLang(): Lang {
 }
 
 export const lang = ref<Lang>(initialLang())
+
+// <html lang> 을 실제 표시 언어와 동기화 (스크린리더/브라우저 번역 도구가 올바른 언어로 인식하도록).
+watch(lang, (value) => { document.documentElement.lang = value }, { immediate: true })
 
 export function setLang(next: Lang): void {
   lang.value = next

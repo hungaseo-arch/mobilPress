@@ -5,7 +5,6 @@
 // 업로드 엔드포인트는 Apps Script 웹앱(apps-script/Code.gs)입니다.
 // 설정: .env 의 VITE_DRIVE_UPLOAD_URL — docs/DRIVE-REPORT-SETUP.md 참고.
 import { canUnlinkReport, canUploadReport } from '@/lib/auth-state'
-import { getAuthToken } from '@/lib/neon-auth'
 
 const UPLOAD_URL = import.meta.env.VITE_DRIVE_UPLOAD_URL ?? ''
 // 단순 공유 토큰. 프런트엔드 번들에 포함되므로 '비밀'이 아니라 무작위 호출 차단용입니다.
@@ -43,6 +42,7 @@ export function buildReportName(
 
 /** 화면 권한은 UX 이고 실제 차단은 Apps Script(역할 재검증) + Drive 폴더 권한에서 이뤄집니다. */
 async function authHeaderToken(): Promise<string> {
+  const { getAuthToken } = await import('@/lib/neon-auth')
   return (await getAuthToken()) ?? ''
 }
 
