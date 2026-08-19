@@ -2,6 +2,47 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-08-19 — 웹사이트 최적화 작업지시서 P2: ESLint/Prettier·배포 자동화 + 번들/Lighthouse 측정
+
+- **P2-1**: ESLint(flat config, `eslint-plugin-vue` + `typescript-eslint`) + Prettier 도구 설정 추가.
+  `npm run lint` / `format` / `format:check` 스크립트 추가. 저장소 전체 일괄 포맷(`prettier --write .`)은
+  무관한 대량 diff를 피하기 위해 이번 작업에 포함하지 않음(27개 파일이 대상, 필요 시 별도 진행)
+- **P2-2**: `.github/workflows/deploy.yml` 추가 — `main` push 시(또는 수동 실행) 자동 빌드 후
+  `gh-pages` 브랜치에 게시(기존 `npm run deploy` 로컬 수동 배포와 동일한 방식, 트리거만 자동화).
+  빌드에 `VITE_DATA_MODE`/`VITE_NEON_DATA_API_URL`/`VITE_NEON_AUTH_URL` 리포지토리 secrets 필요(미등록 시 mock 모드로 빌드됨)
+- **P2-3**: 번들 크기·Lighthouse 점수 측정 기록(아래)
+
+### 번들 크기 (2026-08-19, `npm run build` 기준, P0~P2 최적화 반영 후)
+
+manualChunks로 라우트별/벤더별 코드 스플리팅 적용된 상태:
+
+| 청크 | raw | gzip |
+|---|---|---|
+| vue (vue/vue-router/pinia) | 102.10 kB | 40.01 kB |
+| neon (@neondatabase/@better-auth/zod) | 308.47 kB | 74.40 kB |
+| vendor(기타) | 71.75 kB | 21.89 kB |
+| index (앱 엔트리) | 67.24 kB | 20.16 kB |
+| icons(lucide) | 8.50 kB | 2.04 kB |
+| 나머지 모달·컴포넌트 lazy chunk 다수 | — | 각 1~13 kB |
+| CSS | 28.90 kB | 6.03 kB |
+| **JS 합계** | **651.3 kB** | **191.6 kB** |
+| **전체(HTML+CSS+JS) 합계** | **681.9 kB** | **198.2 kB** |
+
+### Lighthouse (2026-08-19, `npm run preview` + `lighthouse` CLI, 로컬 측정)
+
+| 항목 | 점수 |
+|---|---|
+| Performance | 95 |
+| Accessibility | 98 |
+| Best Practices | 100 |
+| SEO | 100 |
+
+> ⚠️ 로컬 `.env`가 Neon 인증 모드로 설정돼 있어 프리뷰 접속 시 로그인 화면(`AuthGate`)이 먼저 표시됨.
+> 이번 측정은 그 로그인 화면 기준이며, 로그인 이후의 실제 데이터 화면(장착 실적/매출 테이블 등,
+> P1-8~P1-10에서 접근성을 개선한 화면)은 자격 증명이 없어 별도로 측정하지 못함 — 실제 앱 화면 점수는
+> 다를 수 있음. Accessibility 98점에서 감점된 항목은 `landmark-one-main`(로그인 화면에 `<main>`
+> 랜드마크 없음) 1건.
+
 ## 2026-08-15 — 수정 저장 시 "대상을 찾을 수 없습니다" 첫 클릭 실패(2번째 클릭엔 정상) 완화
 
 - **증상**: 첨부 파일을 삭제한 뒤 곧바로 "수정"을 누르면 오류 토스트가 뜨고, 바로 다시 누르면 정상 저장됨
