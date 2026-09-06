@@ -2,6 +2,76 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-09-06 — 웹사이트 최적화 검증: 폰트 자체 호스팅·접근성 100·neon 청크 preload + 문서 정비
+
+09-01 작업(AsuraDB 디자인 토큰) 이후 Lighthouse 성능이 95 → 84(neon 로그인 화면)/89(mock) 로 떨어진 원인을
+찾아 고치고, README / CONTRIBUTING / ARCHITECTURE 문서를 새로 썼습니다. **SQL 마이그레이션 없음.**
+
+- **P0-1 CI 빌드 env 누락**: `.github/workflows/deploy.yml` 에 `VITE_DRIVE_UPLOAD_URL` / `VITE_DRIVE_UPLOAD_TOKEN` 을
+  추가했습니다. 그동안 CI 는 이 두 값을 모르는 채 빌드했으므로 `main` push 시 업로드 버튼이 없는 빌드가 배포될
+  위험이 있었습니다. ⚠️ **리포지토리 secrets 에 두 값을 등록한 뒤에 push** 해야 합니다([CONTRIBUTING.md](CONTRIBUTING.md) §4)
+- **P0-2 폰트 자체 호스팅**(원인 수정): jsDelivr 의 Pretendard dynamic-subset CSS(굵기 9종 × 서브셋 92개 =
+  `@font-face` 828개, 613 KB)와 Google Fonts JetBrains Mono 링크가 **별도 출처의 렌더 차단 리소스**가 되어 첫 렌더를
+  약 1초 늦추고 있었습니다(LCP 렌더 지연 2.7~2.85 s). JetBrains Mono 는 화면 어디에도 쓰이지 않아 링크만 있고 파일
+  요청은 한 번도 없었습니다.
+  - `scripts/build-fonts.mjs` 가 `node_modules/pretendard` 에서 앱이 쓰는 굵기 400/500/600/700 만 골라
+    `public/fonts/`(CSS 368 선언 205 KB → gzip 52 KB + woff2, `.gitignore`)를 생성합니다.
+    `postinstall / prebuild / predev` 훅으로 자동 실행되므로 clone 직후 `npm install` 만 하면 됩니다
+  - `index.html` 은 같은 출처의 `/fonts/pretendard.css` 하나만 링크하고 preconnect 3개를 제거했습니다.
+    `--font-mono` 는 시스템 글꼴 스택으로 바꿨습니다
+- **P1-1 접근성 100**: 로그인 화면(`AuthGate`) 컨테이너를 `<main>` 으로(landmark-one-main), 시드 안내 배너의
+  글자색을 본문색으로·버튼을 카드 배경 + primary 테두리로 바꿔 대비를 확보했습니다(반투명 primary 위 muted 글자
+  4.44:1 미달). 언어 버튼의 `aria-label` 순서도 정리
+- **P1-2 neon 청크 modulepreload + 역할 조회 병렬화**: `vite.config.ts` 의 `preloadNeonChunks` 플러그인이 neon 모드
+  빌드에서 `neon / neon-auth / neon-api` 청크에 `<link rel="modulepreload">` 를 주입합니다(동적 import 라
+  index 청크 파싱 뒤에야 요청되던 308 KB SDK 를 HTML 파싱 시점부터 내려받음). `auth-state.refreshUser()` 는
+  `user_roles` 조회를 기다리지 않고 `rolePromise` 로 분리해, `currentUser` 가 채워지는 즉시 HomeView 가 뜨고
+  `loadData()` 와 역할 조회가 병렬로 진행됩니다. 관리자 탭·수정 버튼은 역할이 오면 반응적으로 나타나고, 응답 전에
+  사용자가 바뀌면 결과를 버립니다
+- **P2-1 ESLint 경고 0 + 시드 분리**: `OperationsReference` 의 바깥 `v-for` 변수 `row` → `sectionRow`
+  (vue/no-template-shadow ×3). `src/data/seed.ts` 는 폼 기본값과 `SEED_COUNTS` 만 남기고 실제 시드 행은
+  `seed-report.ts` 로 옮겨 `seedFromReport()` 에서 동적 import — index 청크 72.9 → 64.3 kB(gzip 21.9 → 19.5)
+- **P2-2 의존성**: 패치 업데이트(vue 3.5.42, tailwindcss 4.3.3, eslint-plugin-vue 10.11.0, typescript-eslint 8.69.0,
+  vue-sonner 1.3.2)만 반영. **메이저 3종(@neondatabase/neon-js 0.7.0-beta, vue-sonner 2.0.9, lucide-vue-next 1.0.0)은
+  올려서 측정한 뒤 되돌렸습니다** — 타입체크·린트·빌드는 통과했지만 neon 청크 +10 KB(gzip +2.7), vue-sonner 2 는
+  스타일을 자동 주입하지 않아 별도 CSS 파일(15.5 KB, gzip 3.1)이 렌더 차단 요청으로 추가되고, 로그인 화면 LCP 가
+  3.1 s → 3.3~3.5 s(3회) 로 나빠졌습니다. 기능상 필요가 생길 때 [CONTRIBUTING.md](CONTRIBUTING.md) §6 절차로 다시 올립니다
+- **문서**: `README.md` 전면 개정(실제 스택·모드·env·스크립트·권한·배포·폴더 구조), `docs/CONTRIBUTING.md` /
+  `docs/ARCHITECTURE.md` 신규. 기존 README 는 존재하지 않는 `VITE_USE_MOCK`, Hono 백엔드, `components/ui/`, `dashboard/`
+  를 설명하고 있었습니다
+- 보류(다음 작업지시서 후보): Vite 8 / Pinia 4 / Vue Router 5 / TypeScript 7 / ESLint 10 메이저 업그레이드,
+  `vendor` 청크(사실상 vue-sonner 72 KB) 경량 대체 검토, 로그인 후 데이터 화면의 Lighthouse 측정(자격 증명 필요)
+
+### 번들 크기 (2026-09-06, `npm run build`, neon 모드)
+
+| 청크 | raw | gzip | 08-19 대비 |
+|---|---|---|---|
+| neon (@neondatabase/@better-auth/zod) — modulepreload | 308.47 kB | 73.2 kB | 동일 |
+| vue (vue/vue-router/pinia) | 103.81 kB | 40.5 kB | +1.7 kB (3.5.42) |
+| vendor (vue-sonner) | 71.80 kB | 21.9 kB | 동일 |
+| index (앱 엔트리) | 64.28 kB | 19.5 kB | −2.96 kB / −0.7 kB (시드 분리) |
+| icons (lucide) | 9.70 kB | 2.3 kB | +1.2 kB (09-01 아이콘 추가) |
+| seed-report (초기 데이터 버튼 클릭 시) | 9.32 kB | 2.5 kB | 신규(lazy) |
+| 나머지 모달·컴포넌트 lazy chunk 13개 | — | 각 0.1~12.8 kB | |
+| CSS | 29.02 kB | 6.1 kB | 동일 |
+| 폰트 CSS `/fonts/pretendard.css` (같은 출처) | 205.4 kB | 51.6 kB | CDN 613 kB 대체 |
+| **JS 합계** | **674.7 kB** | **191.4 kB** | |
+| **전체(HTML+CSS+JS) 합계** | **706.3 kB** | **198.9 kB** | |
+
+### Lighthouse (2026-09-06, `vite preview` + lighthouse 13.4.1 CLI, 모바일 시뮬레이션, 로컬)
+
+| 화면 | 항목 | 09-06 작업 전 (09-01 코드) | 09-06 작업 후 |
+|---|---|---|---|
+| neon 로그인 화면 | Performance | 84 | **91** (FCP 2.8 → 2.3 s, LCP 3.3 → 3.1 s, SI 5.3 → 2.3 s) |
+| | Accessibility | 98 | **100** |
+| mock 데이터 화면 | Performance | 89 | **94** (FCP 2.6 → 2.3 s, LCP 2.7 → 2.4 s, SI 4.9 → 2.3 s) |
+| | Accessibility | 95 | **100** |
+| 공통 | Best Practices / SEO | 100 / 100 | 100 / 100 |
+
+> 로그인 화면 LCP 는 Neon Auth `get-session` 실제 왕복을 포함하므로 실행마다 ±0.4 s 정도 흔들립니다.
+> 위 값은 2~3회 실행의 중앙값이며, 의존성 메이저 업그레이드 전(폰트·preload 만 반영) 1회 측정에서는 93 / LCP 2.7 s 였습니다.
+> mock 화면의 CLS 0.054 는 빈 데이터 상태에서 로드 후 시드 안내 배너가 끼어드는 것으로 보이며, 데이터가 있는 운영 화면에서는 재현되지 않습니다.
+
 ## 2026-09-01 — 주행거리계 사진 첨부(선택) + 타이어 판매가(건별) 입력
 
 - **주행거리계 사진**(`src/components/ReportUploadField.vue` 를 `kind`/`maxFiles` prop 으로 일반화해
