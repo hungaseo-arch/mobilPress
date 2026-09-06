@@ -52,6 +52,12 @@ export interface InstallationForm {
   reportFileName2: string
   reportFileId3: string
   reportFileName3: string
+  /** 주행거리계 사진 — Google Drive 파일 ID (선택 첨부) */
+  odometerFileId: string
+  /** 주행거리계 사진 파일명 (표시용) */
+  odometerFileName: string
+  /** 타이어 판매가 — 고객마다 달라 건별 총액으로 입력 (단가 아님) */
+  tirePrice: number
   serviceFee: number
   mobilizationFee: number
   discountRate: number
@@ -128,4 +134,21 @@ export interface AuditLog {
   /** 조회 시 user_directory 로 보강 (DB 컬럼 아님) */
   changedByEmail?: string
   changedAt: string
+}
+
+/** 앱 권한 역할 — public.user_roles.role (행이 없는 계정은 'user' 로 취급) */
+export type UserRole = 'admin' | 'staff' | 'user'
+
+export const USER_ROLES: UserRole[] = ['admin', 'staff', 'user']
+
+/** 회원관리 탭 행 — public.user_accounts 뷰 (admin 에게만 행이 보인다) */
+export interface MemberAccount {
+  userId: string
+  email: string
+  name: string
+  role: UserRole
+  /** 가입일 (ISO) */
+  createdAt: string
+  /** 최근 로그인 (ISO). 접속 기록이 없으면 빈 문자열 */
+  lastLoginAt: string
 }

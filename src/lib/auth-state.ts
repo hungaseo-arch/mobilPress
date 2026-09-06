@@ -4,6 +4,7 @@ import { toast } from 'vue-sonner'
 import { isNeonConfigured } from '@/lib/neon-config'
 import { dataMode } from '@/lib/api'
 import type { AuthUser } from '@/lib/neon-auth'
+import type { UserRole } from '@/lib/types'
 
 /** Neon 모드 + 설정 완료일 때만 로그인 게이트가 동작합니다. */
 export const authEnabled = dataMode === 'neon' && isNeonConfigured
@@ -12,8 +13,7 @@ export const currentUser = ref<AuthUser | null>(null)
 
 /** DB 의 user_roles 테이블 기준 역할. 행이 없으면 'user'(조회 전용).
  *  외부에서는 직접 변경하지 말고 canEdit/canDelete 를 사용하세요. */
-type Role = 'admin' | 'staff' | 'user'
-const userRole = ref<Role>('user')
+const userRole = ref<UserRole>('user')
 
 /** 데이터 입력/수정 가능 여부 (staff 이상). mock/proxy 모드에서는 항상 허용. */
 export const canEdit = computed(() => !authEnabled || userRole.value !== 'user')
@@ -25,7 +25,7 @@ export const canDelete = computed(() => !authEnabled || userRole.value === 'admi
 export const isAdmin = computed(() => !authEnabled || userRole.value === 'admin')
 
 /** 현재 역할. 로그인 게이트가 꺼진 mock/proxy 모드에서는 admin 으로 간주합니다. */
-export const role = computed<Role>(() => (authEnabled ? userRole.value : 'admin'))
+export const role = computed<UserRole>(() => (authEnabled ? userRole.value : 'admin'))
 
 // ── 작업보고서(스캔 PDF) 권한 정책 ──────────────────────────
 // 정책을 바꿀 때는 아래 표만 수정하면 화면 전체에 반영됩니다.
@@ -40,7 +40,7 @@ export interface ReportPermissions {
   unlink: boolean
 }
 
-const REPORT_POLICY: Record<Role, ReportPermissions> = {
+const REPORT_POLICY: Record<UserRole, ReportPermissions> = {
   admin: { view: true, download: true, upload: true, unlink: true },
   staff: { view: true, download: true, upload: true, unlink: false },
   user: { view: true, download: false, upload: false, unlink: false },
@@ -59,8 +59,13 @@ export async function refreshUser(): Promise<void> {
   userRole.value = 'user'
   const client = currentUser.value ? getNeonClient() : null
   if (client) {
-    // RLS 가 본인 행만 보여주므로 필터 없이 첫 행을 읽으면 됩니다.
-    const { data, error } = await client.from('user_roles').select('role').limit(1)
+    // 반드시 본인 user_id 로 필터합니다. admin 은 RLS(user_roles_select_admin)로 전체 행이
+    // 보이므로, 필터 없이 첫 행을 읽으면 남의 역할을 자기 역할로 오인합니다.
+    const { data, error } = await client
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', currentUser.value!.id)
+      .limit(1)
     if (error) {
       // 조용히 user 로 남으면 원인을 알 수 없으므로 화면에 노출합니다.
       // (흔한 원인: Data API 의 Refresh schema cache 미실행, schema.sql 미적용)

@@ -5,7 +5,17 @@
 import { AuthRequiredError } from '@neondatabase/neon-js'
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import { getNeonClient } from '@/lib/neon-auth'
-import type { AccessLog, AuditLog, BudgetEntry, Customer, Installation, MobilPressData } from '@/lib/types'
+import { USER_ROLES } from '@/lib/types'
+import type {
+  AccessLog,
+  AuditLog,
+  BudgetEntry,
+  Customer,
+  Installation,
+  MemberAccount,
+  MobilPressData,
+  UserRole,
+} from '@/lib/types'
 
 // 현재 데이터 규모(고객/작업 기록 수백 건, docs/NEON-SETUP.md)보다 10배 이상 여유를 둔 상한.
 // PostgREST 기본 응답 상한에 기대지 않고 명시적으로 방어하기 위함 — 화면 결과에는 영향 없음.
@@ -119,6 +129,42 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
       ])
       const byId = new Map(users.map((u) => [u.userId, u.email]))
       return json(logs.map((l) => ({ ...l, changedByEmail: byId.get(l.changedBy) ?? l.changedBy })))
+    }
+
+    // 회원관리(admin 전용) — 계정 목록은 user_accounts 뷰가 admin 에게만 행을 돌려주고,
+    // 역할 변경은 user_roles 의 RLS(admin, 본인 제외)가 서버에서 재검증한다.
+    if (path === '/mobil-press/members' && method === 'GET') {
+      const rows = unwrap<MemberAccount>(
+        await client
+          .from('user_accounts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(MAIN_TABLE_LIMIT),
+      )
+      return json(rows)
+    }
+
+    const memberMatch = path.match(/^\/mobil-press\/members\/([^/]+)$/)
+    if (memberMatch && method === 'PATCH') {
+      const role = String(body?.role ?? '') as UserRole
+      if (!USER_ROLES.includes(role)) return json({ error: `알 수 없는 역할입니다: ${role}` }, 400)
+      const userId = memberMatch[1]
+      // user_roles 는 계정당 0~1행 — 행이 없는 계정(가입 기본값 user)은 새로 만든다.
+      // upsert 대신 update → insert 순으로 처리해 PostgREST 의 merge-duplicates 에 의존하지 않는다.
+      const updated = unwrap<{ userId: string; role: UserRole }>(
+        await client.from('user_roles').update({ role }).eq('user_id', userId).select(),
+      )
+      if (!updated.length) {
+        const inserted = await client.from('user_roles').insert({ user_id: userId, role }).select()
+        if (inserted.error) {
+          // 동시 요청으로 그 사이 다른 요청이 먼저 같은 행을 만들었을 수 있다 — update 로 재시도한다.
+          const retried = unwrap<{ userId: string; role: UserRole }>(
+            await client.from('user_roles').update({ role }).eq('user_id', userId).select(),
+          )
+          if (!retried.length) unwrap(inserted) // 재시도도 못 찾으면 원래 삽입 오류를 그대로 던진다
+        }
+      }
+      return json({ userId, role })
     }
 
     for (const table of ['customers', 'installations', 'budget_entries'] as const) {

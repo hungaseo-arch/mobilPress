@@ -27,6 +27,24 @@ export function formatDate(value: string): string {
   return value ? value.replaceAll('-', '.') : '-'
 }
 
+function pad(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+/** ISO 타임스탬프 → 'YYYY-MM-DD', 값이 없거나 파싱 실패 시 '-' */
+export function formatDay(iso: string): string {
+  const d = new Date(iso)
+  if (!iso || Number.isNaN(d.getTime())) return '-'
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** ISO 타임스탬프 → 'YYYY-MM-DD HH:mm', 값이 없거나 파싱 실패 시 '-' */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (!iso || Number.isNaN(d.getTime())) return '-'
+  return `${formatDay(iso)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 /** ' / ' 로 이어진 제품명을 줄 단위 배열로 분리 (표시용) */
 export function productLines(product: string): string[] {
   const lines = (product ?? '').split(' / ').map((v) => v.trim()).filter(Boolean)

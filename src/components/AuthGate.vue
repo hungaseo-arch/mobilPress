@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authEnabled, currentUser, refreshUser } from '@/lib/auth-state'
+import { startIdleLogout } from '@/lib/idle-logout'
 import { lang, setLang, t } from '@/lib/i18n'
 
 const route = useRoute()
@@ -20,6 +21,9 @@ const name = ref('')
 const email = ref('')
 const password = ref('')
 const submitting = ref(false)
+
+// 무활동 자동 로그아웃 감시 — 로그인 상태가 될 때만 동작합니다(idle-logout.ts).
+startIdleLogout()
 
 onMounted(async () => {
   if (!authEnabled) return
@@ -70,21 +74,21 @@ async function google() {
 <template>
   <slot v-if="!authEnabled || currentUser || bypassGate" />
 
-  <div v-else-if="checking" class="flex min-h-screen items-center justify-center bg-slate-50">
-    <Loader2 class="h-6 w-6 animate-spin text-slate-400" />
+  <div v-else-if="checking" class="flex min-h-screen items-center justify-center bg-background">
+    <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
   </div>
 
-  <div v-else class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-    <form class="w-full max-w-sm space-y-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm" @submit.prevent="submit">
+  <div v-else class="flex min-h-screen items-center justify-center bg-background px-4">
+    <form class="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8 shadow-sm" @submit.prevent="submit">
       <div>
         <div class="flex items-start justify-between">
-          <h1 class="text-xl font-bold text-slate-900">MobilPress</h1>
+          <h1 class="text-xl font-bold text-foreground">MobilPress</h1>
           <!-- 언어 전환 (기본: 인도네시아어) -->
-          <div class="flex gap-0.5 rounded-md border border-slate-200 p-0.5">
+          <div class="flex gap-0.5 rounded-md border border-border p-0.5">
             <button
               type="button"
               class="rounded px-1.5 py-1 text-xs font-semibold transition"
-              :class="lang === 'id' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-700'"
+              :class="lang === 'id' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
               aria-label="Bahasa Indonesia"
               @click="setLang('id')"
             >
@@ -93,7 +97,7 @@ async function google() {
             <button
               type="button"
               class="rounded px-1.5 py-1 text-xs font-semibold transition"
-              :class="lang === 'ko' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-700'"
+              :class="lang === 'ko' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
               aria-label="한국어"
               @click="setLang('ko')"
             >
@@ -101,7 +105,7 @@ async function google() {
             </button>
           </div>
         </div>
-        <p class="mt-1 text-sm text-slate-500">
+        <p class="mt-1 text-sm text-muted-foreground">
           {{ mode === 'signin' ? t('auth.subtitle.signin') : mode === 'signup' ? t('auth.subtitle.signup') : t('auth.subtitle.forgot') }}
         </p>
       </div>
@@ -112,14 +116,14 @@ async function google() {
         type="text"
         required
         :placeholder="t('auth.name')"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
       <input
         v-model="email"
         type="email"
         required
         :placeholder="t('auth.email')"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
       <input
         v-if="mode !== 'forgot'"
@@ -128,13 +132,13 @@ async function google() {
         required
         minlength="8"
         :placeholder="t('auth.password')"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
 
       <button
         type="submit"
         :disabled="submitting"
-        class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+        class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
       >
         <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
         {{ mode === 'signin' ? t('auth.signin') : mode === 'signup' ? t('auth.signup') : t('auth.sendReset') }}
@@ -143,13 +147,13 @@ async function google() {
       <button
         v-if="mode !== 'forgot'"
         type="button"
-        class="w-full rounded-lg border border-slate-300 py-2 text-sm text-slate-700 hover:bg-slate-50"
+        class="w-full rounded-lg border border-input py-2 text-sm text-foreground hover:bg-secondary"
         @click="google"
       >
         {{ t('auth.google') }}
       </button>
 
-      <p class="flex justify-center gap-3 text-center text-xs text-slate-500">
+      <p class="flex justify-center gap-3 text-center text-xs text-muted-foreground">
         <button v-if="mode !== 'signin'" type="button" class="underline" @click="mode = 'signin'">
           {{ t('auth.backToSignin') }}
         </button>

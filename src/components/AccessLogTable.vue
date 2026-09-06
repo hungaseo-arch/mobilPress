@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { History, Loader2 } from 'lucide-vue-next'
 import { apiFetch } from '@/lib/api'
-import { parseApi } from '@/lib/format'
+import { formatDateTime, parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
@@ -61,13 +61,6 @@ watch([selectedAccount, dateFrom, dateTo], () => {
   accessPage.go(1)
   auditPage.go(1)
 })
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso)
-  if (!iso || Number.isNaN(d.getTime())) return '-'
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 // 세션별 체류시간(로그인~로그아웃) 계산. 로그아웃 행은 필터 기간 밖에 있을 수 있으므로
 // 짝짓기는 전체 로그(accessLogs)를 기준으로 하고, 합계 표시만 필터된 목록을 사용한다.
@@ -139,7 +132,7 @@ onMounted(load)
       <div class="flex flex-wrap items-center gap-2">
         <select
           v-model="selectedAccount"
-          class="rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          class="rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">{{ t('log.filterAccount') }}</option>
           <option v-for="email in accounts" :key="email" :value="email">{{ email }}</option>
@@ -149,7 +142,7 @@ onMounted(load)
           <input
             v-model="dateFrom"
             type="date"
-            class="rounded-md border border-border bg-input px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            class="rounded-md border border-border bg-secondary px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
         <label class="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -157,7 +150,7 @@ onMounted(load)
           <input
             v-model="dateTo"
             type="date"
-            class="rounded-md border border-border bg-input px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            class="rounded-md border border-border bg-secondary px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
       </div>

@@ -21,13 +21,15 @@ function sectionGroups(tab: OpsTab): { sections: OpsSection[]; offset: number }[
   return groups
 }
 
-/** 그룹(행) 컨테이너 클래스: rowLayout=열 개수 기준 그리드, pairSections=2/3 반응형, 그 외=세로 스택. */
+/** 그룹(행) 컨테이너 클래스: rowLayout=열 개수 기준 그리드, pairSections=2/3 반응형, 그 외=세로 스택.
+ *  items-start 를 주지 않아 그리드 기본값(stretch)대로 같은 행의 카드 높이가 맞춰집니다
+ *  — 행 수가 다른 표(요금표 5행 vs 출동비 4행)가 나란히 놓여도 카드 아래가 들쭉날쭉하지 않도록. */
 function groupClass(tab: OpsTab, count: number): string {
   if (tab.rowLayout?.length) {
     const cols = count >= 3 ? 'sm:grid-cols-2 xl:grid-cols-3' : count === 2 ? 'sm:grid-cols-2' : ''
-    return `grid gap-4 lg:items-start ${cols}`.trim()
+    return `grid gap-4 ${cols}`.trim()
   }
-  if (tab.pairSections) return 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3 lg:items-start'
+  if (tab.pairSections) return 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3'
   return 'space-y-4'
 }
 
@@ -231,7 +233,7 @@ const barClass: Record<GanttRow['status'], string> = {
         <section
           v-for="(section, localIndex) in row.sections"
           :key="section.title"
-          class="rounded-xl border border-border bg-card"
+          class="flex h-full flex-col rounded-xl border border-border bg-card"
         >
           <!-- 섹션 헤더 (예산 집행 탭은 아코디언 토글) -->
           <component
@@ -453,7 +455,10 @@ const barClass: Record<GanttRow['status'], string> = {
               </div>
             </div>
 
-            <p v-if="section.note" class="border-t border-border bg-accent/40 px-5 py-3 text-xs leading-relaxed text-accent-foreground">
+            <p
+              v-if="section.note"
+              class="mt-auto border-t border-border bg-accent/40 px-5 py-3 text-xs leading-relaxed text-accent-foreground"
+            >
               {{ section.note }}
             </p>
           </template>

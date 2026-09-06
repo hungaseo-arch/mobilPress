@@ -2,6 +2,121 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-09-01 — 주행거리계 사진 첨부(선택) + 타이어 판매가(건별) 입력
+
+- **주행거리계 사진**(`src/components/ReportUploadField.vue` 를 `kind`/`maxFiles` prop 으로 일반화해
+  재사용, `OdometerPhotoField.vue` 신규 없이 재사용): 장착 등록 모달에 사진 1장을 첨부합니다.
+  저장 방식은 작업보고서와 동일 — 파일은 Google Drive, DB(`installations`)에는
+  `odometer_file_id` / `odometer_file_name` 만 둡니다. 권한도 작업보고서와 같은
+  `REPORT_POLICY`(열람/다운로드/업로드/해제)를 그대로 씁니다
+- **선택 첨부**: 처음에는 신규 등록에서 강제로 막을 계획이었지만, 현장 조도·통신 상태에 따라
+  촬영이 불가능한 경우가 있어 **강제하지 않기로 변경**했습니다. 미첨부 상태에서는
+  "가능하면 첨부해 주세요" 안내만 뜨고 저장은 그대로 진행됩니다
+- **파일명 접두어 분리**(`drive-report.ts` 의 `UploadKind`): 작업보고서 `LK_…`, 주행거리계 사진 `KM_…`.
+  Drive 폴더에서 두 종류가 섞여도 이름만으로 구분됩니다. 사진은 이미지만 받고(`ACCEPT_IMAGE_TYPES`),
+  현장에서 찍은 사진뿐 아니라 갤러리에 저장된 사진도 고를 수 있도록 `capture` 는 걸지 않았습니다
+- **타이어 판매가**(`tirePrice`): 고객마다 값이 달라 요금표 열이 아니라 **장착 기록별 입력 항목**입니다.
+  서비스 비용·출장비와 같이 **건별 총액**(단가 아님)으로 넣고, 입력란 아래에 그 사실을 적어 뒀습니다.
+  장착 실적 표에 '타이어 판매가' 열과 합계를 추가했습니다(값이 없으면 `-`). 수령액 자동 계산식
+  (서비스 비용 × 할인율 + 출장비)에는 **포함하지 않습니다** — 판매가는 시공 수입이 아니라 물품 대금이라
+  기존 매출 집계를 바꾸지 않기 위해서입니다
+- **입력 동선**: 사진 필드를 모달 맨 아래가 아니라 '주행거리계 (hr)' 입력란 **바로 아래**에 붙여
+  같은 칸에서 숫자와 사진을 연달아 넣도록 했습니다. 이때 사진 필드는 조회 전용(readonly) 사용자도
+  미리보기를 눌러야 하므로 `fieldset[disabled]` 바깥에 두고, 숫자 입력에만 `:disabled` 를 겁니다
+  (`display:contents` 인 fieldset 을 그리드 안에서 두 조각으로 나눠 배치가 그대로 유지됩니다)
+- **모달을 취소해도 Drive 에 고아 파일이 남지 않도록** 정리 대상(`handleClose`)에 주행거리계 사진을
+  포함했습니다. 사진을 교체할 때도 이전 파일을 함께 지웁니다
+- ⚠️ **SQL 마이그레이션 필요**: `sql/2026-09-01_odometer_photo.sql`
+  (`odometer_file_id`, `odometer_file_name`, `tire_price`). 실행 후 Neon Data API 의
+  **Refresh schema cache** 를 눌러야 새 컬럼이 읽힙니다. 기존 행은 기본값(빈 문자열 / 0)이고,
+  사진은 애초에 선택 항목이라 DB 에도 NOT NULL 제약을 걸지 않았습니다
+
+## 2026-09-01 — 무활동 30분 자동 로그아웃 + 예산 항목 한국어 누락분 보완
+
+- **자동 로그아웃**(`src/lib/idle-logout.ts` 신규): 30분간 활동이 없으면 `signOut()` 을 호출해
+  로그아웃하고, 1분 전에 예고 토스트를 띄웁니다. `AuthGate` 에서 `startIdleLogout()` 을 한 번 호출하고
+  `currentUser` 를 감시해 로그인 상태에서만 동작 — mock/proxy 모드는 로그인 자체가 없으므로 무시됩니다.
+  정책 변경은 `IDLE_TIMEOUT_MS` 한 줄만 고치면 됩니다
+- **접속 기록의 "접속 중" 이 쌓이던 문제**: `access_logs` 의 logout 행은 `neon_auth."session"` 삭제
+  트리거로 남는데, 로그아웃 버튼 없이 탭만 닫으면 세션이 남아 체류시간이 계속 "접속 중"으로 표시됐습니다.
+  자동 로그아웃이 세션을 지우므로 이후 접속분은 정상적으로 체류시간이 계산됩니다
+  (이미 쌓인 과거 행은 짝이 되는 logout 이 없으므로 그대로 "접속 중" 입니다)
+- **타이머가 아니라 타임스탬프**로 판정합니다. `setTimeout` 은 절전·백그라운드 탭에서 지연되고 탭마다
+  따로 돌기 때문에, 마지막 활동 시각을 `localStorage['mobilpress-last-activity']` 에 15초 스로틀로 기록하고
+  15초마다 경과 시간을 비교합니다. 덕분에 (1) 절전에서 깨어나면 실제 경과분대로 즉시 판정되고,
+  (2) 여러 탭이 같은 시각을 공유해 한 탭에서 작업 중이면 다른 탭도 유지됩니다
+- **예산 항목 한국어 누락분**: 앱에서 새로 등록된 항목(`Kabel 2×1.5 50 Yard`, `Terminal 2 Lubang (Broco)`,
+  `Kipas Angin Stand Fan (Cosmos)`)과 비고(`Untuk kabel Roll`, `Untuk pendinginan area kerja`) 5건을
+  사전에 추가. 아울러 `budgetKo()` 조회 함수를 두어 앞뒤 공백·연속 공백·대소문자·`x`/`×` 혼용은
+  정규화 후 재조회합니다(같은 물건을 손으로 다시 입력해도 사전 키를 또 넣지 않아도 되도록)
+- **운영자료 ⑤ 서비스 요금 카드 높이 정렬**: 같은 행의 표는 행 수가 달라도(요금표 5행 vs 출동비 4행)
+  카드 아래가 들쭉날쭉했습니다. `groupClass()` 에서 `lg:items-start` 를 빼 그리드 기본값(stretch)을
+  쓰고 카드에 `flex h-full flex-col` 을 줘 셀 높이를 채우도록 했습니다. 하단 안내문(`section.note`,
+  "최소 청구 …")은 `mt-auto` 로 카드 맨 아래에 붙여 남는 여백이 표와 안내문 사이로 가게 했습니다
+  (측정 확인: 1행 337px·337px, 2행 251px·251px·251px)
+- ⚠️ SQL 마이그레이션 없음
+
+## 2026-09-01 — 고객별 매출에 지역 컬럼 추가 + 예산 집행 항목·비고 한국어 표시
+
+- **지역 컬럼**: 실적 분석 → 고객별 매출 표에 `customers.area` 를 회사명으로 매칭해 표시.
+  장착고객 바로 뒤에 두어 누구의 지역인지 모호하지 않게 함. 등록된 고객이 아니거나 지역이 비면 `-`.
+  행마다 `store.customers` 를 훑지 않도록 이름→지역 Map 을 한 번만 구성(`requestCustomersByCustomer` 와 동일한 이유).
+  `table-fixed` 폭 6열 재배분(1/12·1/4·1/6·1/4·1/12·1/6), 빈 목록 colspan 5→6, 합계 행 colspan 3→4. 헤더는 `th.area` 신규
+- **예산 집행 현지화**: 항목(`item`)·비고(`note`) 는 DB 저장값이 인도네시아어 정본이라 한국어 화면에서도
+  그대로 노출되고 있었음. 기존 카테고리 라벨(`categoryLabels`)과 같은 원칙으로 `src/data/budget-ko.ts`
+  대역 사전(항목 46건 + 비고 22건)을 두고 `lang === 'ko'` 일 때만 치환. **DB 는 건드리지 않으므로**
+  인도네시아어 화면은 그대로이고, 사전에 없는 값(앱에서 새로 등록한 항목)은 원문이 그대로 보인다
+  (새 항목을 한국어로 보이게 하려면 원문을 키로 사전에 한 줄 추가)
+- ⚠️ SQL 마이그레이션 없음
+
+## 2026-09-01 — AsuraDB 디자인 가이드(글자체·색 토큰) 적용
+
+동일 담당자가 운영하는 [AsuraDB](https://hungaseo-arch.github.io/asuraDB/#/home)와 화면 인상을 통일.
+AsuraDB의 `src/style.css`를 원본으로 삼아 폰트와 디자인 토큰을 그대로 옮겼습니다.
+
+- **글자체**: 본문 `Pretendard`(dynamic subset, jsDelivr) + 숫자·코드용 `JetBrains Mono`(Google Fonts).
+  CSS의 원격 `@import`는 빌드 시 네트워크 요청을 일으키므로 `index.html`의 `<link>`(+ `preconnect`)로 로드.
+  Pretendard 대체 자소 `font-feature-settings: "cv02","cv03","cv04","cv11"` 적용(숫자·기호 가독성)
+- **색**: 60-30-10 팔레트를 hex 토큰으로 이식(라이트 모드 전용). 60 = `--background #F0F0F0`,
+  30 = `--card #FFFFFF` / `--secondary·--muted #ECEFF1`, 10 = `--primary #546E7A` + `--accent #E3F2FD`.
+  success/warning/destructive/info와 각 `-soft`/`-border`, `--chart-1..5`까지 포함.
+  기존 amber 계열 oklch 팔레트와 body 배경 radial-gradient는 제거, `--radius` 0.9rem → 0.75rem
+- ⚠️ AsuraDB와 달리 **oklch가 아닌 hex로 유지**했습니다(변환 과정에서 색이 미묘하게 틀어지는 것을 피하려는 원본의 의도).
+  두 앱의 토큰은 손으로 동기화해야 하므로 `src/assets/main.css` 상단 주석에 그 사실을 적어 두었습니다
+- ⚠️ **`bg-input` 의미 충돌 주의**: AsuraDB에서 `--input`은 입력창 *테두리* 색(`#78909C`)이지만
+  mobilPress는 `bg-input`을 입력창 *배경*으로 쓰고 있었습니다. 토큰을 그대로 옮기면 모든 입력창이
+  짙은 회색으로 칠해지므로, 해당 7곳을 `bg-secondary`(`#ECEFF1`)로 교체(AsuraDB `.form-field` 사양과 동일)
+- `AuthGate.vue` / `ResetPasswordView.vue`에 남아 있던 Tailwind 원색 클래스(`slate-*`, `red-*`)를
+  모두 디자인 토큰(`bg-background`/`bg-card`/`border-border`/`text-destructive` 등)으로 치환 → `src/`에 원색 클래스 0건
+- ⚠️ SQL 마이그레이션 없음(순수 스타일 변경)
+
+## 2026-09-01 — 관리자 전용 "회원관리" 탭 추가
+
+admin 계정이 Neon SQL Editor에 들어가지 않고도 가입 계정과 권한을 확인·변경할 수 있게 했습니다.
+
+- **화면**: `src/components/MemberTable.vue`(lazy) — 계정(이메일)/이름/가입일/최근 로그인/권한 표,
+  역할별 건수 배지, 역할 필터 + 검색, 페이지네이션(15행). 탭은 admin 에게만 노출(`HomeView.vue`)
+- **역할 변경**: 각 행의 선택 상자 → 확인창 → `PATCH /mobil-press/members/:userId`.
+  취소하면 선택 상자를 원래 값으로 되돌리기 위해 `v-model` 대신 `:value` + `@change` + 수동 복원 사용
+- **본인 계정은 변경 불가** — 화면에서 비활성화하고 DB 정책에서도 `user_id <> auth.user_id()`로 막았습니다.
+  마지막 admin이 스스로 권한을 잃어 아무도 되돌릴 수 없게 되는 사고 방지(복구 수단은 SQL Editor)
+- **SQL 마이그레이션 필요**: `sql/2026-09-01_user_management.sql`을 Neon SQL Editor에서 1회 실행한 뒤
+  Data API의 **Refresh schema cache** 실행. `db/schema.sql`에도 동일 내용 반영(신규 구축용)
+  - `public.user_accounts` 뷰: `neon_auth."user"` + `user_roles` + 최근 login 기록을 조인.
+    뷰는 소유자 권한으로 동작해 `user_roles`의 RLS를 우회할 수 있으므로(뷰에는 RLS 정책을 붙일 수 없음)
+    `where public.is_admin()` 게이트로 admin이 아닌 계정에는 0행을 돌려줍니다
+  - `user_roles`에 admin 전용 select/insert/update 정책 추가(+ `grant insert, update`) — 화면을 우회한
+    직접 호출도 서버에서 재검증됩니다
+- **mock 모드**: 데모 계정 4건으로 동작(역할 변경은 메모리에만 반영 — 새로고침하면 초기값). `neon`/`proxy` 모드는 위 마이그레이션 필요
+- 타입 `UserRole` / `MemberAccount`(`src/lib/types.ts`), 라우트는 `neon-api.ts`·`mock-api.ts` 양쪽에 추가.
+  `user_roles`는 계정당 0~1행이므로 PostgREST의 upsert에 기대지 않고 update → (0건이면) insert 순으로 처리
+- 문구는 `src/lib/i18n.ts`에 id/ko 양쪽 추가(`tab.members`, `member.*`, `role.*`)
+- **함께 고친 버그**: `auth-state.ts`의 역할 조회가 필터 없이 `user_roles` 첫 행을 읽고
+  "RLS가 본인 행만 보여준다"는 전제에 기대고 있었음. 위 `user_roles_select_admin` 정책으로
+  admin에게 전체 행이 열리자 첫 행이 남의 `staff`/`user` 행으로 잡혀 **admin이 스스로 user로 강등**되고
+  관리자 전용 탭(접속 기록·회원관리)이 함께 사라짐 → `.eq('user_id', currentUser.id)` 로 본인 ID를 명시.
+  RLS는 권한 경계이지 쿼리 범위를 대신 좁혀주는 장치가 아니라는 점이 교훈
+
 ## 2026-08-19 — 웹사이트 최적화 작업지시서 P2: ESLint/Prettier·배포 자동화 + 번들/Lighthouse 측정
 
 - **P2-1**: ESLint(flat config, `eslint-plugin-vue` + `typescript-eslint`) + Prettier 도구 설정 추가.

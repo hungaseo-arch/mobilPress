@@ -48,6 +48,9 @@ create table if not exists public.installations (
   entered_by       text not null default '',   -- 입력자 (앱이 로그인 사용자 이름으로 자동 기록)
   status           text not null default 'completed' check (status in ('completed', 'pending', 'cancelled')),
   note             text not null default '',
+  odometer_file_id   text not null default '',   -- 주행거리계 사진 (Drive 파일 ID)
+  odometer_file_name text not null default '',
+  tire_price       bigint not null default 0,   -- 타이어 판매가 (건별 총액)
   service_fee      bigint not null default 0,
   mobilization_fee bigint not null default 0,
   discount_rate    integer not null default 0,
@@ -61,6 +64,10 @@ create table if not exists public.installations (
 alter table public.installations add column if not exists worker text not null default '';
 alter table public.installations add column if not exists entered_by text not null default '';
 alter table public.installations add column if not exists odometer text not null default '';
+-- 주행거리계 사진 / 타이어 판매가 컬럼 추가 (재실행 안전, sql/2026-09-01_odometer_photo.sql 과 동일)
+alter table public.installations add column if not exists odometer_file_id text not null default '';
+alter table public.installations add column if not exists odometer_file_name text not null default '';
+alter table public.installations add column if not exists tire_price bigint not null default 0;
 
 -- ─────────────────────────────────────────────
 -- 2b. 예산 집행 (budget_entries) — 인도네시아어 정본
@@ -277,6 +284,29 @@ create or replace view public.user_directory as
   select id as user_id, email, name from neon_auth."user";
 
 -- ─────────────────────────────────────────────
+-- 4d. 회원관리 뷰 — 앱의 "회원관리" 탭(admin 전용) 목록
+--     뷰는 소유자 권한으로 동작하므로 user_roles 의 RLS 를 우회해 전체 역할을 읽을 수 있다.
+--     대신 where 절의 is_admin() 게이트가 admin 이 아닌 계정에는 0행을 돌려준다.
+-- ─────────────────────────────────────────────
+-- neon_auth."user".id 는 uuid, user_roles/access_logs 의 user_id 는 text(auth.user_id() 반환형)
+-- 이므로 조인·비교 전에 u.id 를 text 로 캐스팅한다. 뷰가 돌려주는 user_id 도 text 로 통일.
+-- (컬럼 타입이 바뀌면 create or replace 가 실패하므로 먼저 drop 한다 — 재실행 안전용.)
+drop view if exists public.user_accounts;
+create view public.user_accounts as
+  select
+    u.id::text               as user_id,
+    u.email,
+    u.name,
+    coalesce(r.role, 'user') as role,
+    u."createdAt"            as created_at,
+    (select max(l.occurred_at)
+       from public.access_logs l
+      where l.user_id = u.id::text and l.event = 'login') as last_login_at
+  from neon_auth."user" u
+  left join public.user_roles r on r.user_id = u.id::text
+  where public.is_admin();
+
+-- ─────────────────────────────────────────────
 -- 5. RLS (Row Level Security)
 --    조회: 로그인 사용자 전원 / 입력·수정: staff 이상 / 삭제: admin 만
 -- ─────────────────────────────────────────────
@@ -341,10 +371,27 @@ drop policy if exists budget_entries_delete on public.budget_entries;
 create policy budget_entries_delete on public.budget_entries
   for delete to authenticated using (public.is_admin());
 
--- user_roles: 본인 역할만 조회 가능, API 로는 쓰기 불가 (SQL Editor 로만 관리)
+-- user_roles: 본인 역할은 누구나 조회, 전체 조회·변경은 admin 만(앱의 회원관리 탭).
+-- 본인 역할 변경은 정책에서 막는다 — 마지막 admin 이 스스로 권한을 잃고 아무도 되돌릴 수
+-- 없게 되는 사고를 방지하기 위함(그 경우의 복구 수단은 SQL Editor).
 drop policy if exists user_roles_select_own on public.user_roles;
 create policy user_roles_select_own on public.user_roles
   for select to authenticated using (user_id = auth.user_id());
+
+drop policy if exists user_roles_select_admin on public.user_roles;
+create policy user_roles_select_admin on public.user_roles
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists user_roles_insert_admin on public.user_roles;
+create policy user_roles_insert_admin on public.user_roles
+  for insert to authenticated
+  with check (public.is_admin() and user_id <> auth.user_id());
+
+drop policy if exists user_roles_update_admin on public.user_roles;
+create policy user_roles_update_admin on public.user_roles
+  for update to authenticated
+  using (public.is_admin() and user_id <> auth.user_id())
+  with check (public.is_admin() and user_id <> auth.user_id());
 
 -- audit_logs: 로그인 사용자 조회 가능, API 로는 쓰기 불가 (트리거가 기록)
 drop policy if exists audit_logs_select on public.audit_logs;
@@ -359,10 +406,12 @@ create policy access_logs_select on public.access_logs
   for select to authenticated
   using (user_id = auth.user_id() or public.is_admin());
 
-grant select on public.access_logs, public.user_directory to authenticated;
+grant select on public.access_logs, public.user_directory, public.user_accounts to authenticated;
 
 -- 익명(anonymous) 접근은 정책을 만들지 않음 → 기본 차단.
 
 grant usage on schema public to authenticated;
 grant all on public.customers, public.installations, public.budget_entries to authenticated;
 grant select on public.user_roles, public.audit_logs to authenticated;
+-- 회원관리 탭의 역할 변경용 — 실제 허용 여부는 위 user_roles_*_admin 정책이 판단한다.
+grant insert, update on public.user_roles to authenticated;

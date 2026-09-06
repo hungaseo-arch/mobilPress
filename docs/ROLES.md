@@ -15,6 +15,22 @@ Neon 콘솔 → **SQL Editor** 에서 실행합니다.
 
 권한 변경 후 앱을 **새로고침**하면 반영됩니다.
 
+## 앱에서 권한 변경하기 — 회원관리 탭 (2026-09-01)
+
+admin 으로 로그인하면 상단에 **회원관리** 탭이 보입니다. 가입 계정 목록(이메일·이름·가입일·
+최근 로그인)이 표시되고, 각 행의 선택 상자로 역할을 admin / staff / user 로 바로 바꿀 수 있습니다.
+아래의 SQL 절차는 그대로 유효하며, 첫 admin 지정처럼 **앱에서 할 수 없는 경우**의 수단입니다.
+
+- 목록은 `public.user_accounts` 뷰(뷰 소유자 권한으로 동작 + `where public.is_admin()` 게이트)로
+  조회하므로 admin 이 아닌 계정에는 **0행**이 돌아옵니다.
+- 역할 변경은 `public.user_roles` 의 RLS(`user_roles_insert_admin` / `user_roles_update_admin`)가
+  서버에서 다시 검증합니다 — 화면을 우회한 직접 호출도 admin 이 아니면 거부됩니다.
+- **본인 계정의 역할은 바꿀 수 없습니다**(화면에서 비활성 + DB 정책의 `user_id <> auth.user_id()`).
+  마지막 admin 이 스스로 권한을 잃어 아무도 되돌릴 수 없게 되는 상황을 막기 위함이며,
+  그런 경우의 복구 수단은 아래 SQL 입니다.
+- 적용에 필요한 마이그레이션: `sql/2026-09-01_user_management.sql` (Neon SQL Editor 에서 1회 실행
+  → Data API 의 **Refresh schema cache**). `db/schema.sql` 에도 같은 내용이 반영돼 있습니다.
+
 ## 게스트 계정 (읽기 전용, 2026-08-18)
 
 외부 공유·데모용으로 아래 계정을 앱 가입 화면에서 생성했습니다. 가입 기본값(`user`)
@@ -104,6 +120,9 @@ order by u."createdAt";
   select occurred_at, email, event, ip_address from public.access_logs
   order by occurred_at desc limit 50;
   ```
+  > 무활동 30분이 지나면 앱이 자동으로 로그아웃하므로(`src/lib/idle-logout.ts`) 체류시간이 계산됩니다.
+  > 자동 로그아웃 도입(2026-09-01) 이전에 탭만 닫고 나간 접속은 짝이 되는 logout 행이 없어
+  > 계속 "접속 중"으로 표시됩니다.
   <!-- 보관기간 정책(잠정 12개월): IP·User-Agent 는 개인정보에 해당하므로 12개월 경과분은
        주기적으로 삭제하는 것을 권장. 자동 삭제 잡은 아직 구현되어 있지 않음(수동 관리). -->
   > ⚠️ `access_logs` 조회 시 계정 열은 `public.user_directory` 뷰(뷰 소유자 권한으로 동작)를 통해

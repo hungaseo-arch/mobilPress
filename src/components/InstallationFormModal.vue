@@ -44,6 +44,9 @@ const form = reactive<InstallationForm>(
         reportFileName2: props.editing.reportFileName2 ?? '',
         reportFileId3: props.editing.reportFileId3 ?? '',
         reportFileName3: props.editing.reportFileName3 ?? '',
+        odometerFileId: props.editing.odometerFileId ?? '',
+        odometerFileName: props.editing.odometerFileName ?? '',
+        tirePrice: props.editing.tirePrice ?? 0,
         serviceFee: props.editing.serviceFee,
         mobilizationFee: props.editing.mobilizationFee,
         discountRate: props.editing.discountRate,
@@ -55,18 +58,23 @@ const form = reactive<InstallationForm>(
 // 저장 전에 취소하면, 이번 편집 세션 중 새로 업로드된(기존에 없던) 보고서는
 // Drive에 고아 파일로 남지 않도록 함께 삭제합니다.
 const initialFileIds = new Set(
-  [props.editing?.reportFileId, props.editing?.reportFileId2, props.editing?.reportFileId3].filter(Boolean),
+  [
+    props.editing?.reportFileId,
+    props.editing?.reportFileId2,
+    props.editing?.reportFileId3,
+    props.editing?.odometerFileId,
+  ].filter(Boolean),
 )
 
 function handleClose() {
-  for (const fileId of [form.reportFileId, form.reportFileId2, form.reportFileId3]) {
+  for (const fileId of [form.reportFileId, form.reportFileId2, form.reportFileId3, form.odometerFileId]) {
     if (fileId && !initialFileIds.has(fileId)) void deleteReport(fileId).catch(() => undefined)
   }
   emit('close')
 }
 
 // 금액 입력: 천단위 콤마 표시용 텍스트 모델 (저장은 숫자)
-function moneyModel(key: 'serviceFee' | 'mobilizationFee' | 'receivedAmount') {
+function moneyModel(key: 'tirePrice' | 'serviceFee' | 'mobilizationFee' | 'receivedAmount') {
   return computed({
     get: () => (form[key] ? Number(form[key]).toLocaleString('en-US') : ''),
     set: (value: string) => {
@@ -75,6 +83,7 @@ function moneyModel(key: 'serviceFee' | 'mobilizationFee' | 'receivedAmount') {
   })
 }
 
+const tirePriceText = moneyModel('tirePrice')
 const serviceFeeText = moneyModel('serviceFee')
 const mobilizationFeeText = moneyModel('mobilizationFee')
 
@@ -157,6 +166,16 @@ function onReportChange(files: { fileId: string; fileName: string }[]) {
   form.reportFileName3 = slots[2].fileName
 }
 
+// 주행거리계 사진은 현장 상황(조도·통신 등)에 따라 촬영이 어려울 수 있어 선택 사항입니다(최대 1장).
+const odometerFiles = computed<{ fileId: string; fileName: string }[]>(() =>
+  form.odometerFileId ? [{ fileId: form.odometerFileId, fileName: form.odometerFileName }] : [],
+)
+
+function onOdometerChange(files: { fileId: string; fileName: string }[]) {
+  form.odometerFileId = files[0]?.fileId ?? ''
+  form.odometerFileName = files[0]?.fileName ?? ''
+}
+
 function onSubmit() {
   if (!form.customerName.trim()) return
   emit('submit', {
@@ -164,6 +183,7 @@ function onSubmit() {
     worker: selectedWorkers.value.map((v) => v.trim()).filter(Boolean).join(', '),
     serialNumbers: serials.value.map((v) => v.trim()).filter(Boolean).join(', '),
     qty: Number(form.qty) || 0,
+    tirePrice: Number(form.tirePrice) || 0,
     serviceFee: Number(form.serviceFee) || 0,
     mobilizationFee: Number(form.mobilizationFee) || 0,
     discountRate: Number(form.discountRate) || 0,
@@ -172,15 +192,15 @@ function onSubmit() {
 }
 
 const inputClass =
-  'w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
+  'w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
 </script>
 
 <template>
   <BaseModal :title="readonly ? t('form.installation.view') : editing ? t('form.installation.edit') : t('form.installation.add')" @close="handleClose">
     <form class="space-y-4" @submit.prevent="onSubmit">
-      <fieldset :disabled="readonly" class="contents">
       <div class="grid gap-4 sm:grid-cols-2">
+      <fieldset :disabled="readonly" class="contents">
         <div>
           <label :class="labelClass" for="workDate">{{ t('form.workDate') }}</label>
           <input id="workDate" v-model="form.workDate" type="date" :class="inputClass" required />
@@ -189,14 +209,14 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           <label :class="labelClass" for="distributor">{{ t('form.distributor') }}</label>
           <input id="distributor" v-model="form.distributor" :class="inputClass" />
         </div>
-        <div class="sm:col-span-2">
+        <div>
           <label :class="labelClass" for="customerName">{{ t('form.customerName') }}</label>
           <input id="customerName" v-model="form.customerName" :class="inputClass" list="customer-names" required />
           <datalist id="customer-names">
             <option v-for="name in customerNames" :key="name" :value="name" />
           </datalist>
         </div>
-        <div class="sm:col-span-2">
+        <div>
           <label :class="labelClass" for="product">{{ t('form.product') }}</label>
           <input id="product" v-model="form.product" :class="inputClass" placeholder="ASC 6.00-9 S2000" />
         </div>
@@ -228,7 +248,14 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         </div>
         <div>
           <label :class="labelClass" for="odometer">{{ t('form.odometer') }}</label>
-          <input id="odometer" v-model="form.odometer" type="text" inputmode="numeric" :class="inputClass" placeholder="1234" />
+          <input
+            id="odometer"
+            v-model="form.odometer"
+            type="text"
+            inputmode="numeric"
+            :class="inputClass"
+            placeholder="1234"
+          />
         </div>
         <div>
           <span :class="labelClass">{{ t('form.worker') }}</span>
@@ -265,6 +292,11 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           </select>
         </div>
         <div>
+          <label :class="labelClass" for="tirePrice">{{ t('form.tirePrice') }}</label>
+          <input id="tirePrice" v-model="tirePriceText" type="text" inputmode="numeric" :class="inputClass" />
+          <p class="mt-1 text-xs text-muted-foreground">{{ t('form.tirePriceHint') }}</p>
+        </div>
+        <div>
           <label :class="labelClass" for="serviceFee">{{ t('form.serviceFee') }}</label>
           <input id="serviceFee" v-model="serviceFeeText" type="text" inputmode="numeric" :class="inputClass" />
         </div>
@@ -295,8 +327,19 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           <label :class="labelClass" for="note">{{ t('form.note') }}</label>
           <textarea id="note" v-model="form.note" rows="3" :class="inputClass" />
         </div>
-      </div>
       </fieldset>
+      </div>
+
+      <ReportUploadField
+        :files="odometerFiles"
+        :work-date="form.workDate"
+        :customer-name="form.customerName"
+        :qty="form.qty"
+        kind="odometer"
+        :max-files="1"
+        @change="onOdometerChange"
+        @preview="(fileId, fileName) => emit('preview', fileId, fileName)"
+      />
 
       <ReportUploadField
         :files="reportFiles"

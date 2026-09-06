@@ -43,16 +43,16 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-    <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 class="text-xl font-bold text-slate-900">{{ t('reset.title') }}</h1>
+  <div class="flex min-h-screen items-center justify-center bg-background px-4">
+    <div class="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
+      <h1 class="text-xl font-bold text-foreground">{{ t('reset.title') }}</h1>
 
       <div v-if="linkError || !token" class="mt-4 space-y-4">
-        <p class="text-sm text-red-600">{{ t('reset.invalid') }}</p>
-        <p class="text-sm text-slate-500">{{ t('reset.invalidHint') }}</p>
+        <p class="text-sm text-destructive">{{ t('reset.invalid') }}</p>
+        <p class="text-sm text-muted-foreground">{{ t('reset.invalidHint') }}</p>
         <RouterLink
           to="/"
-          class="block w-full rounded-lg bg-slate-900 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
+          class="block w-full rounded-lg bg-primary py-2 text-center text-sm font-medium text-primary-foreground hover:opacity-90"
         >
           {{ t('reset.toSignin') }}
         </RouterLink>
@@ -65,7 +65,7 @@ async function submit() {
           required
           minlength="8"
           :placeholder="t('reset.newPassword')"
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
         <input
           v-model="passwordConfirm"
@@ -73,12 +73,12 @@ async function submit() {
           required
           minlength="8"
           :placeholder="t('reset.confirmPassword')"
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
         <button
           type="submit"
           :disabled="submitting || done"
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
           <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
           {{ t('reset.submit') }}

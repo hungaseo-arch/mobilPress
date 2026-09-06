@@ -10,7 +10,9 @@ import type {
   CustomerForm,
   Installation,
   InstallationForm,
+  MemberAccount,
   MobilPressData,
+  UserRole,
 } from '@/lib/types'
 
 // mock 모드 전용 더미 로그 — 로그 탭이 비어 보이지 않도록 화면 확인용으로만 사용합니다.
@@ -91,6 +93,43 @@ const mockAuditLogs: AuditLog[] = [
   },
 ]
 
+// mock 모드 전용 더미 계정 — 회원관리 탭 화면 확인용. 역할 변경은 이 배열에만 반영되며
+// (localStorage 에 저장하지 않으므로) 새로고침하면 초기값으로 돌아갑니다.
+const mockMembers: MemberAccount[] = [
+  {
+    userId: 'mock-user-1',
+    email: 'admin@ptascendo.com',
+    name: 'Admin Demo',
+    role: 'admin',
+    createdAt: '2026-06-01T01:00:00.000Z',
+    lastLoginAt: '2026-08-14T02:15:00.000Z',
+  },
+  {
+    userId: 'mock-user-2',
+    email: 'firman@ptascendo.com',
+    name: 'Firman',
+    role: 'staff',
+    createdAt: '2026-06-14T03:20:00.000Z',
+    lastLoginAt: '2026-08-13T10:00:00.000Z',
+  },
+  {
+    userId: 'mock-user-3',
+    email: 'arun@ptascendo.com',
+    name: 'Arun',
+    role: 'staff',
+    createdAt: '2026-07-02T06:40:00.000Z',
+    lastLoginAt: '2026-08-12T09:12:00.000Z',
+  },
+  {
+    userId: 'mock-user-4',
+    email: 'guest@ptascendo.com',
+    name: 'Guest',
+    role: 'user',
+    createdAt: '2026-08-18T04:05:00.000Z',
+    lastLoginAt: '',
+  },
+]
+
 const STORAGE_KEY = 'mobilpress-data-v1'
 
 interface StoredData {
@@ -142,6 +181,18 @@ export async function mockFetch(path: string, options?: RequestInit): Promise<Re
 
   if (path === '/mobil-press/audit-logs' && method === 'GET') {
     return json(mockAuditLogs)
+  }
+
+  if (path === '/mobil-press/members' && method === 'GET') {
+    return json(mockMembers)
+  }
+
+  const memberMatch = path.match(/^\/mobil-press\/members\/([^/]+)$/)
+  if (memberMatch && method === 'PATCH') {
+    const member = mockMembers.find((m) => m.userId === memberMatch[1])
+    if (!member) return json({ error: '계정을 찾을 수 없습니다.' }, 404)
+    member.role = (body as { role: UserRole }).role
+    return json(member)
   }
 
   if (path === '/mobil-press/data' && method === 'GET') {

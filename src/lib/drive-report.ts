@@ -16,6 +16,17 @@ export const driveEnabled = Boolean(UPLOAD_URL)
 
 export const MAX_UPLOAD_MB = 10
 export const ACCEPT_TYPES = 'application/pdf,image/jpeg,image/png'
+/** 주행거리계 사진은 현장에서 찍은 이미지만 받습니다(PDF 제외). */
+export const ACCEPT_IMAGE_TYPES = 'image/jpeg,image/png,image/webp'
+
+/** 업로드 종류. 파일명 접두어와 기본 MIME 타입이 달라집니다.
+ *  report = 작업보고서 스캔(LK_), odometer = 주행거리계 사진(KM_) */
+export type UploadKind = 'report' | 'odometer'
+const KIND_PREFIX: Record<UploadKind, string> = { report: 'LK', odometer: 'KM' }
+const KIND_FALLBACK_MIME: Record<UploadKind, string> = {
+  report: 'application/pdf',
+  odometer: 'image/jpeg',
+}
 
 export function reportPreviewUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/preview`
@@ -25,19 +36,21 @@ export function reportDownloadUrl(fileId: string): string {
   return `https://drive.google.com/uc?export=download&id=${fileId}`
 }
 
-/** LK_20260814_RAJAPART_2PCS.pdf 형태로 파일명을 표준화합니다. */
+/** LK_20260814_RAJAPART_2PCS.pdf (주행거리계 사진은 KM_...) 형태로 파일명을 표준화합니다. */
 export function buildReportName(
   meta: { workDate: string; customerName: string; qty: number },
   originalName: string,
+  kind: UploadKind = 'report',
 ): string {
-  const ext = originalName.includes('.') ? originalName.split('.').pop()!.toLowerCase() : 'pdf'
+  const fallbackExt = kind === 'odometer' ? 'jpg' : 'pdf'
+  const ext = originalName.includes('.') ? originalName.split('.').pop()!.toLowerCase() : fallbackExt
   const date = (meta.workDate || '').replace(/-/g, '') || 'NODATE'
   const customer = (meta.customerName || 'CUSTOMER')
     .replace(/^PT\.?\s*/i, '')
     .replace(/[^A-Za-z0-9]/g, '')
     .toUpperCase()
     .slice(0, 24) || 'CUSTOMER'
-  return `LK_${date}_${customer}_${Number(meta.qty) || 0}PCS.${ext}`
+  return `${KIND_PREFIX[kind]}_${date}_${customer}_${Number(meta.qty) || 0}PCS.${ext}`
 }
 
 /** 화면 권한은 UX 이고 실제 차단은 Apps Script(역할 재검증) + Drive 폴더 권한에서 이뤄집니다. */
@@ -68,6 +81,7 @@ export interface ReportUploadResult {
 export async function uploadReport(
   file: File,
   meta: { workDate: string; customerName: string; qty: number },
+  kind: UploadKind = 'report',
 ): Promise<ReportUploadResult> {
   if (!driveEnabled) throw new Error('VITE_DRIVE_UPLOAD_URL 이 설정되지 않았습니다.')
   if (!canUploadReport.value) throw new Error('업로드 권한이 없습니다.')
@@ -82,8 +96,8 @@ export async function uploadReport(
     workDate: meta.workDate,
     customerName: meta.customerName,
     qty: Number(meta.qty) || 0,
-    fileName: buildReportName(meta, file.name),
-    mimeType: file.type || 'application/pdf',
+    fileName: buildReportName(meta, file.name, kind),
+    mimeType: file.type || KIND_FALLBACK_MIME[kind],
     base64: await fileToBase64(file),
   }
 

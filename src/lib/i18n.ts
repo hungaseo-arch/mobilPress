@@ -59,6 +59,30 @@ const messages: Record<string, { id: string; ko: string }> = {
   'unit.hour': { id: 'jam', ko: '시간' },
   'unit.minute': { id: 'menit', ko: '분' },
 
+  // 회원관리 (admin 전용)
+  'tab.members': { id: 'Manajemen Anggota', ko: '회원관리' },
+  'member.role': { id: 'Peran', ko: '권한' },
+  'member.joinedAt': { id: 'Tanggal Daftar', ko: '가입일' },
+  'member.lastLogin': { id: 'Login Terakhir', ko: '최근 로그인' },
+  'member.filterRole': { id: 'Semua Peran', ko: '전체 권한' },
+  'member.searchPlaceholder': { id: 'Cari email atau nama...', ko: '이메일 또는 이름 검색...' },
+  'member.empty': { id: 'Belum ada akun terdaftar.', ko: '등록된 계정이 없습니다.' },
+  'member.self': { id: 'Akun Anda', ko: '내 계정' },
+  'member.selfHint': { id: 'Peran akun sendiri tidak bisa diubah.', ko: '본인 계정의 권한은 변경할 수 없습니다.' },
+  'member.hint': {
+    id: 'Perubahan peran langsung tersimpan. Anggota perlu memuat ulang halaman agar peran barunya berlaku.',
+    ko: '권한 변경은 즉시 저장됩니다. 해당 회원이 화면을 새로고침하면 반영됩니다.',
+  },
+  'member.confirmRole': {
+    id: "Ubah peran '{name}' menjadi '{role}'?",
+    ko: "'{name}' 계정의 권한을 '{role}' 로 변경할까요?",
+  },
+  'member.roleUpdated': { id: 'Peran berhasil diubah.', ko: '권한을 변경했습니다.' },
+  'member.roleUpdateFail': { id: 'Gagal mengubah peran.', ko: '권한 변경에 실패했습니다.' },
+  'role.admin': { id: 'Admin', ko: '관리자 (admin)' },
+  'role.staff': { id: 'Staff', ko: '직원 (staff)' },
+  'role.user': { id: 'Hanya Lihat', ko: '조회 전용 (user)' },
+
   'seed.empty': {
     id: 'Belum ada data. Anda bisa mulai dengan data awal dari laporan.',
     ko: '등록된 데이터가 없습니다. 보고서 기반 초기 데이터로 시작할 수 있습니다.',
@@ -83,12 +107,14 @@ const messages: Record<string, { id: string; ko: string }> = {
   'th.customer': { id: 'Customer', ko: '장착고객' },
   'th.productRim': { id: 'Produk', ko: '제품' },
   'th.qty': { id: 'Qty', ko: '수량' },
+  'th.tirePrice': { id: 'Harga Ban', ko: '타이어 판매가' },
   'th.serviceFee': { id: 'Biaya Jasa', ko: '서비스 비용' },
   'th.mobFee': { id: 'Mobilisasi', ko: '출장비' },
   'th.discount': { id: 'Diskon', ko: '할인' },
   'th.received': { id: 'Diterima', ko: '수령액' },
   'th.rank': { id: 'No', ko: '순위' },
   'th.installCustomer': { id: 'Customer Pemasangan', ko: '장착고객' },
+  'th.area': { id: 'Area', ko: '지역' },
 
   'installations.empty': { id: 'Belum ada laporan kerja.', ko: '등록된 장착 실적이 없습니다.' },
   'revenue.empty': { id: 'Belum ada data pendapatan.', ko: '매출 데이터가 없습니다.' },
@@ -138,6 +164,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'form.odometer': { id: 'Odometer (hr)', ko: '주행거리계 (hr)' },
   'form.worker': { id: 'Petugas', ko: '작업자' },
   'form.enteredBy': { id: 'Diinput oleh', ko: '입력자' },
+  'form.tirePrice': { id: 'Harga Jual Ban (Rp)', ko: '타이어 판매가 (Rp)' },
+  'form.tirePriceHint': { id: 'Total per pekerjaan (bukan harga satuan)', ko: '건별 총액 (단가 아님)' },
   'form.serviceFee': { id: 'Biaya Jasa (Rp)', ko: '서비스 비용 (Rp)' },
   'form.mobilizationFee': { id: 'Biaya Mobilisasi (Rp)', ko: '출장비 (Rp)' },
   'form.discountRate': { id: 'Diskon (%)', ko: '할인율 (%)' },
@@ -179,6 +207,14 @@ const messages: Record<string, { id: string; ko: string }> = {
   },
   'report.rowHint': { id: 'Klik untuk lihat laporan', ko: '클릭하면 보고서를 볼 수 있습니다' },
   'report.replace': { id: 'Ganti file', ko: '파일 교체' },
+
+  // 주행거리계 사진 (선택 첨부)
+  'form.odometerPhoto': { id: 'Foto Odometer', ko: '주행거리계 사진' },
+  'odometer.attach': { id: 'Ambil / pilih foto', ko: '사진 촬영 · 선택' },
+  'odometer.photoMissing': {
+    id: 'Belum ada foto odometer — lampirkan bila memungkinkan.',
+    ko: '첨부된 사진이 없습니다 — 가능하면 첨부해 주세요.',
+  },
   'report.noUploadPerm': { id: 'Tidak ada izin unggah.', ko: '업로드 권한이 없습니다.' },
   'report.viewOnly': {
     id: 'Akun Anda hanya bisa melihat. Unduhan dibatasi untuk staff ke atas.',
@@ -209,6 +245,14 @@ const messages: Record<string, { id: string; ko: string }> = {
   },
   'auth.sessionFail': { id: 'Gagal mengambil sesi. Silakan coba lagi.', ko: '세션을 가져오지 못했습니다. 다시 시도해주세요.' },
   'auth.signinFail': { id: 'Gagal masuk.', ko: '로그인에 실패했습니다.' },
+  'auth.idleWarn': {
+    id: 'Tidak ada aktivitas — akan keluar otomatis dalam 1 menit.',
+    ko: '활동이 없어 1분 후 자동 로그아웃됩니다.',
+  },
+  'auth.idleLogout': {
+    id: 'Keluar otomatis karena tidak ada aktivitas selama 30 menit.',
+    ko: '30분간 활동이 없어 자동 로그아웃되었습니다.',
+  },
   'auth.googleFail': { id: 'Gagal masuk dengan Google.', ko: 'Google 로그인에 실패했습니다.' },
   // 비밀번호 재설정 페이지
   'reset.title': { id: 'Reset Kata Sandi', ko: '비밀번호 재설정' },

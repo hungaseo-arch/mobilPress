@@ -6,6 +6,7 @@ import { canDelete, canEdit } from '@/lib/auth-state'
 import { formatDate, formatIDR } from '@/lib/format'
 import { lang, t } from '@/lib/i18n'
 import BudgetFormModal from '@/components/BudgetFormModal.vue'
+import { budgetKo } from '@/data/budget-ko'
 import { BUDGET_CATEGORIES } from '@/lib/types'
 import type { BudgetEntry, BudgetEntryForm } from '@/lib/types'
 
@@ -20,6 +21,12 @@ const categoryLabels: Record<string, { id: string; ko: string }> = {
 function catLabel(cat: string): string {
   const label = categoryLabels[cat]
   return label ? label[lang.value] : cat
+}
+
+// 항목·비고 현지화 — 카테고리와 같은 원칙(저장값은 인도네시아어 정본, 표시만 언어별).
+// 사전에 없는 값(앱에서 새로 등록한 항목)은 원문 그대로 노출한다.
+function localize(text: string): string {
+  return lang.value === 'ko' ? budgetKo(text) : text
 }
 
 // 정의된 구분 순서 우선, 그 외 신규 구분은 뒤에 이어붙임.
@@ -64,7 +71,7 @@ async function submit(form: BudgetEntryForm) {
 }
 
 async function confirmDelete(entry: BudgetEntry) {
-  if (window.confirm(t('confirm.delete', { name: entry.item }))) {
+  if (window.confirm(t('confirm.delete', { name: localize(entry.item) }))) {
     await store.deleteRecord('budget_entries', entry.id)
   }
 }
@@ -132,9 +139,9 @@ async function confirmDelete(entry: BudgetEntry) {
                     class="border-b border-border/60 align-top last:border-0 hover:bg-secondary/40"
                   >
                     <td class="whitespace-nowrap px-4 py-2.5 tabular-nums text-muted-foreground">{{ entry.entryDate ? formatDate(entry.entryDate) : '-' }}</td>
-                    <td class="px-4 py-2.5 font-medium text-foreground">{{ entry.item }}</td>
+                    <td class="px-4 py-2.5 font-medium text-foreground">{{ localize(entry.item) }}</td>
                     <td class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-foreground">{{ formatIDR(entry.amount) }}</td>
-                    <td class="px-4 py-2.5 text-muted-foreground">{{ entry.note || '-' }}</td>
+                    <td class="px-4 py-2.5 text-muted-foreground">{{ entry.note ? localize(entry.note) : '-' }}</td>
                     <td v-if="canEdit" class="px-4 py-2.5">
                       <div class="flex justify-end gap-1">
                         <button

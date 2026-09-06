@@ -20,10 +20,11 @@ const RequestHistoryModal = defineAsyncComponent(() => import('@/components/Requ
 const OperationsReference = defineAsyncComponent(() => import('@/components/OperationsReference.vue'))
 const BudgetReference = defineAsyncComponent(() => import('@/components/BudgetReference.vue'))
 const AccessLogTable = defineAsyncComponent(() => import('@/components/AccessLogTable.vue'))
+const MemberTable = defineAsyncComponent(() => import('@/components/MemberTable.vue'))
 
 const store = useMobilPressStore()
 
-type Tab = 'installations' | 'revenue' | 'budget' | 'operations' | 'logs'
+type Tab = 'installations' | 'revenue' | 'budget' | 'operations' | 'logs' | 'members'
 const activeTab = ref<Tab>('installations')
 
 const tabs = computed<{ key: Tab; label: string }[]>(() => [
@@ -31,7 +32,12 @@ const tabs = computed<{ key: Tab; label: string }[]>(() => [
   { key: 'revenue', label: t('tab.revenue') },
   { key: 'budget', label: t('tab.budget') },
   { key: 'operations', label: t('tab.operations') },
-  ...(isAdmin.value ? [{ key: 'logs' as const, label: t('tab.logs') }] : []),
+  ...(isAdmin.value
+    ? [
+        { key: 'logs' as const, label: t('tab.logs') },
+        { key: 'members' as const, label: t('tab.members') },
+      ]
+    : []),
 ])
 
 // 실적 분석 서브탭: 고객별 매출 / 월별 매출
@@ -50,13 +56,24 @@ const monthPage = usePagination(computed(() => store.revenueByMonth), 12)
 // 장착 실적 표 하단 합계 — 검색 필터가 적용된 전체 결과 기준(현재 페이지만이 아님)
 const installationsTotal = computed(() => {
   let qty = 0
+  let tirePrice = 0
   let received = 0
   for (const item of store.filteredInstallations) {
     qty += item.qty
+    tirePrice += Number(item.tirePrice) || 0
     received += item.receivedAmount
   }
-  return { qty, received }
+  return { qty, tirePrice, received }
 })
+
+// 초기 데이터 등록 안내는 실제 데이터 표(장착 실적 / 실적 분석)에서만 노출합니다.
+const showSeedBanner = computed(
+  () =>
+    canEdit.value &&
+    !store.loading &&
+    store.needsSeed &&
+    (activeTab.value === 'installations' || activeTab.value === 'revenue'),
+)
 
 const customerModalOpen = ref(false)
 const editingCustomer = ref<Customer | null>(null)
@@ -109,6 +126,10 @@ const requestCustomersByCustomer = computed(() => {
 function requestCustomersOf(companyName: string): string[] {
   return requestCustomersByCustomer.value.get(companyName) ?? []
 }
+
+// 장착고객 이름 → 지역(customers.area). 매출 표의 행마다 store.customers 를 훑지 않도록
+// 한 번만 Map 으로 만든다(requestCustomersByCustomer 와 같은 이유).
+const areaByCustomer = computed(() => new Map(store.customers.map((c) => [c.companyName, c.area])))
 
 function openCustomerModal(customer: Customer | null = null) {
   editingCustomer.value = customer
@@ -217,7 +238,7 @@ onMounted(() => {
     <div class="mx-auto max-w-300 px-4 py-8 sm:px-6">
       <!-- 초기 데이터 등록 -->
       <div
-        v-if="canEdit && !store.loading && store.needsSeed && activeTab !== 'operations' && activeTab !== 'budget' && activeTab !== 'logs'"
+        v-if="showSeedBanner"
         class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4"
       >
         <p class="text-sm text-muted-foreground">{{ t('seed.empty') }}</p>
@@ -240,6 +261,9 @@ onMounted(() => {
 
       <!-- 접속기록 / 변경이력 (admin 전용) -->
       <AccessLogTable v-else-if="activeTab === 'logs'" />
+
+      <!-- 회원관리 — 계정 목록 / 권한 변경 (admin 전용) -->
+      <MemberTable v-else-if="activeTab === 'members'" />
 
       <template v-else>
         <!-- 검색 + (실적 분석) 서브탭 + 등록 — 한 행 정리 -->
@@ -268,7 +292,7 @@ onMounted(() => {
                 v-model="store.query"
                 type="search"
                 :placeholder="t('search.placeholder')"
-                class="w-full rounded-md border border-border bg-input py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                class="w-full rounded-md border border-border bg-secondary py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <button
@@ -298,6 +322,7 @@ onMounted(() => {
                 <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.customer') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.productRim') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.tirePrice') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.serviceFee') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.discount') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.mobFee') }}</th>
@@ -308,7 +333,7 @@ onMounted(() => {
             </thead>
             <tbody>
               <tr v-if="!store.filteredInstallations.length">
-                <td colspan="10" class="px-4 py-14 text-center text-muted-foreground">
+                <td colspan="11" class="px-4 py-14 text-center text-muted-foreground">
                   <ClipboardList class="mx-auto mb-2 h-8 w-8 opacity-40" />
                   {{ t('installations.empty') }}
                 </td>
@@ -338,6 +363,7 @@ onMounted(() => {
                   <p v-for="line in productLines(item.product)" :key="line" class="max-w-52">{{ line }}</p>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(item.qty) }} pcs</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ item.tirePrice ? formatIDR(item.tirePrice) : '-' }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.serviceFee) }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ item.discountRate }}%</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.mobilizationFee) }}</td>
@@ -387,6 +413,7 @@ onMounted(() => {
                   {{ t('revenue.total') }} ({{ store.filteredInstallations.length }} {{ t('unit.items') }})
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(installationsTotal.qty) }} pcs</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ installationsTotal.tirePrice ? formatIDR(installationsTotal.tirePrice) : '-' }}</td>
                 <td class="px-4 py-3" colspan="3" />
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(installationsTotal.received) }}</td>
                 <td class="px-4 py-3" colspan="2" />
@@ -412,16 +439,17 @@ onMounted(() => {
           <table class="w-full min-w-140 table-fixed text-left text-sm">
             <thead>
               <tr class="border-b border-border text-xs text-muted-foreground">
-                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
-                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
-                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.requestCustomer') }}</th>
-                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
-                <th scope="col" class="w-1/5 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
+                <th scope="col" class="w-1/12 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
+                <th scope="col" class="w-1/4 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
+                <th scope="col" class="w-1/6 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.area') }}</th>
+                <th scope="col" class="w-1/4 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.requestCustomer') }}</th>
+                <th scope="col" class="w-1/12 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
+                <th scope="col" class="w-1/6 whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.received') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="!store.revenueByCustomer.length">
-                <td colspan="5" class="px-4 py-14 text-center text-muted-foreground">
+                <td colspan="6" class="px-4 py-14 text-center text-muted-foreground">
                   <ClipboardList class="mx-auto mb-2 h-8 w-8 opacity-40" />
                   {{ t('revenue.empty') }}
                 </td>
@@ -442,6 +470,7 @@ onMounted(() => {
                     {{ name }}
                   </button>
                 </td>
+                <td class="px-4 py-3 text-muted-foreground">{{ areaByCustomer.get(name) || '-' }}</td>
                 <td class="px-4 py-3">
                   <template v-for="(reqName, reqIndex) in requestCustomersOf(name)" :key="reqName">
                     <span v-if="reqIndex > 0" class="text-muted-foreground">, </span>
@@ -462,7 +491,7 @@ onMounted(() => {
             </tbody>
             <tfoot v-if="store.revenueByCustomer.length">
               <tr class="border-t border-border bg-secondary/50 font-semibold">
-                <td class="px-4 py-3 text-foreground" colspan="3">
+                <td class="px-4 py-3 text-foreground" colspan="4">
                   {{ t('revenue.total') }} ({{ store.revenueByCustomer.length }} {{ t('revenue.customersUnit') }})
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(store.summary.totalQty) }} pcs</td>
