@@ -204,8 +204,8 @@ onMounted(() => {
                 type="button"
                 class="rounded px-1.5 py-1 text-xs font-semibold transition"
                 :class="lang === 'id' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                @click="setLang('id')"
                 aria-label="Bahasa Indonesia"
+                @click="setLang('id')"
               >
                 🇮🇩
               </button>
@@ -213,8 +213,8 @@ onMounted(() => {
                 type="button"
                 class="rounded px-1.5 py-1 text-xs font-semibold transition"
                 :class="lang === 'ko' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                @click="setLang('ko')"
                 aria-label="한국어"
+                @click="setLang('ko')"
               >
                 🇰🇷
               </button>
@@ -239,13 +239,14 @@ onMounted(() => {
       <!-- 초기 데이터 등록 -->
       <div
         v-if="showSeedBanner"
-        class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4"
+        class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-info-border bg-primary-soft px-5 py-4"
       >
-        <p class="text-sm text-muted-foreground">{{ t('seed.empty') }}</p>
+        <!-- 파스텔(bg-primary-soft)은 채움 전용, 글자는 본문색 — 반투명 primary 위 muted 글자는 대비 4.44:1 로 미달 -->
+        <p class="text-sm text-foreground">{{ t('seed.empty') }}</p>
         <button
           type="button"
           :disabled="store.saving"
-          class="inline-flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/20 disabled:opacity-50"
+          class="inline-flex items-center gap-2 rounded-md border border-primary bg-card px-4 py-2 text-sm font-medium text-primary transition hover:bg-secondary disabled:opacity-50"
           @click="store.seedFromReport()"
         >
           <Sparkles class="h-4 w-4" />

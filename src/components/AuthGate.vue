@@ -78,7 +78,8 @@ async function google() {
     <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
   </div>
 
-  <div v-else class="flex min-h-screen items-center justify-center bg-background px-4">
+  <!-- 로그인 화면도 main 랜드마크를 가진다(landmark-one-main). -->
+  <main v-else class="flex min-h-screen items-center justify-center bg-background px-4">
     <form class="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8 shadow-sm" @submit.prevent="submit">
       <div>
         <div class="flex items-start justify-between">
@@ -167,5 +168,5 @@ async function google() {
         </template>
       </p>
     </form>
-  </div>
+  </main>
 </template>
