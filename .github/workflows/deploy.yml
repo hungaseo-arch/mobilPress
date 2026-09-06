@@ -33,6 +33,10 @@ jobs:
           VITE_DATA_MODE: ${{ secrets.VITE_DATA_MODE }}
           VITE_NEON_DATA_API_URL: ${{ secrets.VITE_NEON_DATA_API_URL }}
           VITE_NEON_AUTH_URL: ${{ secrets.VITE_NEON_AUTH_URL }}
+          # 작업보고서·주행거리계 사진 업로드(Apps Script). 미등록 시 driveEnabled=false 로 빌드되어
+          # 업로드 버튼이 사라지므로 반드시 리포지토리 secrets 에 등록한다 (docs/CONTRIBUTING.md).
+          VITE_DRIVE_UPLOAD_URL: ${{ secrets.VITE_DRIVE_UPLOAD_URL }}
+          VITE_DRIVE_UPLOAD_TOKEN: ${{ secrets.VITE_DRIVE_UPLOAD_TOKEN }}
         run: npm run predeploy
 
       - name: Deploy to gh-pages branch
