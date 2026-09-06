@@ -18,9 +18,11 @@ AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다
 :root {
   color-scheme: light;
 
-  /* Typography — 한글 본문 웹폰트는 Pretendard 하나만 로드한다(index.html). */
+  /* Typography — 웹폰트는 Pretendard 하나만 로드한다(index.html, 자체 호스팅).
+     mono 는 code/pre 에만 쓰이고 화면에 노출되는 곳이 없어 시스템 글꼴로 충분하다 —
+     JetBrains Mono(Google Fonts) 링크는 렌더 차단만 하고 실제 파일 요청은 한 번도 없었다. */
   --font-sans: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+  --font-mono: 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 
   --radius: 0.75rem;
 

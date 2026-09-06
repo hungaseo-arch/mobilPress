@@ -42,6 +42,8 @@ coverage/
 .nyc_output/
 
 # --- Build outputs / caches ---
+# 자체 호스팅 폰트 — scripts/build-fonts.mjs 가 node_modules/pretendard 에서 생성 (postinstall)
+public/fonts/
 dist/
 dist-ssr/
 build/

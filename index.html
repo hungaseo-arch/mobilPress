@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
@@ -6,27 +6,30 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <link rel="apple-touch-icon" href="%BASE_URL%favicon.svg" />
     <title>Mobil Press 운영관리 | PT Ascendo Internasional</title>
-    <meta name="description" content="PT Ascendo Internasional Mobil Press 운영을 위한 고객 정보, 타이어 장착 정보, 작업 실적 관리 웹앱입니다." />
+    <meta
+      name="description"
+      content="PT Ascendo Internasional Mobil Press 운영을 위한 고객 정보, 타이어 장착 정보, 작업 실적 관리 웹앱입니다."
+    />
     <meta name="author" content="PT Ascendo Internasional" />
 
-    <!-- 폰트: AsuraDB 디자인 가이드와 동일 — 한글 본문은 Pretendard(dynamic subset) 하나만,
-         숫자·코드용 mono 는 JetBrains Mono. CSS 의 원격 @import 는 빌드 시 네트워크 요청을
-         일으키므로 반드시 여기 <link> 로 로드한다. -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css"
-    />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <!-- 폰트: AsuraDB 디자인 가이드와 동일한 Pretendard(dynamic subset) 하나만, 자체 호스팅.
+         public/fonts/ 는 scripts/build-fonts.mjs 가 생성한다(굵기 400/500/600/700, woff2 만).
+         CDN 링크는 별도 출처 왕복 + @font-face 828개로 첫 렌더를 약 1초 막았다(CHANGELOG 2026-09-06).
+         CSS 의 원격 @import 는 빌드 시 네트워크 요청을 일으키므로 반드시 여기 <link> 로 로드한다. -->
+    <link rel="stylesheet" href="/fonts/pretendard.css" />
 
     <meta property="og:title" content="Mobil Press 운영관리 | PT Ascendo Internasional" />
-    <meta property="og:description" content="고객 정보와 타이어 장착 정보를 한 곳에서 관리하는 Mobil Press 운영 웹앱입니다." />
+    <meta
+      property="og:description"
+      content="고객 정보와 타이어 장착 정보를 한 곳에서 관리하는 Mobil Press 운영 웹앱입니다."
+    />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#F0F0F0" />
     <meta name="twitter:title" content="Mobil Press 운영관리 | PT Ascendo Internasional" />
-    <meta name="twitter:description" content="고객 정보와 타이어 장착 정보를 한 곳에서 관리하는 Mobil Press 운영 웹앱입니다." />
+    <meta
+      name="twitter:description"
+      content="고객 정보와 타이어 장착 정보를 한 곳에서 관리하는 Mobil Press 운영 웹앱입니다."
+    />
   </head>
 
   <body>
