@@ -52,30 +52,38 @@ export const canDownloadReport = computed(() => reportPerms.value.download)
 export const canUploadReport = computed(() => reportPerms.value.upload)
 export const canUnlinkReport = computed(() => reportPerms.value.unlink)
 
+/** 진행 중인 역할 조회. 화면이 권한 확정을 기다려야 할 때 await 할 수 있습니다. */
+export let rolePromise: Promise<void> = Promise.resolve()
+
 export async function refreshUser(): Promise<void> {
   if (!authEnabled) return
   const { getCurrentUser, getNeonClient } = await import('@/lib/neon-auth')
   currentUser.value = await getCurrentUser()
   userRole.value = 'user'
-  const client = currentUser.value ? getNeonClient() : null
-  if (client) {
-    // 반드시 본인 user_id 로 필터합니다. admin 은 RLS(user_roles_select_admin)로 전체 행이
-    // 보이므로, 필터 없이 첫 행을 읽으면 남의 역할을 자기 역할로 오인합니다.
-    const { data, error } = await client
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', currentUser.value!.id)
-      .limit(1)
-    if (error) {
-      // 조용히 user 로 남으면 원인을 알 수 없으므로 화면에 노출합니다.
-      // (흔한 원인: Data API 의 Refresh schema cache 미실행, schema.sql 미적용)
-      toast.error(`권한(user_roles) 조회 실패: ${error.message ?? JSON.stringify(error)}`)
-      console.error('[auth-state] user_roles 조회 실패:', error)
-      return
-    }
-    const role = (data as { role?: string }[] | null)?.[0]?.role
-    if (role === 'admin' || role === 'staff') userRole.value = role
+  if (!currentUser.value) return
+  // 역할 조회는 기다리지 않습니다. currentUser 가 채워지는 즉시 AuthGate 가 HomeView 를 띄워
+  // 데이터 로드(loadData)와 user_roles 조회가 병렬로 진행되고, 결과가 오면 canEdit/isAdmin 이
+  // 반응적으로 갱신됩니다(관리자 탭·수정 버튼이 한 박자 늦게 나타나는 대신 첫 표가 빨리 뜹니다).
+  const client = getNeonClient()
+  if (!client) return
+  rolePromise = loadRole(client, currentUser.value.id)
+}
+
+async function loadRole(client: NonNullable<ReturnType<typeof import('@/lib/neon-auth').getNeonClient>>, userId: string) {
+  // 반드시 본인 user_id 로 필터합니다. admin 은 RLS(user_roles_select_admin)로 전체 행이
+  // 보이므로, 필터 없이 첫 행을 읽으면 남의 역할을 자기 역할로 오인합니다.
+  const { data, error } = await client.from('user_roles').select('role').eq('user_id', userId).limit(1)
+  // 응답이 오기 전에 로그아웃/재로그인됐다면 다른 사용자의 결과이므로 버립니다.
+  if (currentUser.value?.id !== userId) return
+  if (error) {
+    // 조용히 user 로 남으면 원인을 알 수 없으므로 화면에 노출합니다.
+    // (흔한 원인: Data API 의 Refresh schema cache 미실행, schema.sql 미적용)
+    toast.error(`권한(user_roles) 조회 실패: ${error.message ?? JSON.stringify(error)}`)
+    console.error('[auth-state] user_roles 조회 실패:', error)
+    return
   }
+  const role = (data as { role?: string }[] | null)?.[0]?.role
+  if (role === 'admin' || role === 'staff') userRole.value = role
 }
 
 export async function logout(): Promise<void> {
