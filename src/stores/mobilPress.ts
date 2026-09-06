@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api'
 import { currentUser } from '@/lib/auth-state'
 import { parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
-import { seedBudgetEntries, seedCustomers, seedInstallations } from '@/data/seed'
+import { SEED_COUNTS } from '@/data/seed'
 import type {
   BudgetEntry,
   BudgetEntryForm,
@@ -64,9 +64,9 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   // 초기 시드가 아직 완료되지 않았는지(부분 시드 포함) — 시드 버튼 노출 조건.
   const needsSeed = computed(
     () =>
-      customers.value.length < seedCustomers.length ||
-      installations.value.length < seedInstallations.length ||
-      budgetEntries.value.length < seedBudgetEntries.length,
+      customers.value.length < SEED_COUNTS.customers ||
+      installations.value.length < SEED_COUNTS.installations ||
+      budgetEntries.value.length < SEED_COUNTS.budgetEntries,
   )
 
   const revenueByMonth = computed(() => {
@@ -236,15 +236,17 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     const installationCount = installations.value.length
     const budgetCount = budgetEntries.value.length
     if (
-      customerCount >= seedCustomers.length &&
-      installationCount >= seedInstallations.length &&
-      budgetCount >= seedBudgetEntries.length
+      customerCount >= SEED_COUNTS.customers &&
+      installationCount >= SEED_COUNTS.installations &&
+      budgetCount >= SEED_COUNTS.budgetEntries
     ) {
       toast.info(t('toast.seedExists'))
       return
     }
     saving.value = true
     try {
+      // 시드 행 데이터는 이 버튼을 눌렀을 때만 내려받는다(초기 번들에서 분리).
+      const { seedBudgetEntries, seedCustomers, seedInstallations } = await import('@/data/seed-report')
       // 중복 방지용 자연키 — 이미 존재하는 항목은 건너뜁니다.
       const existingCompanies = new Set(customers.value.map((c) => c.companyName))
       const instKey = (i: InstallationForm) => `${i.workDate}|${i.customerName}|${i.product}|${i.serialNumbers}`

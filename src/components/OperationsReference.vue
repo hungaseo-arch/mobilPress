@@ -229,9 +229,9 @@ const barClass: Record<GanttRow['status'], string> = {
 
     <template v-for="tab in operationsTabs" :key="tab.key">
       <div v-if="activeKey === tab.key" class="space-y-4">
-        <div v-for="(row, rowIdx) in sectionGroups(tab)" :key="rowIdx" :class="groupClass(tab, row.sections.length)">
+        <div v-for="(sectionRow, rowIdx) in sectionGroups(tab)" :key="rowIdx" :class="groupClass(tab, sectionRow.sections.length)">
         <section
-          v-for="(section, localIndex) in row.sections"
+          v-for="(section, localIndex) in sectionRow.sections"
           :key="section.title"
           class="flex h-full flex-col rounded-xl border border-border bg-card"
         >
@@ -240,8 +240,8 @@ const barClass: Record<GanttRow['status'], string> = {
             :is="isAccordionTab(tab.key) ? 'button' : 'div'"
             :type="isAccordionTab(tab.key) ? 'button' : undefined"
             class="flex w-full flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-left"
-            :class="isSectionOpen(tab.key, row.offset + localIndex) ? 'border-b border-border' : ''"
-            @click="isAccordionTab(tab.key) && toggleBudget(row.offset + localIndex)"
+            :class="isSectionOpen(tab.key, sectionRow.offset + localIndex) ? 'border-b border-border' : ''"
+            @click="isAccordionTab(tab.key) && toggleBudget(sectionRow.offset + localIndex)"
           >
             <h3 class="text-sm font-bold text-foreground">{{ section.title }}</h3>
             <span class="flex items-center gap-2">
@@ -257,12 +257,12 @@ const barClass: Record<GanttRow['status'], string> = {
               <ChevronDown
                 v-if="isAccordionTab(tab.key)"
                 class="h-4 w-4 text-muted-foreground transition-transform"
-                :class="{ 'rotate-180': isSectionOpen(tab.key, row.offset + localIndex) }"
+                :class="{ 'rotate-180': isSectionOpen(tab.key, sectionRow.offset + localIndex) }"
               />
             </span>
           </component>
 
-          <template v-if="isSectionOpen(tab.key, row.offset + localIndex)">
+          <template v-if="isSectionOpen(tab.key, sectionRow.offset + localIndex)">
             <!-- 분류(첫 열) 기준 아코디언 표 -->
             <div v-if="section.table && section.groupByFirstColumn" class="divide-y divide-border">
               <details
