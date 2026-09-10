@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { Crosshair, Loader2, MapPin } from 'lucide-vue-next'
 import BaseModal from '@/components/BaseModal.vue'
 import ReportUploadField from '@/components/ReportUploadField.vue'
 import { emptyInstallation } from '@/data/seed'
 import { deleteReport } from '@/lib/drive-report'
-import { operationTeam } from '@/lib/format'
+import { maskSensitive } from '@/lib/auth-state'
+import { mapsUrl, operationTeam } from '@/lib/format'
+import { MASKED, maskedName, maskedValue } from '@/lib/mask'
 import { t } from '@/lib/i18n'
 import type { Installation, InstallationForm } from '@/lib/types'
 
@@ -34,6 +37,8 @@ const form = reactive<InstallationForm>(
         serialNumbers: props.editing.serialNumbers,
         workTime: props.editing.workTime,
         odometer: props.editing.odometer,
+        installArea: props.editing.installArea ?? '',
+        locationUrl: props.editing.locationUrl ?? '',
         worker: props.editing.worker,
         enteredBy: props.editing.enteredBy,
         status: props.editing.status,
@@ -73,11 +78,14 @@ function handleClose() {
   emit('close')
 }
 
-// 금액 입력: 천단위 콤마 표시용 텍스트 모델 (저장은 숫자)
+// 금액 입력: 천단위 콤마 표시용 텍스트 모델 (저장은 숫자).
+// 조회 전용 계정에는 가린 값을 보여줍니다 — 마스킹 대상은 항상 readonly(fieldset disabled)라
+// set 이 호출될 일이 없지만, 만일을 대비해 쓰기도 막습니다.
 function moneyModel(key: 'tirePrice' | 'serviceFee' | 'mobilizationFee' | 'receivedAmount') {
   return computed({
-    get: () => (form[key] ? Number(form[key]).toLocaleString('en-US') : ''),
+    get: () => (maskSensitive.value ? MASKED : form[key] ? Number(form[key]).toLocaleString('en-US') : ''),
     set: (value: string) => {
+      if (maskSensitive.value) return
       form[key] = Number(value.replace(/[^\d]/g, '')) || 0
     },
   })
@@ -101,8 +109,9 @@ watch([() => form.serviceFee, () => form.discountRate, () => form.mobilizationFe
 if (!receivedManual.value) form.receivedAmount = autoReceived.value
 
 const receivedAmountText = computed({
-  get: () => (form.receivedAmount ? Number(form.receivedAmount).toLocaleString('en-US') : ''),
+  get: () => (maskSensitive.value ? MASKED : form.receivedAmount ? Number(form.receivedAmount).toLocaleString('en-US') : ''),
   set: (value: string) => {
+    if (maskSensitive.value) return
     form.receivedAmount = Number(value.replace(/[^\d]/g, '')) || 0
     receivedManual.value = true // 직접 입력 → 수동 모드
   },
@@ -132,6 +141,60 @@ watch(
   () => form.qty,
   (qty) => syncSerialCount(qty),
 )
+
+// 구글 위치: 현장에서 버튼 한 번으로 현재 좌표를 채웁니다(HTTPS 에서만 동작).
+// 값은 'lat, lng' 문자열이며, 사용자가 지도 링크를 직접 붙여넣어도 그대로 저장합니다.
+const locating = ref(false)
+const locationError = ref('')
+// 조회 전용 계정에는 지도 링크도 열어주지 않습니다(좌표가 URL 로 그대로 드러남).
+const locationLink = computed(() => (maskSensitive.value ? '' : mapsUrl(form.locationUrl)))
+
+// 고객명·요청고객·지역·위치 — 조회 전용 계정에는 가린 값을 보여줍니다.
+// (maskedName/maskedValue 는 마스킹 대상이 아니면 원값을 그대로 돌려줍니다)
+function nameModel(key: 'customerName' | 'distributor' | 'installArea') {
+  return computed({
+    get: () => maskedName(form[key]),
+    set: (value: string) => {
+      if (!maskSensitive.value) form[key] = value
+    },
+  })
+}
+const customerNameText = nameModel('customerName')
+const distributorText = nameModel('distributor')
+const installAreaText = nameModel('installArea')
+const locationUrlText = computed({
+  get: () => maskedValue(form.locationUrl),
+  set: (value: string) => {
+    if (!maskSensitive.value) form.locationUrl = value
+  },
+})
+const discountRateText = computed({
+  get: () => (maskSensitive.value ? MASKED : String(form.discountRate ?? 0)),
+  set: (value: string) => {
+    if (!maskSensitive.value) form.discountRate = Number(value) || 0
+  },
+})
+
+function captureCurrentLocation() {
+  locationError.value = ''
+  if (!navigator.geolocation) {
+    locationError.value = t('form.geoUnsupported')
+    return
+  }
+  locating.value = true
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords
+      form.locationUrl = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+      locating.value = false
+    },
+    (error) => {
+      locationError.value = error.message || t('form.geoFailed')
+      locating.value = false
+    },
+    { enableHighAccuracy: true, timeout: 10000 },
+  )
+}
 
 // 작업자: 운영팀(operationTeam) 체크박스로 선택. 저장은 쉼표 연결 문자열.
 // 명단에 없는 기존 값(수동 입력분)은 그대로 보존합니다.
@@ -207,18 +270,67 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         </div>
         <div>
           <label :class="labelClass" for="distributor">{{ t('form.distributor') }}</label>
-          <input id="distributor" v-model="form.distributor" :class="inputClass" />
+          <input id="distributor" v-model="distributorText" :class="inputClass" />
         </div>
         <div>
           <label :class="labelClass" for="customerName">{{ t('form.customerName') }}</label>
-          <input id="customerName" v-model="form.customerName" :class="inputClass" list="customer-names" required />
-          <datalist id="customer-names">
+          <input
+            id="customerName"
+            v-model="customerNameText"
+            :class="inputClass"
+            :list="maskSensitive ? undefined : 'customer-names'"
+            required
+          />
+          <!-- 고객 목록 자동완성은 조회 전용 계정에 노출하지 않습니다(마스킹 우회 경로) -->
+          <datalist v-if="!maskSensitive" id="customer-names">
             <option v-for="name in customerNames" :key="name" :value="name" />
           </datalist>
         </div>
         <div>
           <label :class="labelClass" for="product">{{ t('form.product') }}</label>
           <input id="product" v-model="form.product" :class="inputClass" placeholder="ASC 6.00-9 S2000" />
+        </div>
+        <div>
+          <label :class="labelClass" for="installArea">{{ t('form.installArea') }}</label>
+          <input
+            id="installArea"
+            v-model="installAreaText"
+            :class="inputClass"
+            :placeholder="t('form.installAreaPlaceholder')"
+          />
+        </div>
+        <div>
+          <div class="flex items-center justify-between">
+            <label :class="labelClass" for="locationUrl">{{ t('form.locationUrl') }}</label>
+            <a
+              v-if="locationLink"
+              :href="locationLink"
+              target="_blank"
+              rel="noopener"
+              class="mb-1.5 inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+            >
+              <MapPin class="h-3.5 w-3.5" /> {{ t('form.openMap') }}
+            </a>
+          </div>
+          <div class="flex gap-2">
+            <input
+              id="locationUrl"
+              v-model="locationUrlText"
+              :class="inputClass"
+              :placeholder="t('form.locationPlaceholder')"
+            />
+            <button
+              type="button"
+              :disabled="locating"
+              class="inline-flex h-[38px] shrink-0 items-center gap-1 rounded-md border border-border px-3 text-xs text-muted-foreground transition hover:border-primary hover:text-primary disabled:opacity-50"
+              @click="captureCurrentLocation"
+            >
+              <Loader2 v-if="locating" class="h-3.5 w-3.5 animate-spin" />
+              <Crosshair v-else class="h-3.5 w-3.5" />
+              {{ locating ? t('form.locating') : t('form.useCurrentLocation') }}
+            </button>
+          </div>
+          <p v-if="locationError" class="mt-1 text-xs text-destructive">{{ locationError }}</p>
         </div>
         <div>
           <label :class="labelClass" for="rimSize">{{ t('form.rimSize') }}</label>
@@ -264,11 +376,11 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
               v-for="name in operationTeam"
               :key="name"
               type="button"
-              class="rounded-md border px-3 py-1.5 text-sm transition"
+              class="inline-flex h-8 items-center rounded-md border px-3 text-sm transition-colors"
               :class="
                 selectedWorkers.includes(name)
-                  ? 'border-primary bg-primary/10 font-medium text-primary'
-                  : 'border-border text-muted-foreground hover:text-foreground'
+                  ? 'border-primary-40 bg-primary-soft font-bold text-primary'
+                  : 'border-border bg-card font-medium text-muted-foreground hover:bg-secondary hover:text-foreground'
               "
               @click="toggleWorker(name)"
             >
@@ -306,7 +418,14 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         </div>
         <div>
           <label :class="labelClass" for="discountRate">{{ t('form.discountRate') }}</label>
-          <input id="discountRate" v-model.number="form.discountRate" type="number" min="0" max="100" :class="inputClass" />
+          <input
+            id="discountRate"
+            v-model="discountRateText"
+            :type="maskSensitive ? 'text' : 'number'"
+            min="0"
+            max="100"
+            :class="inputClass"
+          />
         </div>
         <div>
           <div class="flex items-center justify-between">
@@ -353,7 +472,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
       <div class="flex justify-end gap-2 border-t border-border pt-4">
         <button
           type="button"
-          class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-6 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           @click="handleClose"
         >
           {{ readonly ? t('aria.close') : t('btn.cancel') }}
@@ -362,7 +481,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
           v-if="!readonly"
           type="submit"
           :disabled="saving"
-          class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active disabled:opacity-50"
         >
           {{ saving ? t('btn.saving') : editing ? t('btn.update') : t('btn.save') }}
         </button>

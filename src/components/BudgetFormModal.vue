@@ -82,7 +82,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
       <div class="flex justify-end gap-2 border-t border-border pt-4">
         <button
           type="button"
-          class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-6 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           @click="emit('close')"
         >
           {{ t('btn.cancel') }}
@@ -90,7 +90,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
         <button
           type="submit"
           :disabled="saving"
-          class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active disabled:opacity-50"
         >
           {{ saving ? t('btn.saving') : editing ? t('btn.update') : t('btn.save') }}
         </button>

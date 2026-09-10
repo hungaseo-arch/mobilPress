@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
-import { ClipboardList, FileText, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
+import { ClipboardList, EyeOff, FileText, Loader2, LogOut, Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
-import { authEnabled, canDelete, canEdit, canViewReport, currentUser, isAdmin, logout } from '@/lib/auth-state'
+import { authEnabled, canDelete, canEdit, canViewReport, currentUser, isAdmin, logout, maskSensitive, role } from '@/lib/auth-state'
 import { deleteReport } from '@/lib/drive-report'
-import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
+import { formatDate, formatNumber, productLines } from '@/lib/format'
+import { maskedIDR, maskedName, maskedPercent } from '@/lib/mask'
 import { lang, setLang, t } from '@/lib/i18n'
-import ReportPreviewModal from '@/components/ReportPreviewModal.vue'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
@@ -21,8 +21,13 @@ const OperationsReference = defineAsyncComponent(() => import('@/components/Oper
 const BudgetReference = defineAsyncComponent(() => import('@/components/BudgetReference.vue'))
 const AccessLogTable = defineAsyncComponent(() => import('@/components/AccessLogTable.vue'))
 const MemberTable = defineAsyncComponent(() => import('@/components/MemberTable.vue'))
+const ReportPreviewModal = defineAsyncComponent(() => import('@/components/ReportPreviewModal.vue'))
 
 const store = useMobilPressStore()
+
+// BI 시그니처·심볼 (public/brand) — GitHub Pages 하위 경로 배포를 위해 base 를 붙인다.
+const signatureSrc = `${import.meta.env.BASE_URL}brand/ascendo-signature.png`
+const symbolSrc = `${import.meta.env.BASE_URL}brand/ascendo-symbol.png`
 
 type Tab = 'installations' | 'revenue' | 'budget' | 'operations' | 'logs' | 'members'
 const activeTab = ref<Tab>('installations')
@@ -172,81 +177,107 @@ onMounted(() => {
 
 <template>
   <main class="min-h-screen">
-    <!-- 상단 헤더 1열 3분할: 25% 타이틀 | 50% 탭 | 25% 검색·등록·로그인 -->
-    <header class="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-      <div class="mx-auto max-w-300 px-4 sm:px-6">
-        <div class="flex flex-wrap items-center gap-3 py-3 lg:grid lg:grid-cols-[1fr_2fr_1fr]">
-          <!-- 1열 (25%): 홈 / 타이틀 -->
-          <div class="min-w-0">
-            <p class="truncate text-[11px] font-semibold uppercase tracking-widest text-primary">{{ t('app.company') }}</p>
-            <h1 class="truncate text-xl font-bold tracking-tight text-foreground">{{ t('app.title') }}</h1>
+    <!-- 상단 4px 블루 액센트 바 — 레터헤드(AS 06) 상단 블루 바 응용, 전 화면 표시 -->
+    <div class="asm-accent-bar" />
+
+    <!-- 헤더 56px: 좌 시그니처 로고|구분선|화면 제목 · 중앙 대분류 메뉴 · 우 역할·언어·로그아웃 -->
+    <header class="asm-app-header sticky top-1 z-40 border-b border-border bg-card px-5">
+      <div class="mx-auto flex max-w-300 flex-wrap items-center gap-3 py-2 lg:grid lg:h-14 lg:grid-cols-[1fr_2fr_1fr] lg:flex-nowrap lg:py-0">
+        <!-- 1열: 시그니처 로고 + 화면 제목 (BS 04 — 비율 보존을 위해 높이만 지정) -->
+        <div class="flex min-w-0 items-center">
+          <img
+            :src="signatureSrc"
+            class="hidden h-7 w-auto sm:block"
+            alt="PT ASCENDO INTERNASIONAL"
+            width="640"
+            height="127"
+          />
+          <!-- 모바일(<640px)에서는 워드마크를 숨기고 심볼 단독형만 표시 (가이드 4-1a) -->
+          <img :src="symbolSrc" class="h-7 w-auto sm:hidden" alt="PT ASCENDO INTERNASIONAL" width="200" height="196" />
+          <h1 class="ml-3 hidden truncate border-l border-border pl-3 text-sm font-medium text-foreground md:block">
+            {{ t('app.title') }}
+          </h1>
+        </div>
+
+        <!-- 2열: 대분류 메뉴 (중앙) — 활성은 블루 10% 틴트 + 블루 글자 700 (가이드 7-2) -->
+        <nav class="flex flex-wrap justify-center gap-1 lg:justify-self-center">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            type="button"
+            class="whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors"
+            :class="
+              activeTab === tab.key
+                ? 'bg-primary-soft font-bold text-primary'
+                : 'font-medium text-foreground hover:bg-secondary'
+            "
+            @click="activeTab = tab.key"
+          >
+            {{ tab.label }}
+          </button>
+        </nav>
+
+        <!-- 3열: 역할 pill · 언어 · 로그인 -->
+        <div class="flex min-w-0 flex-1 items-center justify-end gap-2 lg:flex-none">
+          <span v-if="authEnabled && currentUser" class="asm-pill hidden xl:inline-flex">{{ t(`role.${role}`) }}</span>
+
+          <!-- 언어 전환 (기본: 인도네시아어) -->
+          <div class="flex shrink-0 gap-0.5 rounded-md border border-border bg-card p-0.5">
+            <button
+              type="button"
+              class="rounded-sm px-1.5 py-1 text-xs font-medium transition-colors"
+              :class="lang === 'id' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-secondary'"
+              aria-label="Bahasa Indonesia"
+              @click="setLang('id')"
+            >
+              🇮🇩
+            </button>
+            <button
+              type="button"
+              class="rounded-sm px-1.5 py-1 text-xs font-medium transition-colors"
+              :class="lang === 'ko' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-secondary'"
+              aria-label="한국어"
+              @click="setLang('ko')"
+            >
+              🇰🇷
+            </button>
           </div>
 
-          <!-- 2열 (50%): 네비 탭 (중앙) -->
-          <nav class="flex justify-center gap-1 rounded-lg border border-border bg-card p-1 lg:justify-self-center">
-            <button
-              v-for="tab in tabs"
-              :key="tab.key"
-              type="button"
-              class="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition xl:px-4"
-              :class="activeTab === tab.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-              @click="activeTab = tab.key"
-            >
-              {{ tab.label }}
-            </button>
-          </nav>
-
-          <!-- 3열 (25%): 언어 · 로그인 -->
-          <div class="flex min-w-0 flex-1 items-center justify-end gap-1.5 lg:flex-none">
-            <!-- 언어 전환 (기본: 인도네시아어) -->
-            <div class="flex shrink-0 gap-0.5 rounded-md border border-border bg-card p-0.5">
-              <button
-                type="button"
-                class="rounded px-1.5 py-1 text-xs font-semibold transition"
-                :class="lang === 'id' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                aria-label="Bahasa Indonesia"
-                @click="setLang('id')"
-              >
-                🇮🇩
-              </button>
-              <button
-                type="button"
-                class="rounded px-1.5 py-1 text-xs font-semibold transition"
-                :class="lang === 'ko' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                aria-label="한국어"
-                @click="setLang('ko')"
-              >
-                🇰🇷
-              </button>
-            </div>
-
-            <button
-              v-if="authEnabled && currentUser"
-              type="button"
-              class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-              :title="`${currentUser.email} · ${t('btn.logout')}`"
-              @click="onLogout"
-            >
-              <LogOut class="h-4 w-4" />
-              <span class="hidden xl:inline">{{ currentUser.name || currentUser.email }}</span>
-            </button>
-          </div>
+          <button
+            v-if="authEnabled && currentUser"
+            type="button"
+            class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            :title="`${currentUser.email} · ${t('btn.logout')}`"
+            @click="onLogout"
+          >
+            <LogOut class="h-4 w-4" />
+            <span class="hidden xl:inline">{{ currentUser.name || currentUser.email }}</span>
+          </button>
         </div>
       </div>
     </header>
 
-    <div class="mx-auto max-w-300 px-4 py-8 sm:px-6">
+    <div class="mx-auto max-w-300 p-4 sm:p-6">
+      <!-- 조회 전용 계정 마스킹 안내 — 값이 비어 보이는 것이 오류가 아님을 알립니다 -->
+      <p
+        v-if="maskSensitive"
+        class="mb-6 flex items-center gap-2 rounded-lg border border-border bg-secondary px-5 py-3 text-sm text-foreground"
+      >
+        <EyeOff class="h-4 w-4 shrink-0 text-muted-foreground" />
+        {{ t('mask.notice') }}
+      </p>
+
       <!-- 초기 데이터 등록 -->
       <div
         v-if="showSeedBanner"
-        class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-info-border bg-primary-soft px-5 py-4"
+        class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-info-border border-l-4 border-l-primary bg-info-soft px-5 py-4"
       >
         <!-- 파스텔(bg-primary-soft)은 채움 전용, 글자는 본문색 — 반투명 primary 위 muted 글자는 대비 4.44:1 로 미달 -->
         <p class="text-sm text-foreground">{{ t('seed.empty') }}</p>
         <button
           type="button"
           :disabled="store.saving"
-          class="inline-flex items-center gap-2 rounded-md border border-primary bg-card px-4 py-2 text-sm font-medium text-primary transition hover:bg-secondary disabled:opacity-50"
+          class="inline-flex h-9 items-center gap-2 rounded-md border border-primary bg-card px-4 text-sm font-medium text-primary transition-colors hover:bg-secondary disabled:opacity-50"
           @click="store.seedFromReport()"
         >
           <Sparkles class="h-4 w-4" />
@@ -275,11 +306,11 @@ onMounted(() => {
               v-for="rt in revenueTabs"
               :key="rt.key"
               type="button"
-              class="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition"
+              class="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-4 text-[13px] transition-colors"
               :class="
                 revenueTab === rt.key
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                  ? 'border-primary-40 bg-primary-soft font-bold text-primary'
+                  : 'border-border bg-card font-medium text-muted-foreground hover:bg-secondary hover:text-foreground'
               "
               @click="revenueTab = rt.key"
             >
@@ -292,14 +323,14 @@ onMounted(() => {
               <input
                 v-model="store.query"
                 type="search"
-                :placeholder="t('search.placeholder')"
-                class="w-full rounded-md border border-border bg-secondary py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                :placeholder="t(maskSensitive ? 'search.placeholderMasked' : 'search.placeholder')"
+                class="h-9 w-full rounded-md border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               />
             </div>
             <button
               v-if="activeTab === 'installations' && canEdit"
               type="button"
-              class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              class="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active"
               @click="openInstallationModal()"
             >
               <Plus class="h-4 w-4" /> {{ t('btn.addInstallation') }}
@@ -316,9 +347,9 @@ onMounted(() => {
         <!-- 장착 실적 -->
         <section v-else-if="activeTab === 'installations'" class="rounded-xl border border-border bg-card">
           <div class="overflow-x-auto">
-          <table class="w-full min-w-260 text-left text-sm">
+          <table class="asm-table w-full min-w-260 text-left text-sm">
             <thead>
-              <tr class="border-b border-border text-xs text-muted-foreground">
+              <tr>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.workDate') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.customer') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.productRim') }}</th>
@@ -342,33 +373,30 @@ onMounted(() => {
               <tr
                 v-for="item in instPage.paged.value"
                 :key="item.id"
-                class="cursor-pointer border-b border-border/60 align-top outline-none transition last:border-0 hover:bg-secondary/40 focus-visible:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                class="cursor-pointer align-top outline-none focus-visible:bg-primary-soft"
                 :title="canEdit ? t('installations.rowHint') : t('installations.rowHintView')"
                 role="button"
                 tabindex="0"
                 @click="openInstallationModal(item)"
                 @keydown.enter="openInstallationModal(item)"
-                @keydown.space.prevent="openInstallationModal(item)"
-              >
-                <td class="px-4 py-3 text-muted-foreground">
+                @keydown.space.prevent="openInstallationModal(item)">
+                <td class="whitespace-nowrap px-4 py-3 text-muted-foreground">
                   <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
-                  <p v-if="item.workTime" class="mt-0.5 text-xs">{{ item.workTime }}</p>
-                  <p v-if="item.odometer" class="mt-0.5 text-xs">{{ t('form.odometer') }}: {{ item.odometer }}</p>
                   <p v-if="item.worker" class="mt-0.5 text-xs">{{ t('form.worker') }}: {{ item.worker }}</p>
                 </td>
                 <td class="px-4 py-3">
-                  <p class="font-semibold text-foreground">{{ item.customerName }}</p>
-                  <p class="mt-0.5 text-xs text-muted-foreground">{{ item.distributor }}</p>
+                  <p :title="maskedName(item.customerName)" class="max-w-52 truncate font-semibold text-foreground">{{ maskedName(item.customerName) }}</p>
+                  <p :title="maskedName(item.distributor)" class="mt-0.5 max-w-52 truncate text-xs text-muted-foreground">{{ maskedName(item.distributor) }}</p>
                 </td>
                 <td class="px-4 py-3 text-muted-foreground">
-                  <p v-for="line in productLines(item.product)" :key="line" class="max-w-52">{{ line }}</p>
+                  <p v-for="line in productLines(item.product)" :key="line" :title="line" class="max-w-52 truncate">{{ line }}</p>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(item.qty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ item.tirePrice ? formatIDR(item.tirePrice) : '-' }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.serviceFee) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ item.discountRate }}%</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.mobilizationFee) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(item.receivedAmount) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.tirePrice, true) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.serviceFee) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedPercent(item.discountRate) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.mobilizationFee) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(item.receivedAmount) }}</td>
                 <td class="px-4 py-3 text-center">
                   <div v-if="reportFilesOf(item).length && canViewReport" class="flex items-center justify-center gap-1">
                     <button
@@ -400,7 +428,7 @@ onMounted(() => {
                       type="button"
                       class="rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
                       :aria-label="t('btn.delete')"
-                      @click.stop="confirmDelete('installations', item.id, item.customerName, item)"
+                      @click.stop="confirmDelete('installations', item.id, maskedName(item.customerName), item)"
                     >
                       <Trash2 class="h-4 w-4" />
                     </button>
@@ -409,14 +437,15 @@ onMounted(() => {
               </tr>
             </tbody>
             <tfoot v-if="store.filteredInstallations.length">
-              <tr class="border-t border-border bg-secondary/50 font-semibold">
-                <td class="px-4 py-3 text-foreground" colspan="3">
+              <!-- 합계 행 배경·글자색은 .asm-table 규격(가이드 6-2)이 정한다 -->
+              <tr>
+                <td class="px-4 py-3" colspan="3">
                   {{ t('revenue.total') }} ({{ store.filteredInstallations.length }} {{ t('unit.items') }})
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(installationsTotal.qty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ installationsTotal.tirePrice ? formatIDR(installationsTotal.tirePrice) : '-' }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(installationsTotal.qty) }} pcs</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(installationsTotal.tirePrice, true) }}</td>
                 <td class="px-4 py-3" colspan="3" />
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(installationsTotal.received) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(installationsTotal.received) }}</td>
                 <td class="px-4 py-3" colspan="2" />
               </tr>
             </tfoot>
@@ -437,9 +466,9 @@ onMounted(() => {
         <!-- 고객별 매출 -->
         <section v-if="revenueTab === 'customer'" class="rounded-xl border border-border bg-card">
           <div class="overflow-x-auto">
-          <table class="w-full min-w-140 table-fixed text-left text-sm">
+          <table class="asm-table w-full min-w-140 table-fixed text-left text-sm">
             <thead>
-              <tr class="border-b border-border text-xs text-muted-foreground">
+              <tr>
                 <th scope="col" class="w-1/12 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.rank') }}</th>
                 <th scope="col" class="w-1/4 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.installCustomer') }}</th>
                 <th scope="col" class="w-1/6 whitespace-nowrap px-4 py-3 font-medium">{{ t('th.area') }}</th>
@@ -458,7 +487,6 @@ onMounted(() => {
               <tr
                 v-for="([name, value], index) in custPage.paged.value"
                 :key="name"
-                class="border-b border-border/60 transition last:border-0 hover:bg-secondary/40"
               >
                 <td class="px-4 py-3 text-muted-foreground">{{ custPage.offset.value + index + 1 }}</td>
                 <td class="px-4 py-3">
@@ -468,10 +496,10 @@ onMounted(() => {
                     :title="t('revenue.rowHint')"
                     @click="revenueDetailCustomer = name"
                   >
-                    {{ name }}
+                    {{ maskedName(name) }}
                   </button>
                 </td>
-                <td class="px-4 py-3 text-muted-foreground">{{ areaByCustomer.get(name) || '-' }}</td>
+                <td class="px-4 py-3 text-muted-foreground">{{ areaByCustomer.get(name) ? maskedName(areaByCustomer.get(name)!) : '-' }}</td>
                 <td class="px-4 py-3">
                   <template v-for="(reqName, reqIndex) in requestCustomersOf(name)" :key="reqName">
                     <span v-if="reqIndex > 0" class="text-muted-foreground">, </span>
@@ -481,22 +509,23 @@ onMounted(() => {
                       :title="t('request.modalTitle')"
                       @click="requestDetail = reqName"
                     >
-                      {{ reqName }}
+                      {{ maskedName(reqName) }}
                     </button>
                   </template>
                   <span v-if="!requestCustomersOf(name).length" class="text-muted-foreground">-</span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatNumber(value.qty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(value.revenue) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(value.revenue) }}</td>
               </tr>
             </tbody>
             <tfoot v-if="store.revenueByCustomer.length">
-              <tr class="border-t border-border bg-secondary/50 font-semibold">
-                <td class="px-4 py-3 text-foreground" colspan="4">
+              <!-- 합계 행 배경·글자색은 .asm-table 규격(가이드 6-2)이 정한다 -->
+              <tr>
+                <td class="px-4 py-3" colspan="4">
                   {{ t('revenue.total') }} ({{ store.revenueByCustomer.length }} {{ t('revenue.customersUnit') }})
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(store.summary.totalQty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(store.summary.totalRevenue) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(store.summary.totalQty) }} pcs</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(store.summary.totalRevenue) }}</td>
               </tr>
             </tfoot>
           </table>
@@ -514,9 +543,9 @@ onMounted(() => {
         <!-- 월별 매출 -->
         <section v-else class="rounded-xl border border-border bg-card">
           <div class="overflow-x-auto">
-          <table class="w-full min-w-140 text-left text-sm">
+          <table class="asm-table w-full min-w-140 text-left text-sm">
             <thead>
-              <tr class="border-b border-border text-xs text-muted-foreground">
+              <tr>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.month') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.jobs') }}</th>
                 <th scope="col" class="whitespace-nowrap px-4 py-3 text-right font-medium">{{ t('th.qty') }}</th>
@@ -533,28 +562,28 @@ onMounted(() => {
               <tr
                 v-for="[month, value] in monthPage.paged.value"
                 :key="month"
-                class="cursor-pointer border-b border-border/60 outline-none transition last:border-0 hover:bg-secondary/40 focus-visible:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                class="cursor-pointer outline-none focus-visible:bg-primary-soft"
                 :title="t('month.rowHint')"
                 role="button"
                 tabindex="0"
                 @click="monthDetail = month"
                 @keydown.enter="monthDetail = month"
-                @keydown.space.prevent="monthDetail = month"
-              >
-                <td class="px-4 py-3 font-semibold text-foreground">{{ formatDate(month) }}</td>
+                @keydown.space.prevent="monthDetail = month">
+                <td class="whitespace-nowrap px-4 py-3 font-medium text-foreground">{{ formatDate(month) }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatNumber(value.count) }} {{ t('unit.items') }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatNumber(value.qty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(value.revenue) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(value.revenue) }}</td>
               </tr>
             </tbody>
             <tfoot v-if="store.revenueByMonth.length">
-              <tr class="border-t border-border bg-secondary/50 font-semibold">
-                <td class="px-4 py-3 text-foreground">
+              <!-- 합계 행 배경·글자색은 .asm-table 규격(가이드 6-2)이 정한다 -->
+              <tr>
+                <td class="px-4 py-3">
                   {{ t('revenue.total') }} ({{ store.revenueByMonth.length }} {{ t('revenue.monthsUnit') }})
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(store.summary.totalInstallations) }} {{ t('unit.items') }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(store.summary.totalQty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(store.summary.totalRevenue) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(store.summary.totalInstallations) }} {{ t('unit.items') }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(store.summary.totalQty) }} pcs</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(store.summary.totalRevenue) }}</td>
               </tr>
             </tfoot>
           </table>
@@ -572,8 +601,9 @@ onMounted(() => {
       </template>
     </div>
 
+    <!-- 푸터 (가이드 7-1) — 상단선 1px · 12px muted · 회사명 표기 -->
     <footer class="border-t border-border py-6 text-center text-xs text-muted-foreground">
-      Copyright © ASEOA
+      © {{ t('app.company') }}
     </footer>
 
     <CustomerFormModal

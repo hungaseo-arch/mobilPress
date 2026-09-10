@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { Pencil } from 'lucide-vue-next'
 import BaseModal from '@/components/BaseModal.vue'
-import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
+import { formatDate, formatNumber, productLines } from '@/lib/format'
+import { maskedIDR, maskedName, maskedPercent, maskedValue } from '@/lib/mask'
 import { t } from '@/lib/i18n'
 import type { Customer, Installation } from '@/lib/types'
 
@@ -33,15 +34,16 @@ const totals = computed(() => ({
 </script>
 
 <template>
-  <BaseModal :title="customerName" @close="emit('close')">
+  <BaseModal :title="maskedName(customerName)" @close="emit('close')">
     <!-- 고객 주요 정보 -->
-    <section v-if="customer" class="mb-5 rounded-lg border border-border bg-secondary/30 p-4">
+    <section v-if="customer" class="mb-5 rounded-lg border border-border bg-secondary p-4">
       <div class="mb-3 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <h3 class="text-sm font-bold text-foreground">{{ t('tab.customers') }}</h3>
+          <!-- 상태 배지 (가이드 8-4) — 거래 중=성공 / 그 외=중립 -->
           <span
-            class="inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium"
-            :class="customer.status === 'active' ? 'bg-primary/15 text-primary' : 'bg-secondary text-secondary-foreground'"
+            class="asm-badge"
+            :class="customer.status === 'active' ? 'asm-badge--success' : 'asm-badge--neutral'"
           >
             {{ t(`status.${customer.status}`) }}
           </span>
@@ -59,17 +61,17 @@ const totals = computed(() => ({
       <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         <div>
           <dt class="text-xs text-muted-foreground">{{ t('th.bizArea') }}</dt>
-          <dd class="text-foreground">{{ customer.businessType || '-' }} · {{ customer.area || '-' }}</dd>
+          <dd class="text-foreground">{{ customer.businessType || '-' }} · {{ customer.area ? maskedName(customer.area) : '-' }}</dd>
         </div>
         <div>
           <dt class="text-xs text-muted-foreground">{{ t('form.contactName') }}</dt>
-          <dd class="text-foreground">{{ customer.contactName || '-' }}</dd>
+          <dd class="text-foreground">{{ customer.contactName ? maskedName(customer.contactName) : '-' }}</dd>
         </div>
         <div>
           <dt class="text-xs text-muted-foreground">{{ t('th.vendorPrice') }}</dt>
           <dd class="text-foreground">
             {{ customer.currentPressVendor || '-' }}
-            <span v-if="customer.marketPrice" class="block text-xs text-muted-foreground">{{ customer.marketPrice }}</span>
+            <span v-if="customer.marketPrice" class="block text-xs text-muted-foreground">{{ maskedValue(customer.marketPrice) }}</span>
           </dd>
         </div>
         <div>
@@ -86,9 +88,9 @@ const totals = computed(() => ({
     <!-- 매출 상세 히스토리 -->
     <h3 class="mb-2 text-sm font-bold text-foreground">{{ t('revenue.modalTitle') }}</h3>
     <div class="overflow-x-auto">
-      <table class="w-full min-w-180 text-left text-sm">
+      <table class="asm-table w-full min-w-180 text-left text-sm">
         <thead>
-          <tr class="border-b border-border text-xs text-muted-foreground">
+          <tr>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.workDate') }}</th>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.productRim') }}</th>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right font-medium">{{ t('th.qty') }}</th>
@@ -105,31 +107,28 @@ const totals = computed(() => ({
           <tr
             v-for="item in history"
             :key="item.id"
-            class="border-b border-border/60 align-top last:border-0"
-          >
-            <td class="px-3 py-2.5">
-              <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
-              <p v-if="item.workTime" class="mt-0.5 text-xs text-muted-foreground">{{ item.workTime }}</p>
-            </td>
+            class="align-top">
+            <td class="whitespace-nowrap px-3 py-2.5 text-foreground">{{ formatDate(item.workDate) }}</td>
             <td class="px-3 py-2.5 text-muted-foreground">
-              <p v-for="line in productLines(item.product)" :key="line" class="max-w-56">{{ line }}</p>
-              <p v-if="item.note" class="mt-1 text-xs leading-relaxed">{{ item.note }}</p>
+              <p v-for="line in productLines(item.product)" :key="line" :title="line" class="max-w-56 truncate">{{ line }}</p>
+              <p v-if="item.note" :title="item.note" class="mt-1 max-w-56 truncate text-xs">{{ item.note }}</p>
             </td>
             <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(item.qty) }} pcs</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.serviceFee) }}</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ item.discountRate }}%</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(item.mobilizationFee) }}</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(item.receivedAmount) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.serviceFee) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedPercent(item.discountRate) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.mobilizationFee) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(item.receivedAmount) }}</td>
           </tr>
         </tbody>
         <tfoot v-if="history.length">
-          <tr class="border-t border-border bg-secondary/50 font-semibold">
-            <td class="px-3 py-2.5 text-foreground" colspan="2">{{ t('revenue.total') }} ({{ history.length }} {{ t('unit.items') }})</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(totals.qty) }} pcs</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(totals.serviceFee) }}</td>
+          <!-- 합계 행 배경·글자색은 .asm-table 규격(가이드 6-2)이 정한다 -->
+          <tr>
+            <td class="px-3 py-2.5" colspan="2">{{ t('revenue.total') }} ({{ history.length }} {{ t('unit.items') }})</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums">{{ formatNumber(totals.qty) }} pcs</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(totals.serviceFee) }}</td>
             <td class="px-3 py-2.5" />
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ formatIDR(totals.mobFee) }}</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(totals.received) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(totals.mobFee) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(totals.received) }}</td>
           </tr>
         </tfoot>
       </table>

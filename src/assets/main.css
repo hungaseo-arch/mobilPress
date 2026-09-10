@@ -2,76 +2,96 @@
 
 /*
 ==========================================================================
-【Design Tokens — AsuraDB 사내 배색 가이드 60-30-10 (2026-09-01 이식)】
-AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다. 사내 앱 간
-화면이 따로 놀지 않도록 값은 임의로 바꾸지 말고, 가이드가 바뀌면 양쪽을 함께 고친다.
-  · 60% 배경 LIGHT GREY #F0F0F0 / 30% SOFT BLUE #E3F2FD · PASTEL BLUE-GREY #ECEFF1
-    / 10% 강조 SAGE GREEN #E8F5E9 / 텍스트·라인 #546E7A
+【Design Tokens — ASM 디자인 가이드 · 아센도 BI 기준 v1.0 (2026-09-06 이식)】
+「ASCENDO Brand Identity Design Guidelines」(Basic System BS 01~09 · Application
+System AS 01~25, 2024-05-23) 를 웹 UI 토큰으로 옮긴 사내 기준을 따른다. 명함·봉투·
+레터헤드 등 오프라인 매체와 사내 시스템이 하나의 브랜드로 보이도록, 값은 임의로 바꾸지
+말고 가이드가 바뀌면 함께 고친다.
+  · BI 전용색상(원본, 변경 금지) — Main Blue #0062C6 / Main Dark Gray #333333 /
+    Sub White #FFFFFF / Sub Black #000000(인쇄 전용, 화면 미사용)
+  · 나머지(회색 단계·상태색·차트색)는 BI 톤에서 파생한 값 — 가이드 3-2 / 3-3 / 10장
   · 표기는 Hex — 가이드가 Hex/RGB 로 확정 배포된 기준이라, oklch 변환 과정의
     색상 드리프트를 원천 차단한다. Tailwind v4 `@theme inline` 은 Hex 를 그대로 받는다.
-  · 파스텔 5색은 배경(Fill) 전용, 텍스트·경계선은 진한 청회색 계열.
-  · 본문 #37474F(대비 8.47:1), 보조 텍스트·라인 #546E7A(4.74:1)로 2단계 분리.
-  · 라이트 모드 고정 — `color-scheme: light` 로 네이티브 컨트롤도 OS 다크와 무관히 라이트.
+  · 화면에서 색을 직접 쓰지 말고 반드시 변수(=시맨틱 유틸리티 클래스)로 참조한다.
+  · 명도대비 — primary/white 5.9:1, fg/white 12.6:1, muted-fg/white 5.7:1,
+    상태색 전 항목 WCAG AA(4.5:1) 이상.
+  · 라이트 모드 고정 — 가이드 3-4(다크 모드 1차 범위 제외).
 ==========================================================================
 */
 
 :root {
   color-scheme: light;
 
-  /* Typography — 웹폰트는 Pretendard 하나만 로드한다(index.html, 자체 호스팅).
-     mono 는 code/pre 에만 쓰이고 화면에 노출되는 곳이 없어 시스템 글꼴로 충분하다 —
-     JetBrains Mono(Google Fonts) 링크는 렌더 차단만 하고 실제 파일 요청은 한 번도 없었다. */
-  --font-sans: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  /* Typography — BI BS 09 지정서체(Noto Sans 계열). 웹폰트는 Noto Sans KR 하나만
+     자체 호스팅으로 로드한다(index.html · scripts/build-fonts.mjs). 한글은 물론
+     영문·숫자도 이 한 벌이 덮으므로 Noto Sans 를 따로 받지 않는다.
+     mono 는 code/pre 에만 쓰이고 화면에 노출되는 곳이 없어 시스템 글꼴로 충분하다. */
+  --font-sans: 'Noto Sans KR', 'Noto Sans', KoPubDotum, 'Malgun Gothic',
+    'Apple SD Gothic Neo', system-ui, sans-serif;
   --font-mono: 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 
-  --radius: 0.75rem;
+  /* ══ BI 전용색상 (원본 — 변경 금지) ═══════════════════ */
+  --primary: #0062c6;               /* Main · Blue  C90 M60 Y0 K0 */
+  --foreground: #333333;            /* Main · Dark Gray  K90 — 대비 12.6:1 */
+  --card: #ffffff;                  /* Sub · White */
 
-  /* ══ 60% — Surface (배경) ══════════════════════════════ */
-  --background: #f0f0f0;            /* LIGHT GREY — 앱 셸 바탕 */
-  --foreground: #37474f;            /* 본문 텍스트: 대비 8.47:1 (AAA) */
-  --card: #ffffff;                  /* 카드는 흰색 — 회색 바탕과 층위 분리 */
-  --card-foreground: #37474f;
+  /* ══ 브랜드 파생 (가이드 3-2) ═════════════════════════ */
+  --primary-foreground: #ffffff;
+  --primary-hover: #0053a8;         /* Blue 85% — 버튼 hover */
+  --primary-active: #00458b;        /* Blue 70% — 버튼 pressed */
+  --primary-6: #f0f6fc;             /* 표 헤더·행 hover */
+  --primary-soft: #e6eff9;          /* Blue 10% — 활성 메뉴·배지·합계 행 */
+  --primary-15: #d9e7f6;
+  --primary-20: #cce0f4;
+  --primary-40: #99c0e8;            /* 포커스 링·info 테두리 */
+  --primary-soft-foreground: #0062c6;
+
+  /* ══ 중립 (Dark Gray 틴트) ════════════════════════════ */
+  --background: #f5f5f5;            /* 페이지 바탕 — 흰 카드가 구분되도록 */
+  --card-foreground: #333333;
   --popover: #ffffff;
-  --popover-foreground: #37474f;
+  --popover-foreground: #333333;
+  --secondary: #f3f3f3;             /* Dark Gray 6% */
+  --secondary-foreground: #333333;
+  --muted: #ebebeb;                 /* Dark Gray 10% */
+  --muted-foreground: #666666;      /* 부제·단위·placeholder — 대비 5.7:1 */
+  --accent: #e6eff9;
+  --accent-foreground: #0062c6;
 
-  /* ══ 30% — Accent (주요 요소) ══════════════════════════ */
-  --primary: #546e7a;               /* TEXT & LINE — 텍스트·아이콘·포커스·솔리드 CTA */
-  --primary-foreground: #ffffff;    /* 흰 글자 대비 5.40:1 (AA) */
-  --primary-soft: #e3f2fd;          /* SOFT BLUE — 연한 배경(Fill) */
-  --primary-soft-foreground: #37474f;
-  --secondary: #eceff1;             /* PASTEL BLUE-GREY */
-  --secondary-foreground: #37474f;
-  --muted: #eceff1;
-  --muted-foreground: #546e7a;      /* 보조 텍스트: 대비 4.68~4.74:1 (AA) */
-  --accent: #e3f2fd;
-  --accent-foreground: #37474f;
-
-  /* ══ 10% — Highlight (강조·상태) ═══════════════════════ */
-  --success: #2e7d32;               /* 5.13:1 */
-  --success-soft: #e8f5e9;          /* SAGE GREEN — 배경 */
-  --success-border: #a5d6a7;
-  --warning: #8d6e00;               /* 4.81:1 */
-  --warning-soft: #fff8e1;
-  --warning-border: #ffe082;
-  --destructive: #c62828;           /* 5.62:1 */
+  /* ══ 상태 색상 (파생 — 글자 / soft 배경 / 테두리 3종) ══ */
+  --success: #1e7b34;               /* 4.7:1 */
+  --success-soft: #e6f4ea;
+  --success-border: #a8d5b3;
+  --warning: #8a5a00;               /* 5.5:1 */
+  --warning-soft: #fff6e0;
+  --warning-border: #f5d580;
+  --destructive: #c62828;           /* 4.8:1 */
   --destructive-foreground: #ffffff;
-  --destructive-soft: #fdecea;
-  --destructive-border: #ef9a9a;
-  --info: #1565c0;                  /* 5.75:1 */
-  --info-soft: #e3f2fd;
-  --info-border: #90caf9;
+  --destructive-soft: #fce9e9;
+  --destructive-border: #f0a3a3;
+  --info: #0062c6;                  /* info 는 브랜드 블루 그대로 — 5.1:1 */
+  --info-soft: #e6eff9;
+  --info-border: #99c0e8;
+  --neutral: #5f5f5f;               /* 5.5:1 */
+  --neutral-soft: #ededed;
+  --neutral-border: #d6d6d6;
 
   /* ══ Line ══════════════════════════════════════════════ */
-  --border: #cfd8dc;                /* 카드·표 구분선 */
-  --input: #78909c;                 /* 입력 테두리 3.35:1 — WCAG 1.4.11 충족 */
-  --ring: #546e7a;
+  --border: #d6d6d6;                /* Dark Gray 20% — 카드·표·입력창 (레터헤드 회색 띠 톤) */
+  --border-50: #ebebeb;             /* 표 행 구분선 */
+  --input: #d6d6d6;
+  --ring: #99c0e8;                  /* 포커스 링 3px */
 
-  /* ══ Chart — 5색 카테고리 팔레트 (파스텔은 채움 전용) ═══ */
-  --chart-1: #546e7a;
-  --chart-2: #4a7fa5;
-  --chart-3: #4f8a6b;
-  --chart-4: #8d6e63;
-  --chart-5: #5c6bc0;
+  /* ══ Chart — 브랜드 블루 고정 + 조화 파생 4색 (가이드 10장) ══ */
+  --chart-1: #0062c6;               /* Brand Blue — 당기·자사 */
+  --chart-2: #333333;               /* Dark Gray — 전기·목표선 */
+  --chart-3: #1e7b34;
+  --chart-4: #e08a00;
+  --chart-5: #99c0e8;               /* Blue 40% — 전년·참고 */
+
+  /* ══ 그림자 — 평면 원칙, 떠 있는 요소에만 (가이드 6-3) ══ */
+  --shadow-float: 0 4px 12px rgb(51 51 51 / 0.12);   /* 드롭다운·팝오버·토스트 */
+  --shadow-overlay: 0 12px 32px rgb(51 51 51 / 0.18); /* 모달 */
 }
 
 @theme inline {
@@ -83,8 +103,14 @@ AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-6: var(--primary-6);
   --color-primary-soft: var(--primary-soft);
   --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-primary-15: var(--primary-15);
+  --color-primary-20: var(--primary-20);
+  --color-primary-40: var(--primary-40);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -104,7 +130,11 @@ AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-info-border: var(--info-border);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-neutral-border: var(--neutral-border);
   --color-border: var(--border);
+  --color-border-50: var(--border-50);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
@@ -117,10 +147,20 @@ AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* 모서리 (가이드 6-1) — BI 응용물은 직각·최소 라운드. 화면은 소폭 라운드만 허용:
+     배지·태그 4px / 버튼·입력창·드롭다운 6px / 카드·모달 8px.
+     xl·2xl 은 Tailwind 기본값(12·16px)이 가이드를 넘어서므로 카드값 8px 로 낮춘다. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+
+  /* 그림자 (가이드 6-3) — 버튼·카드·헤더·입력창·표는 그림자 없음 */
+  --shadow-md: var(--shadow-float);
+  --shadow-lg: var(--shadow-float);
+  --shadow-xl: var(--shadow-overlay);
+  --shadow-2xl: var(--shadow-overlay);
 }
 
 @layer base {
@@ -133,13 +173,13 @@ AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다
   }
 
   body {
-    @apply bg-background text-foreground font-sans min-h-screen;
-    /* Pretendard 의 대체 자소(cv02·cv03·cv04·cv11) — 숫자·기호 가독성 향상 */
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    /* 본문 14px 통일 (가이드 5-2) — OS 기본 16px 에 의존하지 않는다. */
+    @apply bg-background text-foreground font-sans min-h-screen text-sm;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    /* BI 제목용 Bold 원칙 (가이드 5-2) */
+    @apply font-bold tracking-tight;
   }
 
   code, pre {
@@ -147,12 +187,213 @@ AsuraDB(asuraDB/src/style.css)와 동일한 토큰·타이포그래피를 쓴다
   }
 
   ::selection {
-    @apply bg-primary/20 text-primary;
+    background: var(--primary-20);
+    color: var(--primary);
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40;
+  }
+}
+
+/*
+==========================================================================
+【컴포넌트 규격 — 가이드 8장 · 9장】
+아래는 cascade layer 밖(unlayered)에 둔다. Tailwind v4 는 자신의 base/components/
+utilities 를 모두 @layer 안에 넣으므로, 레이어 밖 규칙이 특이도와 무관하게 유틸리티를
+이긴다. 덕분에 표·포커스 링처럼 "전 화면 동일해야 하는" 규격을 마크업 600여 곳을
+고치지 않고 한 곳에서 강제할 수 있다(가이드 11장 STEP 3 의 의도와 동일).
+개별 화면에서 예외가 필요하면 해당 요소에만 인라인 style 또는 전용 클래스를 쓴다.
+==========================================================================
+*/
+
+/* ── 포커스 링 (가이드 8-1 / 8-2 · 체크리스트 13) ────────────
+   Tab 이동 시 전 입력창·버튼에 3px 연블루 링. :where() 로 특이도 0 을 유지해
+   컴포넌트가 필요하면 자기 클래스로 덮어쓸 수 있게 한다. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-40);
+}
+
+/* ── 표 (가이드 9-1 / 9-2) ────────────────────────────────
+   BI 견적서 양식(AS 07)의 회색 헤더 + 가로 괘선 + 합계 행 강조 구조.
+   <table class="asm-table"> 로 옵트인한다. */
+.asm-table {
+  font-size: 13px;
+  /* separate + spacing 0 — collapse 모델에서는 sticky 헤더의 테두리가 사라진다. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.asm-table > thead > tr > th {
+  background: var(--primary-6);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 500;
+  height: 36px;
+  padding: 9px 12px;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--primary); /* 블루 괘선이 표 시작을 표시 */
+  /* 긴 목록 스크롤 시 헤더 고정 (체크리스트 7) */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* 행 구분선은 tr 이 아니라 td 에 건다 — border-collapse:separate 에서는 행 테두리가
+   그려지지 않는다(헤더 sticky 를 위해 separate 가 필요하다). 세로선은 쓰지 않는다. */
+.asm-table > tbody > tr > td {
+  border-bottom: 1px solid var(--border-50);
+}
+
+.asm-table > tbody > tr:last-child > td {
+  border-bottom: 0;
+}
+
+/* 행 높이 38px · 셀 13px. colspan 셀(빈 상태·로딩 안내)은 자체 여백을 유지한다. */
+.asm-table > tbody > tr > td:not([colspan]) {
+  height: 38px;
+  padding: 9px 12px;
+}
+
+/* 클릭 가능한 행에만 hover (가이드 9-1) */
+.asm-table > tbody > tr:hover {
+  background: var(--primary-6);
+}
+
+/* 합계 행 — 견적서 합계 행 강조 응용 */
+.asm-table > tfoot > tr > td {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* 보조 정보 12px muted (가이드 9-2) */
+.asm-table .sub {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+/* 날짜 열 — ISO 8601 고정, 줄바꿈 금지 (체크리스트 8) */
+.asm-table .date {
+  white-space: nowrap;
+}
+
+/* ── 상단 블루 액센트 바 (가이드 7-1 · 레터헤드 AS 06 응용) ── */
+.asm-accent-bar {
+  height: 4px;
+  background: var(--primary);
+  position: sticky;
+  top: 0;
+  z-index: 41;
+}
+
+/* ── 상태 배지 (가이드 8-4) — soft 배경 + 진한 글자 + 테두리 3종 세트 ── */
+.asm-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.asm-badge--info { background: var(--info-soft); color: var(--info); border-color: var(--info-border); }
+.asm-badge--success { background: var(--success-soft); color: var(--success); border-color: var(--success-border); }
+.asm-badge--warning { background: var(--warning-soft); color: var(--warning); border-color: var(--warning-border); }
+.asm-badge--danger { background: var(--destructive-soft); color: var(--destructive); border-color: var(--destructive-border); }
+.asm-badge--neutral { background: var(--neutral-soft); color: var(--neutral); border-color: var(--neutral-border); }
+
+/* 역할 pill (가이드 8-4) */
+.asm-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── 카드 제목 (가이드 8-3) — 좌측 3px 블루 세로선. 밑줄·배경 강조는 쓰지 않는다. ── */
+.asm-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  padding-left: 10px;
+  border-left: 3px solid var(--primary);
+}
+
+/* 섹션 킥커 — BI 목차의 "BS 01" 스타일 */
+.asm-kicker {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+}
+
+/* ── 심볼 워터마크 (가이드 4-4 · BS 08) ───────────────────
+   로그인·빈 상태·오류 화면에만. 데이터 표·입력 폼 뒤에는 금지(가독성 저하). */
+.asm-motif {
+  position: relative;
+  overflow: hidden;
+}
+
+.asm-motif::before {
+  content: '';
+  position: absolute;
+  right: -10%;
+  bottom: -20%;
+  width: 40vmin;
+  height: 40vmin;
+  background: url('/brand/ascendo-symbol.png') no-repeat center / contain;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* 블루 바탕 위에서는 White 10% (가이드 4-4) */
+.asm-motif--on-blue::before {
+  filter: brightness(0) invert(1);
+  opacity: 0.1;
+}
+
+/* ── 토스트 (가이드 8-7) — 흰 배경 · 좌측 4px 상태 바 · 그림자는 떠 있는 요소라 허용 ──
+   vue-sonner 의 rich-colors 대신 BI 상태색을 직접 입힌다(App.vue). */
+[data-sonner-toast] {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--neutral);
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--shadow-float);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+[data-sonner-toast][data-type='success'] { border-left-color: var(--success); }
+[data-sonner-toast][data-type='error'] { border-left-color: var(--destructive); }
+[data-sonner-toast][data-type='warning'] { border-left-color: var(--warning); }
+[data-sonner-toast][data-type='info'] { border-left-color: var(--info); }
+
+[data-sonner-toast] [data-icon] > svg { color: currentcolor; }
+[data-sonner-toast][data-type='success'] [data-icon] { color: var(--success); }
+[data-sonner-toast][data-type='error'] [data-icon] { color: var(--destructive); }
+[data-sonner-toast][data-type='warning'] [data-icon] { color: var(--warning); }
+[data-sonner-toast][data-type='info'] [data-icon] { color: var(--info); }
+
+/* ── 인쇄 (가이드 7-2) — 헤더·액센트 바는 인쇄 시 숨기고 고정 해제 ── */
+@media print {
+  .asm-accent-bar,
+  .asm-app-header {
+    position: static;
   }
 }

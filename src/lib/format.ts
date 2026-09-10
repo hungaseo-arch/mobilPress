@@ -12,19 +12,26 @@ export async function parseApi<T = unknown>(response: Response): Promise<T> {
   return data as T
 }
 
-/** 루피아 표기 — 천단위 콤마 구분 (예: Rp 1,350,000) */
+/** 루피아 표기 — 천단위 콤마 구분, 정수 (예: Rp 1,350,000).
+    디자인 가이드 9-3 은 통화코드(IDR) 병기를 예시로 들지만, 이 앱은 인도네시아 현장에서
+    쓰이는 화면이라 통용 표기인 'Rp' 를 유지한다. 콤마·정수 규칙은 가이드 그대로. */
 export function formatIDR(value: number): string {
   return `Rp ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value || 0)}`
 }
 
-/** 천 단위 구분 숫자 표기 */
+/** 천 단위 구분 숫자 표기 — 영미식(콤마), 사내 문서 표준 (디자인 가이드 9-3) */
 export function formatNumber(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(value || 0)
+  return new Intl.NumberFormat('en-US').format(value || 0)
 }
 
-/** 'YYYY-MM-DD' → 'YYYY.MM.DD', 값이 없으면 '-' */
+/** 비율 표기 — 소수점 첫째 자리 고정 (디자인 가이드 9-3) */
+export function formatPercent(value: number): string {
+  return `${(value || 0).toFixed(1)}%`
+}
+
+/** 날짜 표기 — ISO 8601 'YYYY-MM-DD' 고정 (디자인 가이드 9-2), 값이 없으면 '-' */
 export function formatDate(value: string): string {
-  return value ? value.replaceAll('-', '.') : '-'
+  return value || '-'
 }
 
 function pad(n: number): string {
@@ -43,6 +50,16 @@ export function formatDateTime(iso: string): string {
   const d = new Date(iso)
   if (!iso || Number.isNaN(d.getTime())) return '-'
   return `${formatDay(iso)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** 장착 위치 값을 Google 지도 링크로 변환합니다.
+    입력은 두 가지를 모두 허용합니다 — 붙여넣은 지도 링크(그대로 사용) 또는
+    'lat, lng' 좌표(검색 URL 로 변환). 값이 없으면 빈 문자열을 돌려줍니다. */
+export function mapsUrl(value: string): string {
+  const query = (value ?? '').trim()
+  if (!query) return ''
+  if (/^https?:\/\//i.test(query)) return query
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 }
 
 /** ' / ' 로 이어진 제품명을 줄 단위 배열로 분리 (표시용) */

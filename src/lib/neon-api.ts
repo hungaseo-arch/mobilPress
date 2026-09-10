@@ -167,6 +167,18 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
       return json({ userId, role })
     }
 
+    if (memberMatch && method === 'DELETE') {
+      // 계정 원본(neon_auth."user")은 Data API 로 직접 지울 수 없어, public 스키마의
+      // security definer 함수를 호출한다. admin 여부·본인 계정 여부는 함수가 재검증한다.
+      const userId = memberMatch[1]
+      const rpc = client as unknown as {
+        rpc: (fn: string, args: Row) => PromiseLike<{ error: { message?: string } | null }>
+      }
+      const { error } = await rpc.rpc('delete_member', { target_user_id: userId })
+      if (error) throw new Error(`Neon Data API 오류: ${error.message ?? JSON.stringify(error)}`)
+      return json({ ok: true })
+    }
+
     for (const table of ['customers', 'installations', 'budget_entries'] as const) {
       if (path === `/mobil-press/${table}` && method === 'POST') {
         const rows = unwrap<Customer | Installation | BudgetEntry>(

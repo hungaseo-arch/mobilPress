@@ -5,6 +5,8 @@ import BaseModal from '@/components/BaseModal.vue'
 import { getOperationsTabs } from '@/data/operations'
 import type { OpsGantt, OpsSection, OpsTab } from '@/data/operations'
 import { lang, t } from '@/lib/i18n'
+import { maskSensitive } from '@/lib/auth-state'
+import { MASKED, maskedName } from '@/lib/mask'
 
 // ── 섹션 행 배치 (rowLayout / pairSections) ──────
 /** rowLayout 이 있으면 지정한 개수만큼 행으로 분할, 없으면 전체를 한 그룹으로 반환. */
@@ -148,6 +150,31 @@ function isDateHeader(header: string): boolean {
   return /날짜|Tanggal|Tgl|Bulan|일자/i.test(header)
 }
 
+/** 업체명이 들어가는 열(고객 회사명·경쟁사 Press 업체) — 조회 전용 계정에는 가려서 표시 */
+function isCompanyHeader(header: string): boolean {
+  return /회사명|Perusahaan|고객|Customer|경쟁사|Kompetitor/i.test(header)
+}
+
+/** 시세·단가처럼 금액이 문장으로 적힌 열 (isAmountHeader 가 긴 텍스트라 제외하는 열) */
+function isPriceTextHeader(header: string): boolean {
+  return /시장 가격|Harga Pasar/i.test(header)
+}
+
+/** 서비스 요금표(pricing)는 회사 표준 단가표라 특정 고객의 거래 금액이 아니므로
+ *  조회 전용 계정에도 그대로 보여줍니다. */
+function isMaskedTab(tabKey: string): boolean {
+  return tabKey !== 'pricing'
+}
+
+/** 조회 전용 계정용 셀 값 — 금액·시세 열은 통째로, 회사명 열은 첫 글자만 남겨 가립니다. */
+function maskedCell(tabKey: string, headers: string[], index: number, cell: string): string {
+  if (!maskSensitive.value || !isMaskedTab(tabKey)) return cell
+  const header = headers[index] ?? ''
+  if (isAmountHeader(header) || isPriceTextHeader(header)) return cell ? MASKED : cell
+  if (isCompanyHeader(header)) return maskedName(cell)
+  return cell
+}
+
 /** 정렬 규칙: 금액 → 오른쪽 | 그 외(텍스트·수량·비고 등) → 왼쪽 */
 function alignClass(headers: string[], index: number): string {
   const header = headers[index] ?? ''
@@ -202,7 +229,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
 
 const barClass: Record<GanttRow['status'], string> = {
   done: 'bg-primary text-primary-foreground',
-  progress: 'bg-primary/35 border border-primary/70 text-foreground',
+  progress: 'bg-primary-40 border border-primary text-foreground',
   waiting: 'bg-card border border-dashed border-border text-muted-foreground',
 }
 </script>
@@ -215,11 +242,11 @@ const barClass: Record<GanttRow['status'], string> = {
         v-for="tab in operationsTabs"
         :key="tab.key"
         type="button"
-        class="rounded-full border px-4 py-2 text-sm font-semibold transition"
+        class="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-4 text-[13px] transition-colors"
         :class="
           activeKey === tab.key
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border bg-card text-muted-foreground hover:text-foreground'
+            ? 'border-primary-40 bg-primary-soft font-bold text-primary'
+            : 'border-border bg-card font-medium text-muted-foreground hover:bg-secondary hover:text-foreground'
         "
         @click="activeKey = tab.key"
       >
@@ -243,12 +270,13 @@ const barClass: Record<GanttRow['status'], string> = {
             :class="isSectionOpen(tab.key, sectionRow.offset + localIndex) ? 'border-b border-border' : ''"
             @click="isAccordionTab(tab.key) && toggleBudget(sectionRow.offset + localIndex)"
           >
-            <h3 class="text-sm font-bold text-foreground">{{ section.title }}</h3>
+            <!-- 카드 제목 14px/700 + 블루 좌측 괘선 3px (가이드 8-3) -->
+            <h3 class="border-l-[3px] border-primary pl-2.5 text-sm font-bold text-foreground">{{ section.title }}</h3>
             <span class="flex items-center gap-2">
               <button
                 v-if="section.modal"
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                class="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 @click.stop="openModal = section.modal"
               >
                 <BookOpen class="h-3.5 w-3.5" />
@@ -271,7 +299,7 @@ const barClass: Record<GanttRow['status'], string> = {
                 :open="groupIndex === 0"
                 class="group"
               >
-                <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-3 transition hover:bg-secondary/40">
+                <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-3 transition-colors hover:bg-secondary">
                   <span class="text-sm font-semibold text-foreground">
                     {{ group.name }}
                     <span class="ml-1.5 text-xs font-normal text-muted-foreground">({{ group.rows.length }})</span>
@@ -280,11 +308,11 @@ const barClass: Record<GanttRow['status'], string> = {
                 </summary>
                 <div class="overflow-x-auto">
                   <table
-                    class="w-full min-w-140 text-left text-sm"
+                    class="asm-table w-full min-w-140 text-left text-sm"
                     :class="{ 'table-fixed': eqWidthEnabled(section.table.headers.slice(1)) }"
                   >
                     <thead>
-                      <tr class="border-t border-border/60 text-xs text-muted-foreground">
+                      <tr>
                         <th
                           v-for="(header, headerIndex) in section.table.headers.slice(1)"
                           :key="header"
@@ -301,15 +329,14 @@ const barClass: Record<GanttRow['status'], string> = {
                       <tr
                         v-for="(row, rowIndex) in group.rows"
                         :key="rowIndex"
-                        class="border-t border-border/60 align-top hover:bg-secondary/40"
-                      >
+                        class="align-top">
                         <td
                           v-for="(cell, cellIndex) in row"
                           :key="cellIndex"
                           class="px-5 py-2.5 text-foreground"
                           :class="[{ 'font-semibold': cellIndex === 0 }, cellClass(section.table.headers.slice(1), cellIndex)]"
                         >
-                          <span v-for="(line, li) in cellLines(cell)" :key="li" class="block">
+                          <span v-for="(line, li) in cellLines(maskedCell(tab.key, section.table.headers.slice(1), cellIndex, cell))" :key="li" class="block">
                             <span v-for="(part, i) in line" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
                           </span>
                         </td>
@@ -323,14 +350,14 @@ const barClass: Record<GanttRow['status'], string> = {
             <!-- 일반 표 (3열 표는 각 1/3 균등 배분) -->
             <div v-else-if="section.table" class="overflow-x-auto">
               <table
-                class="w-full text-left text-sm"
+                class="asm-table w-full text-left text-sm"
                 :class="[
                   { 'table-fixed': eqWidthEnabled(section.table.headers) },
                   section.table.headers.length > 3 ? 'min-w-140' : 'min-w-0',
                 ]"
               >
                 <thead>
-                  <tr class="border-b border-border text-xs text-muted-foreground">
+                  <tr>
                     <th
                       v-for="(header, headerIndex) in section.table.headers"
                       :key="header"
@@ -347,8 +374,7 @@ const barClass: Record<GanttRow['status'], string> = {
                   <tr
                     v-for="(row, rowIndex) in section.table.rows"
                     :key="rowIndex"
-                    class="border-b border-border/60 align-top last:border-0 hover:bg-secondary/40"
-                  >
+                    class="align-top">
                     <td
                       v-for="(cell, cellIndex) in row"
                       :key="cellIndex"
@@ -358,7 +384,7 @@ const barClass: Record<GanttRow['status'], string> = {
                         cellClass(section.table.headers, cellIndex),
                       ]"
                     >
-                      <span v-for="(line, li) in cellLines(cell)" :key="li" class="block">
+                      <span v-for="(line, li) in cellLines(maskedCell(tab.key, section.table.headers, cellIndex, cell))" :key="li" class="block">
                         <span v-for="(part, i) in line" :key="i" :class="{ 'whitespace-nowrap': part.nowrap }">{{ part.text }}</span>
                       </span>
                     </td>
@@ -372,7 +398,7 @@ const barClass: Record<GanttRow['status'], string> = {
               <div
                 v-for="step in section.steps"
                 :key="step.title"
-                class="rounded-lg border-l-4 border-primary bg-secondary/40 px-4 py-3"
+                class="rounded-md border border-border border-l-4 border-l-primary bg-primary-6 px-4 py-3"
               >
                 <p class="text-sm font-bold text-foreground">{{ step.title }}</p>
                 <ul class="mt-1.5 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
@@ -386,7 +412,7 @@ const barClass: Record<GanttRow['status'], string> = {
               <!-- 범례 -->
               <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
                 <span class="flex items-center gap-1.5"><span class="h-2.5 w-5 rounded-sm bg-primary" /> {{ t('gantt.done') }}</span>
-                <span class="flex items-center gap-1.5"><span class="h-2.5 w-5 rounded-sm border border-primary/70 bg-primary/35" /> {{ t('gantt.progress') }}</span>
+                <span class="flex items-center gap-1.5"><span class="h-2.5 w-5 rounded-sm border border-primary bg-primary-40" /> {{ t('gantt.progress') }}</span>
                 <span class="flex items-center gap-1.5"><span class="h-2.5 w-5 rounded-sm border border-dashed border-border bg-card" /> {{ t('gantt.waiting') }}</span>
                 <span v-if="todayPct(section.gantt) !== null" class="flex items-center gap-1.5">
                   <span class="h-3 w-0.5 bg-destructive" /> {{ t('gantt.today') }}
@@ -470,9 +496,9 @@ const barClass: Record<GanttRow['status'], string> = {
     <!-- 섹션 참조 모달 (지그 규격 등) -->
     <BaseModal v-if="openModal" :title="openModal.title" @close="openModal = null">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-140 text-left text-sm">
+        <table class="asm-table w-full min-w-140 text-left text-sm">
           <thead>
-            <tr class="border-b border-border text-xs text-muted-foreground">
+            <tr>
               <th
                 v-for="header in openModal.table.headers"
                 :key="header"
@@ -488,15 +514,14 @@ const barClass: Record<GanttRow['status'], string> = {
             <tr
               v-for="(row, rowIndex) in openModal.table.rows"
               :key="rowIndex"
-              class="border-b border-border/60 last:border-0"
-            >
+              class="last:border-0">
               <td
                 v-for="(cell, cellIndex) in row"
                 :key="cellIndex"
                 class="px-3 py-2.5 text-foreground"
                 :class="[{ 'font-semibold': cellIndex === 0 }, cellClass(openModal.table.headers, cellIndex)]"
               >
-                {{ cell }}
+                {{ maskedCell(activeKey, openModal.table.headers, cellIndex, cell) }}
               </td>
             </tr>
           </tbody>

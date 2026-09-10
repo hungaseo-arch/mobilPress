@@ -43,47 +43,50 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-background px-4">
-    <div class="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
-      <h1 class="text-xl font-bold text-foreground">{{ t('reset.title') }}</h1>
+  <div class="flex min-h-screen flex-col bg-background">
+    <div class="asm-accent-bar" />
+    <div class="flex flex-1 items-center justify-center px-4 py-10">
+      <div class="w-full max-w-[400px] rounded-lg border border-border bg-card p-8">
+        <h1 class="text-xl font-bold text-foreground">{{ t('reset.title') }}</h1>
 
-      <div v-if="linkError || !token" class="mt-4 space-y-4">
-        <p class="text-sm text-destructive">{{ t('reset.invalid') }}</p>
-        <p class="text-sm text-muted-foreground">{{ t('reset.invalidHint') }}</p>
-        <RouterLink
-          to="/"
-          class="block w-full rounded-lg bg-primary py-2 text-center text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          {{ t('reset.toSignin') }}
-        </RouterLink>
+        <div v-if="linkError || !token" class="mt-4 space-y-4">
+          <p class="text-sm text-destructive">{{ t('reset.invalid') }}</p>
+          <p class="text-sm text-muted-foreground">{{ t('reset.invalidHint') }}</p>
+          <RouterLink
+            to="/"
+            class="flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active"
+          >
+            {{ t('reset.toSignin') }}
+          </RouterLink>
+        </div>
+
+        <form v-else class="mt-4 space-y-4" @submit.prevent="submit">
+          <input
+            v-model="password"
+            type="password"
+            required
+            minlength="8"
+            :placeholder="t('reset.newPassword')"
+            class="h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          />
+          <input
+            v-model="passwordConfirm"
+            type="password"
+            required
+            minlength="8"
+            :placeholder="t('reset.confirmPassword')"
+            class="h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          />
+          <button
+            type="submit"
+            :disabled="submitting || done"
+            class="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active disabled:pointer-events-none disabled:opacity-50"
+          >
+            <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+            {{ t('reset.submit') }}
+          </button>
+        </form>
       </div>
-
-      <form v-else class="mt-4 space-y-4" @submit.prevent="submit">
-        <input
-          v-model="password"
-          type="password"
-          required
-          minlength="8"
-          :placeholder="t('reset.newPassword')"
-          class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        />
-        <input
-          v-model="passwordConfirm"
-          type="password"
-          required
-          minlength="8"
-          :placeholder="t('reset.confirmPassword')"
-          class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        />
-        <button
-          type="submit"
-          :disabled="submitting || done"
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-        >
-          <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
-          {{ t('reset.submit') }}
-        </button>
-      </form>
     </div>
   </div>
 </template>

@@ -24,6 +24,8 @@ export const emptyInstallation: InstallationForm = {
   serialNumbers: '',
   workTime: '',
   odometer: '',
+  installArea: '',
+  locationUrl: '',
   worker: '',
   enteredBy: '',
   status: 'completed',

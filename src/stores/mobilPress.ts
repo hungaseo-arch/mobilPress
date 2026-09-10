@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { apiFetch } from '@/lib/api'
-import { currentUser } from '@/lib/auth-state'
+import { currentUser, maskSensitive } from '@/lib/auth-state'
 import { parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { SEED_COUNTS } from '@/data/seed'
@@ -44,8 +44,13 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   const filteredInstallations = computed(() => {
     const keyword = query.value.trim().toLowerCase()
     if (!keyword) return installations.value
+    // 조회 전용 계정은 고객명·요청고객을 검색 대상에서 제외합니다 — 화면에서 가린 이름을
+    // 검색으로 되짚어 확인하는 우회를 막기 위함입니다(src/lib/mask.ts 참고).
     return installations.value.filter((item: Installation) =>
-      [item.customerName, item.product, item.distributor, item.serialNumbers, item.note]
+      (maskSensitive.value
+        ? [item.product, item.serialNumbers, item.note]
+        : [item.customerName, item.product, item.distributor, item.serialNumbers, item.note]
+      )
         .join(' ')
         .toLowerCase()
         .includes(keyword),

@@ -4,7 +4,7 @@
 //   kind="odometer"      : 주행거리계 사진 1장 (현장 상황상 촬영이 어려울 수 있어 선택 사항)
 // 열람/다운로드/업로드/해제는 각각 별도 권한으로 통제됩니다 (auth-state.ts 의 REPORT_POLICY).
 import { computed, ref } from 'vue'
-import { Camera, Eye, FileText, Image as ImageIcon, Loader2, Lock, Paperclip, Trash2 } from 'lucide-vue-next'
+import { Camera, Download, Eye, FileText, Image as ImageIcon, Loader2, Lock, Paperclip, Trash2 } from 'lucide-vue-next'
 import {
   canDownloadReport,
   canUnlinkReport,
@@ -16,12 +16,13 @@ import {
   ACCEPT_TYPES,
   MAX_UPLOAD_MB,
   deleteReport,
+  downloadReport,
   driveEnabled,
-  reportDownloadUrl,
   uploadReport,
   type UploadKind,
 } from '@/lib/drive-report'
 import { t } from '@/lib/i18n'
+import { maskedFileName } from '@/lib/mask'
 
 export interface ReportFileSlot {
   fileId: string
@@ -54,6 +55,8 @@ const fieldLabel = computed(() => t(isPhoto.value ? 'form.odometerPhoto' : 'form
 const attachLabel = computed(() => t(isPhoto.value ? 'odometer.attach' : 'report.attach'))
 
 const input = ref<HTMLInputElement | null>(null)
+// 다운로드 중인 파일 ID (버튼 하나만 스피너로 바꾸기 위해 ID 로 관리)
+const downloading = ref('')
 // 교체(replace) 대상 인덱스. null 이면 신규 추가.
 const replaceIndex = ref<number | null>(null)
 const uploading = ref(false)
@@ -92,6 +95,18 @@ async function onPick(event: Event) {
   }
 }
 
+async function download(file: ReportFileSlot) {
+  error.value = ''
+  downloading.value = file.fileId
+  try {
+    await downloadReport(file.fileId, file.fileName)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : t('report.loadFailed')
+  } finally {
+    downloading.value = ''
+  }
+}
+
 function unlink(index: number) {
   // Drive 원본도 휴지통으로 이동하므로 삭제 전 확인을 거칩니다.
   const target = props.files[index]
@@ -116,24 +131,27 @@ const chipClass =
       <div
         v-for="(f, index) in files"
         :key="f.fileId"
-        class="flex flex-wrap items-center gap-2 rounded-md border border-border bg-secondary/40 px-3 py-2"
+        class="flex flex-wrap items-center gap-2 rounded-md border border-border bg-secondary px-3 py-2"
       >
         <component :is="FileIcon" class="h-4 w-4 shrink-0 text-primary" />
-        <span class="min-w-0 flex-1 truncate text-sm text-foreground">{{ f.fileName || f.fileId }}</span>
+        <!-- 파일명에 고객명이 들어가므로(LK_날짜_고객_수량) 조회 전용 계정에는 그 부분을 가립니다 -->
+        <span class="min-w-0 flex-1 truncate text-sm text-foreground">{{ maskedFileName(f.fileName || f.fileId) }}</span>
 
         <button v-if="canViewReport" type="button" :class="chipClass" @click="emit('preview', f.fileId, f.fileName)">
           <Eye class="h-3.5 w-3.5" /> {{ t('report.preview') }}
         </button>
 
-        <a
+        <button
           v-if="canDownloadReport"
-          :href="reportDownloadUrl(f.fileId)"
-          target="_blank"
-          rel="noopener"
+          type="button"
+          :disabled="downloading === f.fileId"
           :class="chipClass"
+          @click="download(f)"
         >
-          {{ t('report.download') }}
-        </a>
+          <Loader2 v-if="downloading === f.fileId" class="h-3.5 w-3.5 animate-spin" />
+          <Download v-else class="h-3.5 w-3.5" />
+          {{ downloading === f.fileId ? t('report.loading') : t('report.download') }}
+        </button>
 
         <button v-if="canUploadReport" type="button" :class="chipClass" @click="openPicker(index)">
           <component :is="AttachIcon" class="h-3.5 w-3.5" /> {{ t('report.replace') }}

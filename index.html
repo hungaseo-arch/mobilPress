@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
-    <link rel="apple-touch-icon" href="%BASE_URL%favicon.svg" />
+    <!-- 파비콘·앱 아이콘: BI 심볼 단독형(BS 04) — 원본 그대로 사용하며 재작도·재채색하지 않는다. -->
+    <link rel="icon" type="image/png" href="%BASE_URL%brand/ascendo-symbol.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%brand/ascendo-symbol.png" />
     <title>Mobil Press 운영관리 | PT Ascendo Internasional</title>
     <meta
       name="description"
@@ -12,11 +13,12 @@
     />
     <meta name="author" content="PT Ascendo Internasional" />
 
-    <!-- 폰트: AsuraDB 디자인 가이드와 동일한 Pretendard(dynamic subset) 하나만, 자체 호스팅.
-         public/fonts/ 는 scripts/build-fonts.mjs 가 생성한다(굵기 400/500/600/700, woff2 만).
-         CDN 링크는 별도 출처 왕복 + @font-face 828개로 첫 렌더를 약 1초 막았다(CHANGELOG 2026-09-06).
+    <!-- 폰트: ASCENDO BI 지정서체(BS 09) Noto Sans 계열 — 웹 배포본 Noto Sans KR 하나만, 자체 호스팅.
+         public/fonts/ 는 scripts/build-fonts.mjs 가 생성한다(굵기 400/500/700, woff2 만).
+         가이드 5-1 은 fonts.googleapis.com 링크를 제시하나, 별도 출처 왕복이 첫 렌더를 약 1초
+         막았기에(CHANGELOG 2026-09-06) 동일한 dynamic-subset 배포본을 같은 출처에서 받는다.
          CSS 의 원격 @import 는 빌드 시 네트워크 요청을 일으키므로 반드시 여기 <link> 로 로드한다. -->
-    <link rel="stylesheet" href="/fonts/pretendard.css" />
+    <link rel="stylesheet" href="/fonts/noto-sans-kr.css" />
 
     <meta property="og:title" content="Mobil Press 운영관리 | PT Ascendo Internasional" />
     <meta
@@ -24,7 +26,7 @@
       content="고객 정보와 타이어 장착 정보를 한 곳에서 관리하는 Mobil Press 운영 웹앱입니다."
     />
     <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#F0F0F0" />
+    <meta name="theme-color" content="#0062C6" />
     <meta name="twitter:title" content="Mobil Press 운영관리 | PT Ascendo Internasional" />
     <meta
       name="twitter:description"

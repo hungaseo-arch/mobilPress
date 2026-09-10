@@ -3,7 +3,8 @@ import { computed, ref } from 'vue'
 import { ChevronDown, Loader2, Pencil, Plus, Trash2, Wallet } from 'lucide-vue-next'
 import { useMobilPressStore } from '@/stores/mobilPress'
 import { canDelete, canEdit } from '@/lib/auth-state'
-import { formatDate, formatIDR } from '@/lib/format'
+import { formatDate } from '@/lib/format'
+import { maskedIDR } from '@/lib/mask'
 import { lang, t } from '@/lib/i18n'
 import BudgetFormModal from '@/components/BudgetFormModal.vue'
 import { budgetKo } from '@/data/budget-ko'
@@ -83,7 +84,7 @@ async function confirmDelete(entry: BudgetEntry) {
     <div v-if="canEdit" class="mb-4 flex justify-end">
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+        class="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active"
         @click="openModal()"
       >
         <Plus class="h-4 w-4" /> {{ t('budget.addEntry') }}
@@ -97,8 +98,8 @@ async function confirmDelete(entry: BudgetEntry) {
     </div>
 
     <!-- 빈 상태 -->
-    <div v-else-if="!store.budgetEntries.length" class="rounded-xl border border-border bg-card py-16 text-center text-muted-foreground">
-      <Wallet class="mx-auto mb-2 h-8 w-8 opacity-40" />
+    <div v-else-if="!store.budgetEntries.length" class="asm-motif rounded-xl border border-border bg-card py-16 text-center text-muted-foreground">
+      <Wallet class="relative mx-auto mb-2 h-8 w-8 opacity-40" />
       {{ t('budget.empty') }}
     </div>
 
@@ -111,20 +112,20 @@ async function confirmDelete(entry: BudgetEntry) {
           class="rounded-xl border border-border bg-card"
         >
           <details :open="groupIndex === 0" class="group">
-            <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 transition hover:bg-secondary/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 transition-colors hover:bg-secondary">
               <span class="text-sm font-bold text-foreground">
                 {{ catLabel(group.category) }}
                 <span class="ml-1.5 text-xs font-normal text-muted-foreground">({{ group.entries.length }})</span>
               </span>
               <span class="flex items-center gap-3">
-                <span class="text-sm font-semibold tabular-nums text-primary">{{ formatIDR(subtotal(group.entries)) }}</span>
+                <span class="text-sm font-semibold tabular-nums text-primary">{{ maskedIDR(subtotal(group.entries)) }}</span>
                 <ChevronDown class="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
               </span>
             </summary>
             <div class="overflow-x-auto border-t border-border">
-              <table class="w-full min-w-160 text-left text-sm">
+              <table class="asm-table w-full min-w-160 text-left text-sm">
                 <thead>
-                  <tr class="border-b border-border/60 text-xs text-muted-foreground">
+                  <tr>
                     <th scope="col" class="w-28 whitespace-nowrap px-4 py-2 font-medium">{{ t('form.entryDate') }}</th>
                     <th scope="col" class="px-4 py-2 font-medium">{{ t('form.item') }}</th>
                     <th scope="col" class="w-36 whitespace-nowrap px-4 py-2 text-right font-medium">{{ t('form.amount') }}</th>
@@ -136,11 +137,10 @@ async function confirmDelete(entry: BudgetEntry) {
                   <tr
                     v-for="entry in group.entries"
                     :key="entry.id"
-                    class="border-b border-border/60 align-top last:border-0 hover:bg-secondary/40"
-                  >
+                    class="align-top">
                     <td class="whitespace-nowrap px-4 py-2.5 tabular-nums text-muted-foreground">{{ entry.entryDate ? formatDate(entry.entryDate) : '-' }}</td>
                     <td class="px-4 py-2.5 font-medium text-foreground">{{ localize(entry.item) }}</td>
-                    <td class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-foreground">{{ formatIDR(entry.amount) }}</td>
+                    <td class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-foreground">{{ maskedIDR(entry.amount) }}</td>
                     <td class="px-4 py-2.5 text-muted-foreground">{{ entry.note ? localize(entry.note) : '-' }}</td>
                     <td v-if="canEdit" class="px-4 py-2.5">
                       <div class="flex justify-end gap-1">
@@ -166,9 +166,10 @@ async function confirmDelete(entry: BudgetEntry) {
                   </tr>
                 </tbody>
                 <tfoot>
-                  <tr class="border-t border-border bg-secondary/40 text-sm font-semibold">
-                    <td class="px-4 py-2.5 text-foreground" :colspan="2">{{ t('budget.subtotal') }}</td>
-                    <td class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-foreground">{{ formatIDR(subtotal(group.entries)) }}</td>
+                  <!-- 합계 행 배경·글자색은 .asm-table 규격(가이드 6-2)이 정한다 -->
+                  <tr>
+                    <td class="px-4 py-2.5" :colspan="2">{{ t('budget.subtotal') }}</td>
+                    <td class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">{{ maskedIDR(subtotal(group.entries)) }}</td>
                     <td :colspan="canEdit ? 2 : 1" />
                   </tr>
                 </tfoot>
@@ -179,17 +180,17 @@ async function confirmDelete(entry: BudgetEntry) {
       </div>
 
       <!-- 총 집행액 (차량·설비 + 공구·장비) -->
-      <div class="mt-4 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4">
+      <div class="mt-4 rounded-lg border border-info-border bg-primary-soft px-5 py-4">
         <div class="flex items-center justify-between">
           <span class="text-sm font-bold text-foreground">
             {{ t('budget.grandTotal') }}
             <span class="ml-1 text-xs font-normal text-muted-foreground">({{ t('budget.grandTotalScope') }})</span>
           </span>
-          <span class="text-base font-bold tabular-nums text-primary">{{ formatIDR(grandTotal) }}</span>
+          <span class="text-base font-bold tabular-nums text-primary">{{ maskedIDR(grandTotal) }}</span>
         </div>
-        <div v-if="hasOps" class="mt-2 flex items-center justify-between border-t border-primary/20 pt-2">
+        <div v-if="hasOps" class="mt-2 flex items-center justify-between border-t border-info-border pt-2">
           <span class="text-xs font-medium text-muted-foreground">{{ t('budget.opsRealisasi') }}</span>
-          <span class="text-sm font-semibold tabular-nums text-foreground">{{ formatIDR(opsRealisasi) }}</span>
+          <span class="text-sm font-semibold tabular-nums text-foreground">{{ maskedIDR(opsRealisasi) }}</span>
         </div>
       </div>
     </template>

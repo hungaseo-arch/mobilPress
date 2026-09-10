@@ -47,8 +47,29 @@ function doPost(e) {
 
     if (p.action === 'delete') {
       requireRole_(p.authToken, ['admin']);
-      DriveApp.getFileById(p.fileId).setTrashed(true);
+      var doomed = DriveApp.getFileById(p.fileId);
+      assertManaged_(doomed);
+      doomed.setTrashed(true);
       return json_({ ok: true });
+    }
+
+    // ── 파일 읽기 ──
+    // 앱이 파일 본체를 직접 받아 blob: 으로 보여주고 내려받습니다. Drive 임베드 뷰어/다운로드
+    // 링크는 '보는 사람'의 Google 세션에 기대기 때문에, 계정이 여러 개 로그인돼 있거나
+    // 서드파티 쿠키가 차단된 브라우저에서 미리보기가 빈 화면이 되는 문제가 있었습니다.
+    // 이 웹앱은 폴더 소유 계정으로 실행되므로 공유 설정과 무관하게 파일을 읽습니다.
+    if (p.action === 'get') {
+      requireRole_(p.authToken, ['admin', 'staff', 'user']);
+      var target = DriveApp.getFileById(p.fileId);
+      assertManaged_(target);
+      var data = target.getBlob();
+      return json_({
+        ok: true,
+        fileId: target.getId(),
+        fileName: target.getName(),
+        mimeType: data.getContentType(),
+        base64: Utilities.base64Encode(data.getBytes()),
+      });
     }
 
     requireRole_(p.authToken, ['admin', 'staff']);
@@ -95,8 +116,38 @@ function requireRole_(authToken, allowed) {
   if (res.getResponseCode() !== 200) throw new Error('role check failed');
 
   var rows = JSON.parse(res.getContentText());
-  var role = rows && rows[0] ? rows[0].role : null;
+  // 행이 없는 계정은 앱과 동일하게 'user'(조회 전용)로 취급합니다.
+  var role = rows && rows[0] ? rows[0].role : 'user';
   if (allowed.indexOf(role) < 0) throw new Error('forbidden');
+}
+
+/**
+ * 파일이 보고서 폴더(FOLDER_ID) 하위에 있는지 확인합니다.
+ * 이 웹앱은 폴더 소유 계정으로 실행되고 토큰은 프런트엔드 번들에 노출되므로,
+ * 이 검사가 없으면 임의의 fileId 로 소유 계정 Drive 의 '아무 파일'이나
+ * 읽기(get)·휴지통 이동(delete)할 수 있습니다. 부모 폴더 체인을 거슬러 올라가
+ * FOLDER_ID 에 닿지 않으면 거부합니다.
+ */
+function assertManaged_(file) {
+  var seen = {};
+  var queue = [file];
+  for (var depth = 0; depth < 10 && queue.length; depth++) {
+    var next = [];
+    for (var i = 0; i < queue.length; i++) {
+      var parents = queue[i].getParents();
+      while (parents.hasNext()) {
+        var folder = parents.next();
+        var id = folder.getId();
+        if (id === FOLDER_ID) return;
+        if (!seen[id]) {
+          seen[id] = true;
+          next.push(folder);
+        }
+      }
+    }
+    queue = next;
+  }
+  throw new Error('file outside report folder');
 }
 
 /** 작업일자 기준 월별 하위 폴더(2026-08) 자동 생성 */

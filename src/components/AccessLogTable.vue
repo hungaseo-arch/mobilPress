@@ -117,11 +117,11 @@ onMounted(load)
           v-for="st in subTabs"
           :key="st.key"
           type="button"
-          class="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition"
+          class="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-4 text-[13px] transition-colors"
           :class="
             subTab === st.key
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-border bg-card text-muted-foreground hover:text-foreground'
+              ? 'border-primary-40 bg-primary-soft font-bold text-primary'
+              : 'border-border bg-card font-medium text-muted-foreground hover:bg-secondary hover:text-foreground'
           "
           @click="subTab = st.key"
         >
@@ -132,7 +132,7 @@ onMounted(load)
       <div class="flex flex-wrap items-center gap-2">
         <select
           v-model="selectedAccount"
-          class="rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          class="h-9 rounded-md border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none"
         >
           <option value="">{{ t('log.filterAccount') }}</option>
           <option v-for="email in accounts" :key="email" :value="email">{{ email }}</option>
@@ -142,7 +142,7 @@ onMounted(load)
           <input
             v-model="dateFrom"
             type="date"
-            class="rounded-md border border-border bg-secondary px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            class="h-9 rounded-md border border-border bg-card px-2 text-sm text-foreground focus:border-primary focus:outline-none"
           />
         </label>
         <label class="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -150,7 +150,7 @@ onMounted(load)
           <input
             v-model="dateTo"
             type="date"
-            class="rounded-md border border-border bg-secondary px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            class="h-9 rounded-md border border-border bg-card px-2 text-sm text-foreground focus:border-primary focus:outline-none"
           />
         </label>
       </div>
@@ -167,9 +167,9 @@ onMounted(load)
         {{ t('log.durationTotal') }}: <span class="ml-1 font-semibold text-foreground">{{ formatDuration(totalDurationMs) }}</span>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full min-w-220 text-left text-sm">
+        <table class="asm-table w-full min-w-220 text-left text-sm">
           <thead>
-            <tr class="border-b border-border text-xs text-muted-foreground">
+            <tr>
               <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.occurredAt') }}</th>
               <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
               <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('auth.name') }}</th>
@@ -189,8 +189,7 @@ onMounted(load)
             <tr
               v-for="log in accessPage.paged.value"
               :key="log.id"
-              class="border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
-            >
+              class="align-top">
               <td class="whitespace-nowrap px-4 py-3 tabular-nums text-foreground">{{ formatDateTime(log.occurredAt) }}</td>
               <td class="px-4 py-3 text-foreground">{{ log.email || '-' }}</td>
               <td class="px-4 py-3 text-muted-foreground">{{ log.userName || '-' }}</td>
@@ -220,9 +219,9 @@ onMounted(load)
     <!-- 변경 이력 -->
     <section v-else class="rounded-xl border border-border bg-card">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-140 text-left text-sm">
+        <table class="asm-table w-full min-w-140 text-left text-sm">
           <thead>
-            <tr class="border-b border-border text-xs text-muted-foreground">
+            <tr>
               <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.occurredAt') }}</th>
               <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.account') }}</th>
               <th scope="col" class="whitespace-nowrap px-4 py-3 font-medium">{{ t('th.targetTable') }}</th>
@@ -239,8 +238,7 @@ onMounted(load)
             <tr
               v-for="log in auditPage.paged.value"
               :key="log.id"
-              class="border-b border-border/60 align-top transition last:border-0 hover:bg-secondary/40"
-            >
+              class="align-top">
               <td class="whitespace-nowrap px-4 py-3 tabular-nums text-foreground">{{ formatDateTime(log.changedAt) }}</td>
               <td class="px-4 py-3 text-foreground">{{ log.changedByEmail || log.changedBy }}</td>
               <td class="px-4 py-3 text-muted-foreground">{{ log.tableName }}</td>

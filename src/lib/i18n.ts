@@ -70,8 +70,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'member.self': { id: 'Akun Anda', ko: '내 계정' },
   'member.selfHint': { id: 'Peran akun sendiri tidak bisa diubah.', ko: '본인 계정의 권한은 변경할 수 없습니다.' },
   'member.hint': {
-    id: 'Perubahan peran langsung tersimpan. Anggota perlu memuat ulang halaman agar peran barunya berlaku.',
-    ko: '권한 변경은 즉시 저장됩니다. 해당 회원이 화면을 새로고침하면 반영됩니다.',
+    id: 'Perubahan peran langsung tersimpan. Anggota perlu memuat ulang halaman agar peran barunya berlaku. Penghapusan akun bersifat permanen.',
+    ko: '권한 변경은 즉시 저장됩니다. 해당 회원이 화면을 새로고침하면 반영됩니다. 계정 삭제는 되돌릴 수 없습니다.',
   },
   'member.confirmRole': {
     id: "Ubah peran '{name}' menjadi '{role}'?",
@@ -79,9 +79,23 @@ const messages: Record<string, { id: string; ko: string }> = {
   },
   'member.roleUpdated': { id: 'Peran berhasil diubah.', ko: '권한을 변경했습니다.' },
   'member.roleUpdateFail': { id: 'Gagal mengubah peran.', ko: '권한 변경에 실패했습니다.' },
+  'member.delete': { id: 'Hapus akun', ko: '계정 삭제' },
+  'member.selfDeleteHint': { id: 'Akun sendiri tidak bisa dihapus.', ko: '본인 계정은 삭제할 수 없습니다.' },
+  'member.confirmDelete': {
+    id: "Hapus akun '{name}'? Akun ini tidak bisa login lagi dan tindakan ini tidak dapat dibatalkan. Riwayat akses tetap disimpan.",
+    ko: "'{name}' 계정을 삭제할까요? 해당 계정은 다시 로그인할 수 없으며 되돌릴 수 없습니다. 접속 기록은 그대로 보존됩니다.",
+  },
+  'member.deleted': { id: 'Akun berhasil dihapus.', ko: '계정을 삭제했습니다.' },
+  'member.deleteFail': { id: 'Gagal menghapus akun.', ko: '계정 삭제에 실패했습니다.' },
   'role.admin': { id: 'Admin', ko: '관리자 (admin)' },
   'role.staff': { id: 'Staff', ko: '직원 (staff)' },
   'role.user': { id: 'Hanya Lihat', ko: '조회 전용 (user)' },
+
+  // 조회 전용 계정 마스킹 안내 (금액·고객명·위치는 가려서 표시)
+  'mask.notice': {
+    id: 'Akun hanya-lihat: nilai uang, nama customer, dan lokasi ditampilkan tersamar.',
+    ko: '조회 전용 계정입니다 — 금액·고객명·위치는 가려서 표시됩니다.',
+  },
 
   'seed.empty': {
     id: 'Belum ada data. Anda bisa mulai dengan data awal dari laporan.',
@@ -90,6 +104,8 @@ const messages: Record<string, { id: string; ko: string }> = {
   'seed.button': { id: 'Isi data awal dari laporan', ko: '보고서 기반 초기 데이터 등록' },
 
   'search.placeholder': { id: 'Cari perusahaan, produk, area...', ko: '회사명, 제품, 지역 검색...' },
+  // 조회 전용 계정: 고객명은 검색 대상에서 제외되므로 안내 문구도 바꿉니다.
+  'search.placeholderMasked': { id: 'Cari produk, nomor seri...', ko: '제품, 시리얼 검색...' },
   'btn.addInstallation': { id: 'Tambah Pemasangan', ko: '장착 등록' },
   'btn.cancel': { id: 'Batal', ko: '취소' },
   'btn.save': { id: 'Simpan', ko: '등록' },
@@ -162,6 +178,18 @@ const messages: Record<string, { id: string; ko: string }> = {
   'form.serialPlaceholder': { id: 'contoh: AJ220626269', ko: '예: AJ220626269' },
   'form.workTime': { id: 'Waktu Kerja', ko: '작업 시간' },
   'form.odometer': { id: 'Odometer (hr)', ko: '주행거리계 (hr)' },
+  'form.installArea': { id: 'Lokasi Pemasangan', ko: '장착 지역' },
+  'form.installAreaPlaceholder': { id: 'contoh: Gudang Ascendo Karawang', ko: '예: Gudang Ascendo Karawang' },
+  'form.locationUrl': { id: 'Lokasi Google Maps', ko: '구글 위치' },
+  'form.locationPlaceholder': { id: 'Koordinat atau link Maps', ko: '좌표 또는 지도 링크' },
+  'form.useCurrentLocation': { id: 'Lokasi saat ini', ko: '현재 위치' },
+  'form.locating': { id: 'Mencari lokasi...', ko: '위치 확인 중...' },
+  'form.openMap': { id: 'Buka peta', ko: '지도 열기' },
+  'form.geoFailed': { id: 'Gagal mengambil lokasi.', ko: '위치를 가져오지 못했습니다.' },
+  'form.geoUnsupported': {
+    id: 'Perangkat ini tidak mendukung lokasi.',
+    ko: '이 기기는 위치 기능을 지원하지 않습니다.',
+  },
   'form.worker': { id: 'Petugas', ko: '작업자' },
   'form.enteredBy': { id: 'Diinput oleh', ko: '입력자' },
   'form.tirePrice': { id: 'Harga Jual Ban (Rp)', ko: '타이어 판매가 (Rp)' },
@@ -197,13 +225,16 @@ const messages: Record<string, { id: string; ko: string }> = {
   'report.uploadFailed': { id: 'Gagal mengunggah.', ko: '업로드에 실패했습니다.' },
   'report.preview': { id: 'Pratinjau', ko: '미리보기' },
   'report.download': { id: 'Unduh', ko: '다운로드' },
+  'report.loading': { id: 'Memuat...', ko: '불러오는 중...' },
+  'report.loadFailed': { id: 'Gagal memuat file.', ko: '파일을 불러오지 못했습니다.' },
+  'report.openInDrive': { id: 'Buka di Drive', ko: 'Drive에서 열기' },
   'report.unlink': { id: 'Hapus (termasuk file Drive)', ko: '삭제 (Drive 파일 포함)' },
   'report.none': { id: 'Belum ada laporan.', ko: '첨부된 보고서가 없습니다.' },
   'report.disabled': { id: 'Unggah belum diaktifkan (VITE_DRIVE_UPLOAD_URL).', ko: '업로드가 설정되지 않았습니다 (VITE_DRIVE_UPLOAD_URL).' },
   'report.modalTitle': { id: 'Laporan Kerja', ko: '작업보고서' },
   'report.previewHint': {
-    id: 'Jika pratinjau kosong, buka file dengan akun Google yang punya akses ke folder Drive.',
-    ko: '미리보기가 비어 있으면 Drive 폴더 접근 권한이 있는 Google 계정으로 로그인 후 다시 열어주세요.',
+    id: 'Jika pratinjau kosong, gunakan "Buka di Drive" untuk membuka file di tab baru.',
+    ko: '미리보기가 비어 있으면 "Drive에서 열기"로 새 탭에서 확인해 주세요.',
   },
   'report.rowHint': { id: 'Klik untuk lihat laporan', ko: '클릭하면 보고서를 볼 수 있습니다' },
   'report.replace': { id: 'Ganti file', ko: '파일 교체' },

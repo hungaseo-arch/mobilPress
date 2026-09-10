@@ -10,6 +10,9 @@ import { authEnabled, currentUser, refreshUser } from '@/lib/auth-state'
 import { startIdleLogout } from '@/lib/idle-logout'
 import { lang, setLang, t } from '@/lib/i18n'
 
+// BI 시그니처 (public/brand) — GitHub Pages 하위 경로 배포를 위해 base 를 붙인다.
+const signatureSrc = `${import.meta.env.BASE_URL}brand/ascendo-signature.png`
+
 const route = useRoute()
 // 비밀번호 재설정 페이지는 이메일 링크로 진입하므로 로그인 없이 통과시킵니다.
 const bypassGate = computed(() => route.name === 'reset-password')
@@ -79,94 +82,110 @@ async function google() {
   </div>
 
   <!-- 로그인 화면도 main 랜드마크를 가진다(landmark-one-main). -->
-  <main v-else class="flex min-h-screen items-center justify-center bg-background px-4">
-    <form class="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8 shadow-sm" @submit.prevent="submit">
-      <div>
-        <div class="flex items-start justify-between">
-          <h1 class="text-xl font-bold text-foreground">MobilPress</h1>
-          <!-- 언어 전환 (기본: 인도네시아어) -->
-          <div class="flex gap-0.5 rounded-md border border-border p-0.5">
-            <button
-              type="button"
-              class="rounded px-1.5 py-1 text-xs font-semibold transition"
-              :class="lang === 'id' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-              aria-label="Bahasa Indonesia"
-              @click="setLang('id')"
-            >
-              🇮🇩
-            </button>
-            <button
-              type="button"
-              class="rounded px-1.5 py-1 text-xs font-semibold transition"
-              :class="lang === 'ko' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-              aria-label="한국어"
-              @click="setLang('ko')"
-            >
-              🇰🇷
-            </button>
+  <!-- BI 적용 로그인 (가이드 10-1): 데스크톱 좌측 45% 블루 패널 · 모바일 상단 200px 밴드 -->
+  <main v-else class="flex min-h-screen flex-col bg-background lg:flex-row">
+    <div
+      class="asm-motif asm-motif--on-blue flex h-50 shrink-0 items-center justify-center bg-primary px-8 lg:h-auto lg:w-[45%]"
+    >
+      <!-- 블루 바탕 위 시그니처는 BI 반전(백색) 적용형이다. 형태·비율은 원본 그대로 둔다(BS 07). -->
+      <img :src="signatureSrc" alt="ASCENDO INTERNASIONAL" class="relative h-8 w-auto brightness-0 invert lg:h-12" />
+    </div>
+
+    <div class="flex flex-1 items-center justify-center px-4 py-10">
+      <form class="w-full max-w-[400px] space-y-4 rounded-lg border border-border bg-card p-8" @submit.prevent="submit">
+        <div>
+          <div class="flex items-start justify-between">
+            <h1 class="text-xl font-bold text-foreground">MobilPress</h1>
+            <!-- 언어 전환 (기본: 인도네시아어) -->
+            <div class="flex gap-0.5 rounded-md border border-border p-0.5">
+              <button
+                type="button"
+                class="rounded px-1.5 py-1 text-xs font-semibold transition"
+                :class="lang === 'id' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:text-foreground'"
+                aria-label="Bahasa Indonesia"
+                @click="setLang('id')"
+              >
+                🇮🇩
+              </button>
+              <button
+                type="button"
+                class="rounded px-1.5 py-1 text-xs font-semibold transition"
+                :class="lang === 'ko' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:text-foreground'"
+                aria-label="한국어"
+                @click="setLang('ko')"
+              >
+                🇰🇷
+              </button>
+            </div>
           </div>
+          <p class="mt-1 text-sm text-muted-foreground">
+            {{
+              mode === 'signin'
+                ? t('auth.subtitle.signin')
+                : mode === 'signup'
+                  ? t('auth.subtitle.signup')
+                  : t('auth.subtitle.forgot')
+            }}
+          </p>
         </div>
-        <p class="mt-1 text-sm text-muted-foreground">
-          {{ mode === 'signin' ? t('auth.subtitle.signin') : mode === 'signup' ? t('auth.subtitle.signup') : t('auth.subtitle.forgot') }}
-        </p>
-      </div>
 
-      <input
-        v-if="mode === 'signup'"
-        v-model="name"
-        type="text"
-        required
-        :placeholder="t('auth.name')"
-        class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
-      />
-      <input
-        v-model="email"
-        type="email"
-        required
-        :placeholder="t('auth.email')"
-        class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
-      />
-      <input
-        v-if="mode !== 'forgot'"
-        v-model="password"
-        type="password"
-        required
-        minlength="8"
-        :placeholder="t('auth.password')"
-        class="w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
-      />
+        <input
+          v-if="mode === 'signup'"
+          v-model="name"
+          type="text"
+          required
+          :placeholder="t('auth.name')"
+          class="h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
+        <input
+          v-model="email"
+          type="email"
+          required
+          :placeholder="t('auth.email')"
+          class="h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
+        <input
+          v-if="mode !== 'forgot'"
+          v-model="password"
+          type="password"
+          required
+          minlength="8"
+          :placeholder="t('auth.password')"
+          class="h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
 
-      <button
-        type="submit"
-        :disabled="submitting"
-        class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-      >
-        <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
-        {{ mode === 'signin' ? t('auth.signin') : mode === 'signup' ? t('auth.signup') : t('auth.sendReset') }}
-      </button>
-
-      <button
-        v-if="mode !== 'forgot'"
-        type="button"
-        class="w-full rounded-lg border border-input py-2 text-sm text-foreground hover:bg-secondary"
-        @click="google"
-      >
-        {{ t('auth.google') }}
-      </button>
-
-      <p class="flex justify-center gap-3 text-center text-xs text-muted-foreground">
-        <button v-if="mode !== 'signin'" type="button" class="underline" @click="mode = 'signin'">
-          {{ t('auth.backToSignin') }}
+        <button
+          type="submit"
+          :disabled="submitting"
+          class="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active disabled:pointer-events-none disabled:opacity-50"
+        >
+          <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+          {{ mode === 'signin' ? t('auth.signin') : mode === 'signup' ? t('auth.signup') : t('auth.sendReset') }}
         </button>
-        <template v-else>
-          <button type="button" class="underline" @click="mode = 'signup'">
-            {{ t('auth.toSignup') }}
+
+        <button
+          v-if="mode !== 'forgot'"
+          type="button"
+          class="flex h-10 w-full items-center justify-center rounded-md border border-border bg-card text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          @click="google"
+        >
+          {{ t('auth.google') }}
+        </button>
+
+        <p class="flex justify-center gap-3 text-center text-xs text-muted-foreground">
+          <button v-if="mode !== 'signin'" type="button" class="underline" @click="mode = 'signin'">
+            {{ t('auth.backToSignin') }}
           </button>
-          <button type="button" class="underline" @click="mode = 'forgot'">
-            {{ t('auth.forgot') }}
-          </button>
-        </template>
-      </p>
-    </form>
+          <template v-else>
+            <button type="button" class="underline" @click="mode = 'signup'">
+              {{ t('auth.toSignup') }}
+            </button>
+            <button type="button" class="underline" @click="mode = 'forgot'">
+              {{ t('auth.forgot') }}
+            </button>
+          </template>
+        </p>
+      </form>
+    </div>
   </main>
 </template>

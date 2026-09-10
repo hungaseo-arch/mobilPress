@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { formatDate, formatIDR, formatNumber, productLines } from '@/lib/format'
+import { formatDate, formatNumber, productLines } from '@/lib/format'
+import { maskedIDR, maskedName } from '@/lib/mask'
 import { t } from '@/lib/i18n'
 import type { Installation } from '@/lib/types'
 
@@ -27,9 +28,9 @@ const totals = computed(() => ({
 <template>
   <BaseModal :title="`${formatDate(month)} — ${t('month.modalTitle')}`" @close="emit('close')">
     <div class="overflow-x-auto">
-      <table class="w-full min-w-160 text-left text-sm">
+      <table class="asm-table w-full min-w-160 text-left text-sm">
         <thead>
-          <tr class="border-b border-border text-xs text-muted-foreground">
+          <tr>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.workDate') }}</th>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.userCustomer') }}</th>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 font-medium">{{ t('th.requestCustomer') }}</th>
@@ -45,28 +46,25 @@ const totals = computed(() => ({
           <tr
             v-for="item in history"
             :key="item.id"
-            class="border-b border-border/60 align-top last:border-0"
-          >
-            <td class="px-3 py-2.5">
-              <p class="text-foreground">{{ formatDate(item.workDate) }}</p>
-              <p v-if="item.workTime" class="mt-0.5 text-xs text-muted-foreground">{{ item.workTime }}</p>
-            </td>
-            <td class="px-3 py-2.5 font-semibold text-foreground">{{ item.customerName }}</td>
-            <td class="px-3 py-2.5 text-muted-foreground">{{ item.distributor || '-' }}</td>
+            class="align-top">
+            <td class="whitespace-nowrap px-3 py-2.5 text-foreground">{{ formatDate(item.workDate) }}</td>
+            <td class="px-3 py-2.5 font-semibold text-foreground">{{ maskedName(item.customerName) }}</td>
+            <td class="px-3 py-2.5 text-muted-foreground">{{ item.distributor ? maskedName(item.distributor) : '-' }}</td>
             <td class="px-3 py-2.5 text-muted-foreground">
-              <p v-for="line in productLines(item.product)" :key="line" class="max-w-48">{{ line }}</p>
+              <p v-for="line in productLines(item.product)" :key="line" :title="line" class="max-w-48 truncate">{{ line }}</p>
             </td>
             <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(item.qty) }} pcs</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ formatIDR(item.receivedAmount) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(item.receivedAmount) }}</td>
           </tr>
         </tbody>
         <tfoot v-if="history.length">
-          <tr class="border-t border-border bg-secondary/50 font-semibold">
-            <td class="px-3 py-2.5 text-foreground" colspan="4">
+          <!-- 합계 행 배경·글자색은 .asm-table 규격(가이드 6-2)이 정한다 -->
+          <tr>
+            <td class="px-3 py-2.5" colspan="4">
               {{ t('revenue.total') }} ({{ history.length }} {{ t('unit.items') }})
             </td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(totals.qty) }} pcs</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-primary">{{ formatIDR(totals.received) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums">{{ formatNumber(totals.qty) }} pcs</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(totals.received) }}</td>
           </tr>
         </tfoot>
       </table>

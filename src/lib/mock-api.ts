@@ -93,7 +93,7 @@ const mockAuditLogs: AuditLog[] = [
   },
 ]
 
-// mock 모드 전용 더미 계정 — 회원관리 탭 화면 확인용. 역할 변경은 이 배열에만 반영되며
+// mock 모드 전용 더미 계정 — 회원관리 탭 화면 확인용. 역할 변경·삭제는 이 배열에만 반영되며
 // (localStorage 에 저장하지 않으므로) 새로고침하면 초기값으로 돌아갑니다.
 const mockMembers: MemberAccount[] = [
   {
@@ -193,6 +193,13 @@ export async function mockFetch(path: string, options?: RequestInit): Promise<Re
     if (!member) return json({ error: '계정을 찾을 수 없습니다.' }, 404)
     member.role = (body as { role: UserRole }).role
     return json(member)
+  }
+
+  if (memberMatch && method === 'DELETE') {
+    const index = mockMembers.findIndex((m) => m.userId === memberMatch[1])
+    if (index === -1) return json({ error: '계정을 찾을 수 없습니다.' }, 404)
+    mockMembers.splice(index, 1)
+    return json({ ok: true })
   }
 
   if (path === '/mobil-press/data' && method === 'GET') {

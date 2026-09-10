@@ -26,18 +26,25 @@ function onKeydown(event: KeyboardEvent) {
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm sm:p-8" @click.self="emit('close')">
+    <!-- 오버레이 rgb(51 51 51 / .5) — BI Dark Gray 기준 (가이드 8-5) -->
+    <div
+      class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+      style="background: rgb(51 51 51 / 0.5)"
+      @click.self="emit('close')"
+    >
+      <!-- 폭 50.4rem — 기존 max-w-2xl(42rem)의 120%. 이력 모달의 표가 가로 스크롤 없이 더 많이 보이도록. -->
       <div
         ref="dialogEl"
-        class="w-full max-w-2xl rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl outline-none"
+        class="w-full max-w-[50.4rem] overflow-hidden rounded-lg border border-border border-t-4 border-t-primary bg-popover text-popover-foreground shadow-2xl outline-none"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"
         tabindex="-1"
         @keydown="onKeydown"
       >
+        <!-- 헤더 20px / 700 (가이드 8-5) -->
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 :id="titleId" class="text-lg font-semibold text-foreground">{{ title }}</h2>
+          <h2 :id="titleId" class="text-xl font-bold text-foreground">{{ title }}</h2>
           <button
             type="button"
             class="rounded-md p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
@@ -47,7 +54,7 @@ function onKeydown(event: KeyboardEvent) {
             <X class="h-5 w-5" />
           </button>
         </div>
-        <div class="px-6 py-5">
+        <div class="p-6">
           <slot />
         </div>
       </div>
