@@ -32,6 +32,59 @@
 > 확인할 수 있습니다. 서버에서 실제로 감추려면 조회 전용 역할용 별도 뷰(금액·고객명 컬럼 제외)를 만들어
 > RLS 로 분기해야 합니다.
 
+## 2026-09-10 — 작업보고서 미리보기·다운로드를 앱이 직접 받도록 변경
+
+Drive 임베드 뷰어와 직접 다운로드 링크는 **보는 사람의 Google 세션**에 의존합니다. 계정이 여러 개
+로그인돼 있거나 서드파티 쿠키가 차단된 브라우저에서는 미리보기가 빈 화면이 되거나 계정 선택 화면으로
+새어 다운로드까지 실패했습니다. **SQL 마이그레이션 없음.**
+
+- Apps Script 에 `action=get` 을 추가했습니다. 이 웹앱은 **폴더 소유 계정으로 실행**되므로 파일 공유
+  설정이나 열람자의 로그인 상태와 무관하게 파일을 읽습니다. 접근 통제는 스크립트 안의 역할 재검증
+  (`requireRole_`)이 담당합니다
+- `drive-report.ts` 의 `fetchReportBlob()` 이 base64 응답을 `Blob` 으로 바꿔 `blob:` URL 을 만들고,
+  `ReportPreviewModal` 이 이것을 표시합니다. 모달을 닫을 때 `revokeReportBlob()` 로 반드시 해제합니다
+- 다운로드도 같은 경로를 씁니다. `revokeObjectURL` 은 클릭 직후가 아니라 지연 호출합니다 — 일부
+  브라우저가 저장을 시작하기 전에 URL 이 사라집니다
+- 임베드 뷰어 URL(`reportViewUrl`)과 새 탭 열기는 폴백으로만 남겨 뒀습니다
+- ⚠️ `apps-script/Code.gs` 를 바꿨으므로 Apps Script 에서 **새 배포**를 만들어야 `/exec` 에 반영됩니다
+
+## 2026-09-10 — 장착 실적에 위치 정보(장착 지역·구글 위치) 추가
+
+작업지시서(SURAT PERINTAH KERJA)의 `Lokasi` 항목을 앱에서도 기록합니다.
+
+- ⚠️ **SQL 마이그레이션 필요**: `sql/2026-09-10_installation_location.sql` 을 Neon SQL Editor 에서 실행한 뒤
+  Data API → **Refresh schema cache**. `db/schema.sql` 에도 반영
+  - `install_area` — 사람이 읽는 장소명 (예: `Gudang Ascendo Karawang`)
+  - `location_url` — `lat, lng` 좌표 또는 붙여넣은 Google Maps 링크
+- 두 형식을 모두 받습니다. `format.ts` 의 `mapsUrl()` 이 `http(s)` 로 시작하면 그대로 쓰고, 좌표면
+  검색 URL 로 바꿉니다 — 현장에서는 링크 복사가, 사무실에서는 좌표 입력이 편해서입니다
+- 폼에 **현재 위치** 버튼(`navigator.geolocation`)과 **지도 열기** 링크를 넣었습니다. 위치 권한이
+  없거나 실패하면 `form.geoFailed` 안내만 띄우고 직접 입력을 막지 않습니다
+
+> 캐시 주의: 컬럼을 만든 뒤 Refresh schema cache 를 빼먹으면 저장할 때
+> `Could not find the 'install_area' column of 'installations' in the schema cache` 오류가 납니다.
+
+## 2026-09-10 — ASCENDO BI 디자인 가이드 적용 (색·서체·파비콘)
+
+09-01 에 넣었던 AsuraDB 디자인 토큰을 **ASCENDO BI 매뉴얼 기준 v1.0** 으로 교체했습니다.
+`src/assets/main.css` 의 토큰만 바꾸는 방식이라 컴포넌트는 대부분 그대로입니다. **SQL 마이그레이션 없음.**
+
+- **색**: BI 전용색 Blue `#0062C6` 와 Dark Gray `#333333` 을 원본 그대로 두고(변경 금지), 나머지는
+  파생으로 만들었습니다 — hover/active(85%/70%), 표 헤더·배지·합계 행용 soft 단계, 상태 색 3종 세트
+  (글자 / soft 배경 / 테두리), 차트 5색. `--background` 는 `#f5f5f5` 로 낮춰 흰 카드가 구분되게 했습니다
+- **서체**: BI 지정서체(BS 09)가 Noto Sans 계열이라 **Noto Sans KR** 웹 배포본 한 벌로 바꿨습니다
+  (`@fontsource/noto-sans-kr`, 굵기 400/500/700). 가이드 5-1 은 `fonts.googleapis.com` 링크를 제시하지만
+  별도 출처 왕복이 첫 렌더를 약 1초 막았던 문제(2026-09-06)가 있어 **같은 출처에서 자체 호스팅**합니다.
+  `scripts/build-fonts.mjs` 가 `public/fonts/` 를 생성하는 구조는 그대로입니다
+- **파비콘·앱 아이콘**: BI 심볼 단독형(BS 04) PNG 로 교체하고(`public/brand/`) `favicon.svg` 는 삭제.
+  BI 응용물은 재작도·재채색하지 않는 것이 원칙이라 원본을 그대로 씁니다. `theme-color` 도 브랜드 블루로
+- **형태**: 모서리는 직각~소폭 라운드, 버튼·카드·헤더·입력창·표는 **그림자 없음**(가이드 6-1 / 6-3).
+  그림자는 모달처럼 실제로 떠 있는 요소에만 남겼습니다
+- **표**: 행 높이 38px·셀 13px 로 조이고 sticky 헤더를 넣었습니다. `border-collapse: separate` 를 쓰므로
+  행 구분선은 `tr` 이 아니라 `td` 에 겁니다 — collapse 모델에서는 sticky 헤더의 테두리가 사라집니다
+- **표기**: 숫자는 영미식 콤마, 비율은 소수점 첫째 자리, 날짜는 ISO 8601 고정(가이드 9-2 / 9-3).
+  금액은 가이드가 통화코드(IDR) 병기를 예시로 들지만 현장 통용 표기인 `Rp` 를 유지했습니다
+
 ## 2026-09-07 — 회원관리: 계정 삭제
 
 회원관리 탭(admin 전용)에서 가입 계정을 삭제할 수 있게 했습니다. 그동안 계정 정리는 Neon 콘솔
