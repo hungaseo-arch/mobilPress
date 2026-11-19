@@ -48,13 +48,18 @@ async function tryGuestAutoLogin() {
   if (new URLSearchParams(window.location.search).get('guest') !== '1') return
   const gEmail = import.meta.env.VITE_GUEST_EMAIL
   const gPassword = import.meta.env.VITE_GUEST_PASSWORD
-  if (!gEmail || !gPassword) return
+  if (!gEmail || !gPassword) {
+    toast.error('게스트 설정 누락(빌드에 게스트 값 없음)')
+    return
+  }
   try {
     const { signInWithEmail } = await import('@/lib/neon-auth')
     await signInWithEmail(gEmail, gPassword)
     await refreshUser()
-  } catch {
-    // 실패하면 일반 로그인 화면으로 남깁니다.
+    if (!currentUser.value) toast.error('게스트 로그인 후 세션 확인 실패')
+  } catch (error) {
+    // 실패하면 일반 로그인 화면으로 남깁니다. (진단용 메시지, 11-21 제거)
+    toast.error(`게스트 자동 로그인 실패 : ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
   }
 }
 
