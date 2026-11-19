@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   // 작업보고서 업로드용 Apps Script 웹앱 URL (docs/DRIVE-REPORT-SETUP.md)
   readonly VITE_DRIVE_UPLOAD_URL?: string
   readonly VITE_DRIVE_UPLOAD_TOKEN?: string
+  readonly VITE_GUEST_EMAIL?: string
+  readonly VITE_GUEST_PASSWORD?: string
 }
 
 interface ImportMeta {

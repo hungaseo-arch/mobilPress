@@ -6,7 +6,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { authEnabled, currentUser, isGuestMode, refreshUser } from '@/lib/auth-state'
+import { authEnabled, currentUser, refreshUser } from '@/lib/auth-state'
 import { startIdleLogout } from '@/lib/idle-logout'
 import { lang, setLang, t } from '@/lib/i18n'
 
@@ -15,7 +15,7 @@ const signatureSrc = `${import.meta.env.BASE_URL}brand/ascendo-signature.png`
 
 const route = useRoute()
 // 비밀번호 재설정 페이지는 이메일 링크로 진입하므로 로그인 없이 통과시킵니다.
-const bypassGate = computed(() => route.name === 'reset-password' || isGuestMode)
+const bypassGate = computed(() => route.name === 'reset-password')
 
 const checking = ref(authEnabled)
 
@@ -32,10 +32,31 @@ onMounted(async () => {
   if (!authEnabled) return
   try {
     await refreshUser()
+    await tryGuestAutoLogin()
   } finally {
     checking.value = false
   }
 })
+
+// ── 임시 게스트 자동 로그인 (2026-11-20 발표 하루 한정) ──
+// ?guest=1 로 열리고 빌드 시 VITE_GUEST_EMAIL/PASSWORD 가 주입된 경우에만 동작합니다.
+// 계정은 user 역할(조회 전용·마스킹)로 만들고, 비밀번호는 저장소에 커밋하지 않습니다.
+// ⚠️ 2026-11-21 이후 이 블록과 게스트 계정을 제거하세요.
+const GUEST_EXPIRES_AT = new Date('2026-11-20T23:59:59+07:00').getTime()
+async function tryGuestAutoLogin() {
+  if (currentUser.value || Date.now() >= GUEST_EXPIRES_AT) return
+  if (new URLSearchParams(window.location.search).get('guest') !== '1') return
+  const gEmail = import.meta.env.VITE_GUEST_EMAIL
+  const gPassword = import.meta.env.VITE_GUEST_PASSWORD
+  if (!gEmail || !gPassword) return
+  try {
+    const { signInWithEmail } = await import('@/lib/neon-auth')
+    await signInWithEmail(gEmail, gPassword)
+    await refreshUser()
+  } catch {
+    // 실패하면 일반 로그인 화면으로 남깁니다.
+  }
+}
 
 async function submit() {
   if (submitting.value) return
