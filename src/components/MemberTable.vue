@@ -276,7 +276,7 @@ onMounted(load)
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
-                  <span v-else :title="t('member.selfDeleteHint')" class="inline-block w-8 text-center text-xs text-muted-foreground">-</span>
+                  <span v-else :title="t('member.selfDeleteHint')" class="inline-block w-8 text-center text-xs text-muted-foreground"><span aria-hidden="true">-</span><span class="sr-only">{{ t('member.selfDeleteHint') }}</span></span>
                 </div>
               </td>
             </tr>

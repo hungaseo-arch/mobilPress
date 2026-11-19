@@ -592,7 +592,7 @@ onMounted(() => {
             @click="onLogout"
           >
             <LogOut class="h-4 w-4" />
-            <span class="hidden xl:inline">{{ currentUser.name || currentUser.email }}</span>
+            <span class="hidden lg:inline">{{ currentUser.name || currentUser.email }}</span>
           </button>
         </div>
       </div>
@@ -653,7 +653,7 @@ onMounted(() => {
         <!-- 전체 요약 — 검색·페이지와 무관한 전체 기준. 금액은 조회 전용 계정에서 마스킹 -->
         <div v-if="activeTab === 'installations' && !store.loading && !store.loadError" class="mb-1 min-h-9 text-xs text-muted-foreground">
           <p>{{ kpiScope }}</p>
-          <p class="min-h-4">{{ kpiBaseline }}</p>
+          <p class="min-h-4 text-foreground">{{ kpiBaseline }}</p>
         </div>
         <dl
           v-if="activeTab === 'installations' && !store.loading && !store.loadError"
@@ -877,7 +877,7 @@ onMounted(() => {
                       <button
                         v-if="canDelete"
                         type="button"
-                        class="rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+                        class="ml-2 rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
                         :aria-label="t('btn.deleteItem', { name: installationLabel(item) })"
                         :title="t('btn.delete')"
                         @click.stop="requestDelete('installations', item.id, installationLabel(item), item)"
@@ -992,7 +992,7 @@ onMounted(() => {
                     <button
                       v-if="requestCustomersOf(name).length > 1"
                       type="button"
-                      class="inline-flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-md border border-border px-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      class="inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-md border sm:min-h-6 sm:min-w-6 border-border px-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground hover:bg-secondary hover:text-foreground"
                       :aria-expanded="expandedRequestRows.has(name)"
                       :aria-controls="`request-list-${index}`"
                       @click="toggleRequestRow(name)"

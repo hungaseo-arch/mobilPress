@@ -24,10 +24,14 @@ export const canDelete = computed(() => !authEnabled || userRole.value === 'admi
 /** 로그 조회 등 관리자 전용 화면 노출 여부. mock/proxy 모드에서는 항상 허용. */
 export const isAdmin = computed(() => !authEnabled || userRole.value === 'admin')
 
+/** 조회 전용(user) 계정 화면 마스킹 스위치. 2026-11-20 사용자 요청으로 해제(false) —
+ *  true 로 되돌리면 금액·고객명·위치 가림이 이전과 같이 다시 적용됩니다. */
+const MASK_USER_ROLE = false
+
 /** 민감 정보(금액·고객명·위치) 마스킹 여부 — 조회 전용(user) 계정에만 적용합니다.
  *  실제 가림 처리는 src/lib/mask.ts 의 helper 를 통해 화면에서 이뤄집니다.
  *  mock/proxy 모드(로그인 게이트 없음)에서는 마스킹하지 않습니다. */
-export const maskSensitive = computed(() => authEnabled && userRole.value === 'user')
+export const maskSensitive = computed(() => MASK_USER_ROLE && authEnabled && userRole.value === 'user')
 
 /** 현재 역할. 로그인 게이트가 꺼진 mock/proxy 모드에서는 admin 으로 간주합니다. */
 export const role = computed<UserRole>(() => (authEnabled ? userRole.value : 'admin'))
