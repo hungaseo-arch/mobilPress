@@ -6,7 +6,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { authEnabled, currentUser, refreshUser } from '@/lib/auth-state'
+import { authEnabled, currentUser, isGuestMode, refreshUser } from '@/lib/auth-state'
 import { startIdleLogout } from '@/lib/idle-logout'
 import { lang, setLang, t } from '@/lib/i18n'
 
@@ -15,7 +15,7 @@ const signatureSrc = `${import.meta.env.BASE_URL}brand/ascendo-signature.png`
 
 const route = useRoute()
 // 비밀번호 재설정 페이지는 이메일 링크로 진입하므로 로그인 없이 통과시킵니다.
-const bypassGate = computed(() => route.name === 'reset-password')
+const bypassGate = computed(() => route.name === 'reset-password' || isGuestMode)
 
 const checking = ref(authEnabled)
 

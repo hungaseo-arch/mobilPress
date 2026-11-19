@@ -11,23 +11,34 @@ export const authEnabled = dataMode === 'neon' && isNeonConfigured
 
 export const currentUser = ref<AuthUser | null>(null)
 
+// ── 임시 게스트 조회 모드 (2026-11-20 하루 한정) ─────────────
+// 발표 시연용. URL 에 ?guest=1 이 있고 만료 시각 전일 때만 로그인 없이 조회 전용으로 진입합니다.
+// 마스킹 없음 · 쓰기/삭제/관리자 화면 없음. 만료 후에는 ?guest=1 이 있어도 무시되어 로그인 화면이 복귀합니다.
+// ⚠️ 2026-11-21 이후 이 블록과 AuthGate 의 guest 분기를 제거하세요(커밋 되돌리기).
+export const GUEST_MODE_EXPIRES_AT = new Date('2026-11-20T23:59:59+07:00')
+export const isGuestMode =
+  authEnabled &&
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('guest') === '1' &&
+  Date.now() < GUEST_MODE_EXPIRES_AT.getTime()
+
 /** DB 의 user_roles 테이블 기준 역할. 행이 없으면 'user'(조회 전용).
  *  외부에서는 직접 변경하지 말고 canEdit/canDelete 를 사용하세요. */
 const userRole = ref<UserRole>('user')
 
 /** 데이터 입력/수정 가능 여부 (staff 이상). mock/proxy 모드에서는 항상 허용. */
-export const canEdit = computed(() => !authEnabled || userRole.value !== 'user')
+export const canEdit = computed(() => !authEnabled || (!isGuestMode && userRole.value !== 'user'))
 
 /** 데이터 삭제 가능 여부 (admin 만). mock/proxy 모드에서는 항상 허용. */
-export const canDelete = computed(() => !authEnabled || userRole.value === 'admin')
+export const canDelete = computed(() => !authEnabled || (!isGuestMode && userRole.value === 'admin'))
 
 /** 로그 조회 등 관리자 전용 화면 노출 여부. mock/proxy 모드에서는 항상 허용. */
-export const isAdmin = computed(() => !authEnabled || userRole.value === 'admin')
+export const isAdmin = computed(() => !authEnabled || (!isGuestMode && userRole.value === 'admin'))
 
 /** 민감 정보(금액·고객명·위치) 마스킹 여부 — 조회 전용(user) 계정에만 적용합니다.
  *  실제 가림 처리는 src/lib/mask.ts 의 helper 를 통해 화면에서 이뤄집니다.
  *  mock/proxy 모드(로그인 게이트 없음)에서는 마스킹하지 않습니다. */
-export const maskSensitive = computed(() => authEnabled && userRole.value === 'user')
+export const maskSensitive = computed(() => authEnabled && !isGuestMode && userRole.value === 'user')
 
 /** 현재 역할. 로그인 게이트가 꺼진 mock/proxy 모드에서는 admin 으로 간주합니다. */
 export const role = computed<UserRole>(() => (authEnabled ? userRole.value : 'admin'))
@@ -53,7 +64,12 @@ const REPORT_POLICY: Record<UserRole, ReportPermissions> = {
   user: { view: false, download: false, upload: false, unlink: false },
 }
 
-export const reportPerms = computed<ReportPermissions>(() => REPORT_POLICY[role.value])
+// 게스트(임시): 마스킹 해제와 맞춰 미리보기만 허용, 내려받기·쓰기 불가
+const GUEST_REPORT_POLICY: ReportPermissions = { view: true, download: false, upload: false, unlink: false }
+
+export const reportPerms = computed<ReportPermissions>(() =>
+  isGuestMode ? GUEST_REPORT_POLICY : REPORT_POLICY[role.value],
+)
 export const canViewReport = computed(() => reportPerms.value.view)
 export const canDownloadReport = computed(() => reportPerms.value.download)
 export const canUploadReport = computed(() => reportPerms.value.upload)

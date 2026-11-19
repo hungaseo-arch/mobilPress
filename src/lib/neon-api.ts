@@ -5,6 +5,8 @@
 import { AuthRequiredError } from '@neondatabase/neon-js'
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
 import { getNeonClient } from '@/lib/neon-auth'
+import { isGuestMode } from '@/lib/auth-state'
+import { NEON_DATA_API_URL } from '@/lib/neon-config'
 import { USER_ROLES } from '@/lib/types'
 import type {
   AccessLog,
@@ -65,10 +67,40 @@ function unwrap<T>(result: { data: unknown; error: { message?: string } | null }
   return ((result.data ?? []) as Row[]).map((row) => rowToCamel<T>(row))
 }
 
+
+// ── 임시 게스트 조회 (2026-11-20 하루 한정, auth-state.ts 의 isGuestMode) ──
+// neon-js 클라이언트는 로그인 토큰이 없으면 요청 전에 AuthRequiredError 로 멈추므로,
+// 게스트는 토큰 없이 Data API(익명 anonymous 역할)를 직접 읽습니다. 조회 전용 · /data 경로만 허용.
+// ⚠️ 2026-11-21 이후 이 블록과 neonFetch 의 isGuestMode 분기를 제거하세요.
+async function guestGet<T>(table: string, order: string, ascending: boolean): Promise<T[]> {
+  const url = `${NEON_DATA_API_URL.replace(/\/$/, '')}/${table}?select=*&order=${order}.${ascending ? 'asc' : 'desc'}&limit=${MAIN_TABLE_LIMIT}`
+  const res = await fetch(url, { headers: { Accept: 'application/json' } })
+  if (!res.ok) throw new Error(`게스트 조회 실패(${table}): HTTP ${res.status}`)
+  return ((await res.json()) as Row[]).map((row) => rowToCamel<T>(row))
+}
+
+async function guestFetch(path: string, method: string): Promise<Response> {
+  if (path !== '/mobil-press/data' || method !== 'GET') return json({ error: '게스트는 조회 전용입니다' }, 403)
+  const [customers, installations, budgetEntries] = await Promise.all([
+    guestGet<Customer>('customers', 'updated_at', false),
+    guestGet<Installation>('installations', 'work_date', false),
+    guestGet<BudgetEntry>('budget_entries', 'entry_date', true),
+  ])
+  return json({ customers, installations, budgetEntries, summary: buildSummary(customers, installations) } as MobilPressData)
+}
+
 // ── 앱 경로('/mobil-press/...') 라우팅 ──────────────────────
 export async function neonFetch(path: string, options?: RequestInit): Promise<Response> {
   const method = (options?.method ?? 'GET').toUpperCase()
   const body = typeof options?.body === 'string' ? (JSON.parse(options.body) as Row) : undefined
+
+  if (isGuestMode) {
+    try {
+      return await guestFetch(path, method)
+    } catch (e) {
+      return json({ error: e instanceof Error ? e.message : String(e) }, 500)
+    }
+  }
 
   try {
     const client = requireClient()
