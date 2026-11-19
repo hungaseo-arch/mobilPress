@@ -37,6 +37,9 @@ jobs:
           # 업로드 버튼이 사라지므로 반드시 리포지토리 secrets 에 등록한다 (docs/CONTRIBUTING.md).
           VITE_DRIVE_UPLOAD_URL: ${{ secrets.VITE_DRIVE_UPLOAD_URL }}
           VITE_DRIVE_UPLOAD_TOKEN: ${{ secrets.VITE_DRIVE_UPLOAD_TOKEN }}
+          # 임시 게스트 자동 로그인(2026-11-20 하루). 11-21 에 secrets 삭제 + 이 두 줄 제거.
+          VITE_GUEST_EMAIL: ${{ secrets.VITE_GUEST_EMAIL }}
+          VITE_GUEST_PASSWORD: ${{ secrets.VITE_GUEST_PASSWORD }}
         run: npm run predeploy
 
       - name: Deploy to gh-pages branch
