@@ -748,7 +748,7 @@ onMounted(() => {
           <div class="min-w-0">
             <p class="text-sm font-bold text-destructive">{{ t('loadError.title') }}</p>
             <p class="mt-1 text-sm text-foreground">{{ t('loadError.hint') }}</p>
-            <p class="mt-1 truncate text-xs text-muted-foreground">{{ store.loadError }}</p>
+            <p class="mt-1 break-words text-xs text-muted-foreground">{{ store.loadError }}</p>
           </div>
           <button
             type="button"
@@ -831,7 +831,7 @@ onMounted(() => {
                   <button
                     type="button"
                     class="block max-w-52 text-left"
-                    :title="canEdit ? t('installations.rowHint') : t('installations.rowHintView')"
+                    :title="`${maskedName(item.customerName)} — ${canEdit ? t('installations.rowHint') : t('installations.rowHintView')}`"
                     @click.stop="openInstallationModal(item)"
                   >
                     <span class="block truncate" :class="nameLinkClass">{{ maskedName(item.customerName) }}</span>
