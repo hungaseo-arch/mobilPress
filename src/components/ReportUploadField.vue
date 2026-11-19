@@ -135,7 +135,7 @@ const chipClass =
       >
         <component :is="FileIcon" class="h-4 w-4 shrink-0 text-primary" />
         <!-- 파일명에 고객명이 들어가므로(LK_날짜_고객_수량) 조회 전용 계정에는 그 부분을 가립니다 -->
-        <span class="min-w-0 flex-1 truncate text-sm text-foreground">{{ maskedFileName(f.fileName || f.fileId) }}</span>
+        <span class="min-w-0 flex-1 truncate text-sm text-foreground" :title="maskedFileName(f.fileName || f.fileId)">{{ maskedFileName(f.fileName || f.fileId) }}</span>
 
         <button v-if="canViewReport" type="button" :class="chipClass" @click="emit('preview', f.fileId, f.fileName)">
           <Eye class="h-3.5 w-3.5" /> {{ t('report.preview') }}

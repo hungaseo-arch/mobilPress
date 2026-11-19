@@ -101,11 +101,16 @@ function onRevenueTabKey(e: KeyboardEvent) {
 // 페이지네이션 (장착 실적 / 고객별 매출 / 월별 매출)
 // 장착 실적 정렬 — 금액 열은 조회 전용 계정에서 순위로 값이 추정되므로 정렬하지 않습니다.
 type SortKey = 'workDate' | 'qty' | 'receivedAmount'
-const sort = ref<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null)
+// 데이터는 작업일 최신순으로 오므로 기본 정렬을 그대로 드러낸다(날짜 열에 ▼ 표시, aria-sort=descending).
+// 날짜 열은 최신순↔오래된순만 오가고, 다른 열은 내림→오름→기본(작업일 최신순)으로 돌아온다.
+const DEFAULT_SORT = { key: 'workDate', dir: 'desc' } as const
+const sort = ref<{ key: SortKey; dir: 'asc' | 'desc' }>({ ...DEFAULT_SORT })
 function toggleSort(key: SortKey) {
   if (key === 'receivedAmount' && maskSensitive.value) return
   const cur = sort.value
-  sort.value = !cur || cur.key !== key ? { key, dir: 'desc' } : cur.dir === 'desc' ? { key, dir: 'asc' } : null
+  if (cur.key !== key) sort.value = { key, dir: 'desc' }
+  else if (cur.dir === 'desc') sort.value = { key, dir: 'asc' }
+  else sort.value = key === 'workDate' ? { key, dir: 'desc' } : { ...DEFAULT_SORT }
 }
 function sortMark(key: SortKey): string {
   return sort.value?.key === key ? (sort.value.dir === 'asc' ? '▲' : '▼') : ''
@@ -116,12 +121,10 @@ function ariaSort(key: SortKey): 'ascending' | 'descending' | 'none' {
 const sortedInstallations = computed(() => {
   const list = store.filteredInstallations
   const s = sort.value
-  if (!s) return list
   const sign = s.dir === 'asc' ? 1 : -1
   return [...list].sort((a, b) => {
-    const av = a[s.key]
-    const bv = b[s.key]
-    return (typeof av === 'string' ? av.localeCompare(String(bv)) : Number(av) - Number(bv)) * sign
+    if (s.key === 'workDate') return (a.workDate ?? '').localeCompare(b.workDate ?? '') * sign
+    return (Number(a[s.key]) - Number(b[s.key])) * sign
   })
 })
 // 요청고객 '+N' 펼침 상태 — 기간이 바뀌면 접습니다.
@@ -141,6 +144,20 @@ watch(
 // 검색어·정렬이 바뀌어도 1페이지로 — 결과 수가 달라져도 페이지 수가 같으면 중간 페이지에 머물러 상위 결과를 놓친다
 watch([() => store.query, sort], () => instPage.go(1))
 const monthPage = usePagination(computed(() => store.revenueByMonth), 12)
+// 월별 매출 합계 행 — 표에 보이는 월 행의 합. 서버 summary 는 작업일 없는 건까지 포함해 열 합과 어긋날 수 있다.
+const monthTotal = computed(() =>
+  store.revenueByMonth.reduce(
+    (acc, [, v]) => ({
+      count: acc.count + v.count,
+      qty: acc.qty + v.qty,
+      tirePrice: acc.tirePrice + v.tirePrice,
+      netServiceFee: acc.netServiceFee + v.netServiceFee,
+      mobFee: acc.mobFee + v.mobFee,
+      revenue: acc.revenue + v.revenue,
+    }),
+    { count: 0, qty: 0, tirePrice: 0, netServiceFee: 0, mobFee: 0, revenue: 0 },
+  ),
+)
 
 // 고객별 매출 합계 행 — 기간 필터가 적용된 행(store.revenueByCustomer)의 합. 서버 전체 합계를 쓰면 기간과 어긋난다.
 const customerTotal = computed(() =>
@@ -1079,12 +1096,12 @@ onMounted(() => {
                 <td class="px-4 py-3">
                   {{ t('revenue.total') }} ({{ store.revenueByMonth.length }} {{ t('revenue.monthsUnit') }})
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(store.summary.totalInstallations) }} {{ t('unit.items') }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(store.summary.totalQty) }} pcs</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums"><span class="text-muted-foreground">{{ maskedIDR(store.summary.totalTirePrice, true) }}</span></td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(store.summary.totalNetServiceFee, true) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(store.summary.totalMobilizationFee, true) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(store.summary.totalRevenue) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(monthTotal.count) }} {{ t('unit.items') }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ formatNumber(monthTotal.qty) }} pcs</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums"><span class="text-muted-foreground">{{ maskedIDR(monthTotal.tirePrice, true) }}</span></td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(monthTotal.netServiceFee, true) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(monthTotal.mobFee, true) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-right tabular-nums">{{ maskedIDR(monthTotal.revenue) }}</td>
               </tr>
             </tfoot>
           </table>
