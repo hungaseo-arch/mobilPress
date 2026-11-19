@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { t } from '@/lib/i18n'
 
 const props = defineProps<{
   page: number
@@ -30,22 +31,24 @@ const btn =
     class="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3"
   >
     <span class="text-xs text-muted-foreground tabular-nums">{{ start }}–{{ end }} / {{ total }}</span>
-    <div class="flex items-center gap-1">
-      <button type="button" :class="btn" :disabled="page <= 1" @click="emit('go', page - 1)">
-        <ChevronLeft class="h-4 w-4" />
+    <nav class="flex items-center gap-1" :aria-label="t('pager.nav')">
+      <button type="button" :class="btn" :disabled="page <= 1" :aria-label="t('pager.prev')" @click="emit('go', page - 1)">
+        <ChevronLeft class="h-4 w-4" aria-hidden="true" />
       </button>
       <button
         v-for="p in pages"
         :key="p"
         type="button"
-        :class="[btn, p === page ? 'bg-primary font-semibold text-primary-foreground' : 'text-muted-foreground hover:text-foreground']"
+        :class="[btn, p === page ? 'border-primary-40 bg-primary-soft font-bold text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground']"
+        :aria-label="t('pager.page', { n: String(p) })"
+        :aria-current="p === page ? 'page' : undefined"
         @click="emit('go', p)"
       >
         {{ p }}
       </button>
-      <button type="button" :class="btn" :disabled="page >= pageCount" @click="emit('go', page + 1)">
-        <ChevronRight class="h-4 w-4" />
+      <button type="button" :class="btn" :disabled="page >= pageCount" :aria-label="t('pager.next')" @click="emit('go', page + 1)">
+        <ChevronRight class="h-4 w-4" aria-hidden="true" />
       </button>
-    </div>
+    </nav>
   </div>
 </template>

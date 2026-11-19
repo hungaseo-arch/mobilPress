@@ -24,9 +24,9 @@ export function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value || 0)
 }
 
-/** 비율 표기 — 소수점 첫째 자리 고정 (디자인 가이드 9-3) */
+/** 비율 표기 — 정수 반올림 (할인율은 실무상 정수로만 쓰여 소수점을 표기하지 않는다) */
 export function formatPercent(value: number): string {
-  return `${(value || 0).toFixed(1)}%`
+  return `${Math.round(value || 0)}%`
 }
 
 /** 날짜 표기 — ISO 8601 'YYYY-MM-DD' 고정 (디자인 가이드 9-2), 값이 없으면 '-' */

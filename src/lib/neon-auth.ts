@@ -83,6 +83,28 @@ export async function signUpWithEmail(name: string, email: string, password: str
   if (error) throw new Error(error.message ?? '회원가입에 실패했습니다.')
 }
 
+/**
+ * 관리자가 다른 사람의 계정을 만든다. client.auth.signUp.email 은 가입 직후 그 계정으로
+ * 로그인해 버려 관리자 세션을 갈아치우므로 쓰지 않고, 인증 서버의 가입 엔드포인트를
+ * 쿠키·토큰 없이(credentials: 'omit') 직접 호출한다 — 관리자 세션은 그대로 유지된다.
+ * 새 계정의 user id 를 반환하며, 응답에 id 가 없으면 빈 문자열이다.
+ */
+export async function createAccountAsAdmin(name: string, email: string, password: string): Promise<string> {
+  if (!isNeonConfigured) throw new Error('Neon 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.')
+  const response = await fetch(`${NEON_AUTH_URL.replace(/\/$/, '')}/sign-up/email`, {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }),
+  })
+  const payload = (await response.json().catch(() => null)) as {
+    user?: { id?: string }
+    message?: string
+  } | null
+  if (!response.ok) throw new Error(payload?.message ?? '계정 등록에 실패했습니다.')
+  return payload?.user?.id ?? ''
+}
+
 /** Google 로그인 — Neon 콘솔 Auth 탭에서 Google provider 활성화가 필요합니다. */
 export async function signInWithGoogle(): Promise<void> {
   const client = getNeonClient()
@@ -102,6 +124,14 @@ export async function requestPasswordReset(email: string, redirectTo: string): P
   if (!client) throw new Error('Neon 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.')
   const { error } = await client.auth.requestPasswordReset({ email, redirectTo })
   if (error) throw new Error(error.message ?? '재설정 메일 발송에 실패했습니다.')
+}
+
+/** 로그인한 본인의 비밀번호를 현재 비밀번호 확인 후 바꿉니다. */
+export async function changeOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
+  const client = getNeonClient()
+  if (!client) throw new Error('Neon 이 설정되지 않았습니다. docs/NEON-SETUP.md 를 참고하세요.')
+  const { error } = await client.auth.changePassword({ currentPassword, newPassword })
+  if (error) throw new Error(error.message ?? '비밀번호 변경에 실패했습니다.')
 }
 
 /** 이메일 링크의 token 으로 새 비밀번호를 설정합니다. */

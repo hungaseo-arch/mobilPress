@@ -4,7 +4,7 @@
 // DB 컬럼은 snake_case, 앱 타입은 camelCase 이므로 여기서 양방향 매핑합니다.
 import { AuthRequiredError } from '@neondatabase/neon-js'
 import { buildSummary, jsonResponse as json } from '@/lib/api-helpers'
-import { getNeonClient } from '@/lib/neon-auth'
+import { createAccountAsAdmin, getNeonClient } from '@/lib/neon-auth'
 import { USER_ROLES } from '@/lib/types'
 import type {
   AccessLog,
@@ -56,6 +56,24 @@ function requireClient() {
     )
   }
   return client
+}
+
+/** user_roles 는 계정당 0~1행 — 행이 없는 계정(가입 기본값 user)은 새로 만든다.
+ *  upsert 대신 update → insert 순으로 처리해 PostgREST 의 merge-duplicates 에 의존하지 않는다. */
+async function setUserRole(client: ReturnType<typeof requireClient>, userId: string, role: UserRole) {
+  const updated = unwrap<{ userId: string; role: UserRole }>(
+    await client.from('user_roles').update({ role }).eq('user_id', userId).select(),
+  )
+  if (!updated.length) {
+    const inserted = await client.from('user_roles').insert({ user_id: userId, role }).select()
+    if (inserted.error) {
+      // 동시 요청으로 그 사이 다른 요청이 먼저 같은 행을 만들었을 수 있다 — update 로 재시도한다.
+      const retried = unwrap<{ userId: string; role: UserRole }>(
+        await client.from('user_roles').update({ role }).eq('user_id', userId).select(),
+      )
+      if (!retried.length) unwrap(inserted) // 재시도도 못 찾으면 원래 삽입 오류를 그대로 던진다
+    }
+  }
 }
 
 function unwrap<T>(result: { data: unknown; error: { message?: string } | null }): T[] {
@@ -144,26 +162,35 @@ export async function neonFetch(path: string, options?: RequestInit): Promise<Re
       return json(rows)
     }
 
+    if (path === '/mobil-press/members' && method === 'POST') {
+      const name = String(body?.name ?? '').trim()
+      const email = String(body?.email ?? '').trim()
+      const password = String(body?.password ?? '')
+      const role = String(body?.role ?? 'user') as UserRole
+      if (!name || !email) return json({ error: '이름과 이메일을 입력하세요.' }, 400)
+      if (password.length < 8) return json({ error: '비밀번호는 8자 이상이어야 합니다.' }, 400)
+      if (!USER_ROLES.includes(role)) return json({ error: `알 수 없는 역할입니다: ${role}` }, 400)
+      let userId = await createAccountAsAdmin(name, email, password)
+      if (role !== 'user') {
+        if (!userId) {
+          // 가입 응답에 id 가 없으면 계정 뷰에서 이메일로 찾는다.
+          const found = unwrap<MemberAccount>(
+            await client.from('user_accounts').select('*').eq('email', email).limit(1),
+          )
+          userId = found[0]?.userId ?? ''
+        }
+        if (!userId) return json({ error: '계정은 만들었지만 권한을 지정하지 못했습니다. 목록에서 권한을 바꿔 주세요.' }, 500)
+        await setUserRole(client, userId, role)
+      }
+      return json({ userId, email, name, role }, 201)
+    }
+
     const memberMatch = path.match(/^\/mobil-press\/members\/([^/]+)$/)
     if (memberMatch && method === 'PATCH') {
       const role = String(body?.role ?? '') as UserRole
       if (!USER_ROLES.includes(role)) return json({ error: `알 수 없는 역할입니다: ${role}` }, 400)
       const userId = memberMatch[1]
-      // user_roles 는 계정당 0~1행 — 행이 없는 계정(가입 기본값 user)은 새로 만든다.
-      // upsert 대신 update → insert 순으로 처리해 PostgREST 의 merge-duplicates 에 의존하지 않는다.
-      const updated = unwrap<{ userId: string; role: UserRole }>(
-        await client.from('user_roles').update({ role }).eq('user_id', userId).select(),
-      )
-      if (!updated.length) {
-        const inserted = await client.from('user_roles').insert({ user_id: userId, role }).select()
-        if (inserted.error) {
-          // 동시 요청으로 그 사이 다른 요청이 먼저 같은 행을 만들었을 수 있다 — update 로 재시도한다.
-          const retried = unwrap<{ userId: string; role: UserRole }>(
-            await client.from('user_roles').update({ role }).eq('user_id', userId).select(),
-          )
-          if (!retried.length) unwrap(inserted) // 재시도도 못 찾으면 원래 삽입 오류를 그대로 던진다
-        }
-      }
+      await setUserRole(client, userId, role)
       return json({ userId, role })
     }
 

@@ -48,13 +48,13 @@ const totals = computed(() => ({
             :key="item.id"
             class="align-top">
             <td class="whitespace-nowrap px-3 py-2.5 text-foreground">{{ formatDate(item.workDate) }}</td>
-            <td class="px-3 py-2.5 font-semibold text-foreground">{{ maskedName(item.customerName) }}</td>
+            <td class="px-3 py-2.5 font-bold text-foreground">{{ maskedName(item.customerName) }}</td>
             <td class="px-3 py-2.5 text-muted-foreground">{{ item.distributor ? maskedName(item.distributor) : '-' }}</td>
             <td class="px-3 py-2.5 text-muted-foreground">
               <p v-for="line in productLines(item.product)" :key="line" :title="line" class="max-w-48 truncate">{{ line }}</p>
             </td>
             <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-foreground">{{ formatNumber(item.qty) }} pcs</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(item.receivedAmount) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right font-bold tabular-nums text-foreground">{{ maskedIDR(item.receivedAmount) }}</td>
           </tr>
         </tbody>
         <tfoot v-if="history.length">

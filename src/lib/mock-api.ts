@@ -187,6 +187,23 @@ export async function mockFetch(path: string, options?: RequestInit): Promise<Re
     return json(mockMembers)
   }
 
+  if (path === '/mobil-press/members' && method === 'POST') {
+    const form = body as { name: string; email: string; role: UserRole }
+    if (mockMembers.some((m) => m.email.toLowerCase() === form.email.toLowerCase())) {
+      return json({ error: '이미 등록된 이메일입니다.' }, 409)
+    }
+    const member: MemberAccount = {
+      userId: `mock-user-${Date.now()}`,
+      email: form.email,
+      name: form.name,
+      role: form.role,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: '',
+    }
+    mockMembers.unshift(member)
+    return json(member, 201)
+  }
+
   const memberMatch = path.match(/^\/mobil-press\/members\/([^/]+)$/)
   if (memberMatch && method === 'PATCH') {
     const member = mockMembers.find((m) => m.userId === memberMatch[1])

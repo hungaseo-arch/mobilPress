@@ -13,6 +13,8 @@ export interface OpsGanttItem {
 export interface OpsGantt {
   rangeStart: string
   rangeEnd: string
+  /** 항목 상태(완료·진행·대기)를 확정한 기준일 YYYY-MM-DD — 화면에 '참고용 일정'으로 표시 */
+  asOf?: string
   items: OpsGanttItem[]
 }
 
@@ -119,6 +121,7 @@ const tabsKo: OpsTab[] = [
         gantt: {
           rangeStart: '2026-04-01',
           rangeEnd: '2026-09-30',
+          asOf: '2026-07-08',
           items: [
             { label: '① 카로세리 수리·개조', start: '2026-04-01', end: '2026-05-31', duration: '약 2개월', status: 'done' },
             { label: '② 차량 서비스 (오일·튠업)', start: '2026-05-15', end: '2026-05-31', duration: '약 2주', status: 'done' },
@@ -419,6 +422,7 @@ const tabsId: OpsTab[] = [
         gantt: {
           rangeStart: '2026-04-01',
           rangeEnd: '2026-09-30',
+          asOf: '2026-07-08',
           items: [
             { label: '① Perbaikan & Modifikasi Karoseri', start: '2026-04-01', end: '2026-05-31', duration: '±2 bulan', status: 'done' },
             { label: '② Service Mobil (Oli · Tune Up)', start: '2026-05-15', end: '2026-05-31', duration: '±2 minggu', status: 'done' },

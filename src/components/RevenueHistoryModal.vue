@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Pencil } from 'lucide-vue-next'
 import BaseModal from '@/components/BaseModal.vue'
+import ScopeTag from '@/components/ScopeTag.vue'
 import { formatDate, formatNumber, productLines } from '@/lib/format'
 import { maskedIDR, maskedName, maskedPercent, maskedValue } from '@/lib/mask'
 import { t } from '@/lib/i18n'
@@ -11,6 +12,9 @@ const props = defineProps<{
   customerName: string
   customer: Customer | null
   installations: Installation[]
+  /** 기간 필터와 무관한 전체 장착 실적 — '전체 기간 보기' 토글용 */
+  allInstallations: Installation[]
+  scope?: string
   canEdit: boolean
 }>()
 
@@ -19,8 +23,9 @@ const emit = defineEmits<{
   editCustomer: [customer: Customer]
 }>()
 
+const widened = ref(false)
 const history = computed(() =>
-  props.installations
+  (widened.value ? props.allInstallations : props.installations)
     .filter((item) => item.customerName === props.customerName)
     .sort((a, b) => b.workDate.localeCompare(a.workDate)),
 )
@@ -87,6 +92,7 @@ const totals = computed(() => ({
 
     <!-- 매출 상세 히스토리 -->
     <h3 class="mb-2 text-sm font-bold text-foreground">{{ t('revenue.modalTitle') }}</h3>
+    <ScopeTag :scope="scope" :widened="widened" @toggle="widened = !widened" />
     <div class="overflow-x-auto">
       <table class="asm-table w-full min-w-180 text-left text-sm">
         <thead>
@@ -117,7 +123,7 @@ const totals = computed(() => ({
             <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.serviceFee) }}</td>
             <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedPercent(item.discountRate) }}</td>
             <td class="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-muted-foreground">{{ maskedIDR(item.mobilizationFee) }}</td>
-            <td class="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-primary">{{ maskedIDR(item.receivedAmount) }}</td>
+            <td class="px-3 py-2.5 whitespace-nowrap text-right font-bold tabular-nums text-foreground">{{ maskedIDR(item.receivedAmount) }}</td>
           </tr>
         </tbody>
         <tfoot v-if="history.length">

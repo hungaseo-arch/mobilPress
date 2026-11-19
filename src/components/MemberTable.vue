@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { Loader2, Search, Trash2, Users } from 'lucide-vue-next'
+import { KeyRound, Loader2, Plus, Search, Trash2, Users } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, dataMode } from '@/lib/api'
 import { currentUser } from '@/lib/auth-state'
 import { formatDateTime, formatDay, parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import MemberFormModal from '@/components/MemberFormModal.vue'
+import PasswordChangeModal from '@/components/PasswordChangeModal.vue'
 import TablePagination from '@/components/TablePagination.vue'
 import { usePagination } from '@/lib/pagination'
-import { USER_ROLES, type MemberAccount, type UserRole } from '@/lib/types'
+import { USER_ROLES, type MemberAccount, type MemberCreateForm, type UserRole } from '@/lib/types'
 
 const loading = ref(true)
 const savingId = ref('')
 const deletingId = ref('')
+const formOpen = ref(false)
+const creating = ref(false)
+const passwordOpen = ref(false)
+const resettingId = ref('')
 const members = ref<MemberAccount[]>([])
 const query = ref('')
 const roleFilter = ref<'' | UserRole>('')
@@ -53,6 +59,30 @@ async function load() {
   }
 }
 
+async function createMember(form: MemberCreateForm) {
+  if (creating.value) return
+  creating.value = true
+  try {
+    await parseApi(
+      await apiFetch('/mobil-press/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      }),
+    )
+    formOpen.value = false
+    toast.success(t('member.add.created'))
+    roleFilter.value = ''
+    query.value = ''
+    await load()
+  } catch (error) {
+    // 실패 시 모달을 열어 둬 입력값을 보존한다.
+    toast.error(error instanceof Error ? error.message : t('member.add.fail'))
+  } finally {
+    creating.value = false
+  }
+}
+
 async function onRoleChange(member: MemberAccount, event: Event) {
   const select = event.target as HTMLSelectElement
   const next = select.value as UserRole
@@ -81,6 +111,29 @@ async function onRoleChange(member: MemberAccount, event: Event) {
     toast.error(error instanceof Error ? error.message : t('member.roleUpdateFail'))
   } finally {
     savingId.value = ''
+  }
+}
+
+/** 본인 행은 현재 비밀번호 확인 후 직접 변경, 다른 회원은 재설정 링크를 그 회원의 이메일로 보낸다
+ *  (인증 서버가 관리자의 타인 비밀번호 직접 변경을 허용하지 않으므로 회원이 링크로 직접 설정한다). */
+async function onPasswordAction(member: MemberAccount) {
+  if (isSelf(member)) {
+    passwordOpen.value = true
+    return
+  }
+  if (!window.confirm(t('member.pw.confirmReset', { name: member.email }))) return
+  resettingId.value = member.userId
+  try {
+    if (dataMode === 'neon') {
+      const { requestPasswordReset } = await import('@/lib/neon-auth')
+      const redirectTo = new URL(`${import.meta.env.BASE_URL}reset-password`, window.location.origin).href
+      await requestPasswordReset(member.email, redirectTo)
+    }
+    toast.success(t('member.pw.resetSent'))
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('member.pw.resetFail'))
+  } finally {
+    resettingId.value = ''
   }
 }
 
@@ -116,9 +169,17 @@ onMounted(load)
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary-hover active:bg-primary-active"
+          @click="formOpen = true"
+        >
+          <Plus class="h-4 w-4" />
+          {{ t('member.add') }}
+        </button>
         <select
           v-model="roleFilter"
-          class="h-9 rounded-md border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+          class="h-9 rounded-md border border-border bg-card px-3 text-xs text-foreground focus:border-primary focus:outline-none"
         >
           <option value="">{{ t('member.filterRole') }}</option>
           <option v-for="r in USER_ROLES" :key="r" :value="r">{{ t(`role.${r}`) }}</option>
@@ -129,7 +190,7 @@ onMounted(load)
             v-model="query"
             type="search"
             :placeholder="t('member.searchPlaceholder')"
-            class="h-9 w-full rounded-md border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            class="h-9 w-full rounded-md border border-border bg-card pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
         </div>
       </div>
@@ -137,13 +198,13 @@ onMounted(load)
 
     <div
       v-if="loading"
-      class="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-20 text-muted-foreground"
+      class="flex items-center justify-center gap-2 rounded-lg border border-border bg-card py-20 text-muted-foreground"
     >
       <Loader2 class="h-5 w-5 animate-spin" />
       {{ t('loading') }}
     </div>
 
-    <section v-else class="rounded-xl border border-border bg-card">
+    <section v-else class="rounded-lg border border-border bg-card">
       <p class="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">{{ t('member.hint') }}</p>
       <div class="overflow-x-auto">
         <table class="asm-table w-full min-w-180 text-left text-sm">
@@ -183,7 +244,7 @@ onMounted(load)
                     :value="member.role"
                     :disabled="isSelf(member) || savingId === member.userId"
                     :title="isSelf(member) ? t('member.selfHint') : t('member.role')"
-                    class="h-8 rounded-md border border-border bg-card px-2.5 text-sm text-foreground focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-secondary disabled:opacity-60"
+                    class="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-secondary disabled:opacity-60"
                     @change="onRoleChange(member, $event)"
                   >
                     <option v-for="r in USER_ROLES" :key="r" :value="r">{{ t(`role.${r}`) }}</option>
@@ -192,7 +253,18 @@ onMounted(load)
                 </div>
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-end">
+                <div class="flex items-center justify-end gap-1">
+                  <Loader2 v-if="resettingId === member.userId" class="h-4 w-4 animate-spin text-muted-foreground" />
+                  <button
+                    v-else
+                    type="button"
+                    class="rounded-md p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    :aria-label="isSelf(member) ? t('member.pw.change') : t('member.pw.sendReset')"
+                    :title="isSelf(member) ? t('member.pw.change') : t('member.pw.sendReset')"
+                    @click="onPasswordAction(member)"
+                  >
+                    <KeyRound class="h-4 w-4" />
+                  </button>
                   <Loader2 v-if="deletingId === member.userId" class="h-4 w-4 animate-spin text-muted-foreground" />
                   <button
                     v-else-if="!isSelf(member)"
@@ -204,7 +276,7 @@ onMounted(load)
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
-                  <span v-else :title="t('member.selfDeleteHint')" class="text-xs text-muted-foreground">-</span>
+                  <span v-else :title="t('member.selfDeleteHint')" class="inline-block w-8 text-center text-xs text-muted-foreground">-</span>
                 </div>
               </td>
             </tr>
@@ -220,5 +292,8 @@ onMounted(load)
         @go="memberPage.go"
       />
     </section>
+  
+    <PasswordChangeModal v-if="passwordOpen" @close="passwordOpen = false" />
+    <MemberFormModal v-if="formOpen" :saving="creating" @close="formOpen = false" @submit="createMember" />
   </div>
 </template>

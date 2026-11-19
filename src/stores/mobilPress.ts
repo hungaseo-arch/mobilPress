@@ -2,9 +2,11 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { apiFetch } from '@/lib/api'
+import { netServiceFee } from '@/lib/api-helpers'
 import { currentUser, maskSensitive } from '@/lib/auth-state'
 import { parseApi } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { inRange, periodRange, previousRange, type Period } from '@/lib/period'
 import { SEED_COUNTS } from '@/data/seed'
 import type {
   BudgetEntry,
@@ -23,6 +25,9 @@ const emptySummary: Summary = {
   prospects: 0,
   totalInstallations: 0,
   totalQty: 0,
+  totalTirePrice: 0,
+  totalNetServiceFee: 0,
+  totalMobilizationFee: 0,
   totalRevenue: 0,
 }
 
@@ -38,15 +43,45 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   const budgetEntries = ref<BudgetEntry[]>([])
   const summary = ref<Summary>({ ...emptySummary })
   const query = ref('')
+  // 조회 기간 — 장착 실적 표·KPI·고객별 매출에 적용 (월별 매출은 기간 흐름 자체라 제외)
+  const period = ref<Period>('all')
   const loading = ref(true)
   const saving = ref(false)
+  // 마지막 불러오기가 실패했는지 — 실패를 "데이터 없음"으로 오인하지 않도록 화면이 구분합니다.
+  const loadError = ref<string | null>(null)
+  // 불러오기가 한 번이라도 성공했는지.
+  const loadedOnce = ref(false)
+  // 마지막으로 저장한 장착 실적의 id — 저장 뒤 '목록에 보이는지' 판정에 씁니다.
+  const lastSavedInstallationId = ref<string | null>(null)
+  // 마지막 저장 뒤 재조회가 성공했는지 — 실패하면 표가 옛 데이터라 '가려짐' 판정을 할 수 없습니다.
+  const lastSaveReloaded = ref(true)
+
+  const periodInstallations = computed(() => {
+    const range = periodRange(period.value)
+    return range ? installations.value.filter((i: Installation) => inRange(i.workDate, range)) : installations.value
+  })
+
+  // KPI — 선택 기간 합계와 직전 동기간 합계(기간이 '전체'이면 비교 없음)
+  function tally(list: Installation[]) {
+    return {
+      jobs: list.length,
+      qty: list.reduce((sum, i) => sum + (Number(i.qty) || 0), 0),
+      received: list.reduce((sum, i) => sum + (Number(i.receivedAmount) || 0), 0),
+      customers: new Set(list.map((i) => i.customerName)).size,
+    }
+  }
+  const periodStats = computed(() => tally(periodInstallations.value))
+  const previousStats = computed(() => {
+    const range = previousRange(period.value)
+    return range ? tally(installations.value.filter((i: Installation) => inRange(i.workDate, range))) : null
+  })
 
   const filteredInstallations = computed(() => {
     const keyword = query.value.trim().toLowerCase()
-    if (!keyword) return installations.value
+    if (!keyword) return periodInstallations.value
     // 조회 전용 계정은 고객명·요청고객을 검색 대상에서 제외합니다 — 화면에서 가린 이름을
     // 검색으로 되짚어 확인하는 우회를 막기 위함입니다(src/lib/mask.ts 참고).
-    return installations.value.filter((item: Installation) =>
+    return periodInstallations.value.filter((item: Installation) =>
       (maskSensitive.value
         ? [item.product, item.serialNumbers, item.note]
         : [item.customerName, item.product, item.distributor, item.serialNumbers, item.note]
@@ -58,10 +93,14 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
   })
 
   const revenueByCustomer = computed(() => {
-    const result = new Map<string, { qty: number; revenue: number }>()
-    installations.value.forEach((item: Installation) => {
-      const prev = result.get(item.customerName) ?? { qty: 0, revenue: 0 }
-      result.set(item.customerName, { qty: prev.qty + item.qty, revenue: prev.revenue + item.receivedAmount })
+    const result = new Map<string, { qty: number; tirePrice: number; revenue: number }>()
+    periodInstallations.value.forEach((item: Installation) => {
+      const prev = result.get(item.customerName) ?? { qty: 0, tirePrice: 0, revenue: 0 }
+      result.set(item.customerName, {
+        qty: prev.qty + item.qty,
+        tirePrice: prev.tirePrice + (Number(item.tirePrice) || 0),
+        revenue: prev.revenue + item.receivedAmount,
+      })
     })
     return Array.from(result.entries()).sort((a, b) => b[1].revenue - a[1].revenue)
   })
@@ -74,15 +113,31 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
       budgetEntries.value.length < SEED_COUNTS.budgetEntries,
   )
 
+  // 성공적으로 불러왔는데 세 종류 모두 비어 있는 경우 — 시드 안내 노출 조건.
+  const isEmptyDb = computed(
+    () =>
+      loadedOnce.value &&
+      !loadError.value &&
+      customers.value.length === 0 &&
+      installations.value.length === 0 &&
+      budgetEntries.value.length === 0,
+  )
+
   const revenueByMonth = computed(() => {
-    const result = new Map<string, { count: number; qty: number; revenue: number }>()
+    const result = new Map<
+      string,
+      { count: number; qty: number; tirePrice: number; netServiceFee: number; mobFee: number; revenue: number }
+    >()
     installations.value.forEach((item: Installation) => {
       const month = (item.workDate ?? '').slice(0, 7)
       if (!month) return
-      const prev = result.get(month) ?? { count: 0, qty: 0, revenue: 0 }
+      const prev = result.get(month) ?? { count: 0, qty: 0, tirePrice: 0, netServiceFee: 0, mobFee: 0, revenue: 0 }
       result.set(month, {
         count: prev.count + 1,
         qty: prev.qty + item.qty,
+        tirePrice: prev.tirePrice + (Number(item.tirePrice) || 0),
+        netServiceFee: prev.netServiceFee + netServiceFee(item),
+        mobFee: prev.mobFee + (Number(item.mobilizationFee) || 0),
         revenue: prev.revenue + item.receivedAmount,
       })
     })
@@ -105,16 +160,23 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     }
   }
 
-  async function loadData() {
-    loading.value = true
+  async function loadData(): Promise<boolean> {
+    // 첫 로딩과 오류 후 재시도만 스피너를 쓰고, 저장·삭제 뒤 재조회는 표를 그대로 둔 채 갱신합니다(깜빡임·스크롤 손실 방지).
+    if (!loadedOnce.value || loadError.value) loading.value = true
     try {
       const nextData = await parseApi<MobilPressData>(await apiFetch('/mobil-press/data'))
       customers.value = nextData.customers
       installations.value = nextData.installations
       budgetEntries.value = nextData.budgetEntries ?? []
       summary.value = nextData.summary
+      loadError.value = null
+      loadedOnce.value = true
+      return true
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('toast.loadFail'))
+      const message = error instanceof Error ? error.message : t('toast.loadFail')
+      loadError.value = message
+      toast.error(message)
+      return false
     } finally {
       loading.value = false
     }
@@ -158,6 +220,8 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
       const payload: InstallationForm = editingId
         ? form
         : { ...form, enteredBy: currentUser.value?.name || currentUser.value?.email || '' }
+      lastSavedInstallationId.value = editingId
+      const idsBefore = new Set(installations.value.map((i) => i.id))
       if (editingId) {
         await patchWithRetry(() =>
           apiFetch(`/mobil-press/installations/${editingId}`, {
@@ -167,16 +231,23 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
           }),
         )
       } else {
-        await parseApi(
+        const created = await parseApi<{ id?: string } | null>(
           await apiFetch('/mobil-press/installations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           }),
         )
+        lastSavedInstallationId.value = created?.id ?? null
       }
       toast.success(editingId ? t('toast.installationUpdated') : t('toast.installationSaved'))
-      await loadData()
+      const reloaded = await loadData()
+      lastSaveReloaded.value = reloaded
+      // 서버가 id 를 돌려주지 않았으면 저장 전후 목록 차이로 새 행을 찾습니다(새 행이 하나일 때만 확정).
+      if (reloaded && !editingId && !lastSavedInstallationId.value) {
+        const added = installations.value.filter((i) => !idsBefore.has(i.id))
+        if (added.length === 1) lastSavedInstallationId.value = added[0].id
+      }
       return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('toast.saveFail'))
@@ -221,14 +292,17 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     }
   }
 
-  async function deleteRecord(kind: 'customers' | 'installations' | 'budget_entries', id: string): Promise<void> {
+  /** 삭제 성공 여부를 반환합니다 — 호출부가 후속 작업(예: 첨부 파일 정리)을 성공했을 때만 하도록. */
+  async function deleteRecord(kind: 'customers' | 'installations' | 'budget_entries', id: string): Promise<boolean> {
     saving.value = true
     try {
       await parseApi(await apiFetch(`/mobil-press/${kind}/${id}`, { method: 'DELETE' }))
       toast.success(t('toast.deleted'))
       await loadData()
+      return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('toast.deleteFail'))
+      return false
     } finally {
       saving.value = false
     }
@@ -304,12 +378,20 @@ export const useMobilPressStore = defineStore('mobilPress', () => {
     budgetEntries,
     summary,
     query,
+    period,
     loading,
     saving,
+    loadError,
+    periodInstallations,
+    periodStats,
+    previousStats,
     filteredInstallations,
+    lastSavedInstallationId,
+    lastSaveReloaded,
     revenueByCustomer,
     revenueByMonth,
     needsSeed,
+    isEmptyDb,
     loadData,
     saveCustomer,
     saveInstallation,

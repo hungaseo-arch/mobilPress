@@ -104,6 +104,12 @@ export interface Summary {
   prospects: number
   totalInstallations: number
   totalQty: number
+  /** 타이어 판매가 합계 (Rp) — 장착 서비스 매출(totalRevenue)과 별개로 집계 */
+  totalTirePrice: number
+  /** 할인후 서비스비용 합계 (Rp) — 건별 (서비스 비용 × 할인율%) 의 합 */
+  totalNetServiceFee: number
+  /** 출장비 합계 (Rp) */
+  totalMobilizationFee: number
   totalRevenue: number
 }
 
@@ -144,6 +150,14 @@ export interface AuditLog {
 export type UserRole = 'admin' | 'staff' | 'user'
 
 export const USER_ROLES: UserRole[] = ['admin', 'staff', 'user']
+
+/** 회원관리 — 관리자가 직접 등록하는 신규 계정 */
+export interface MemberCreateForm {
+  name: string
+  email: string
+  password: string
+  role: UserRole
+}
 
 /** 회원관리 탭 행 — public.user_accounts 뷰 (admin 에게만 행이 보인다) */
 export interface MemberAccount {
