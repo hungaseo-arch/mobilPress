@@ -179,6 +179,7 @@ onMounted(load)
         </button>
         <select
           v-model="roleFilter"
+          :aria-label="t('member.role')"
           class="h-9 rounded-md border border-border bg-card px-3 text-xs text-foreground focus:border-primary focus:outline-none"
         >
           <option value="">{{ t('member.filterRole') }}</option>
@@ -189,6 +190,7 @@ onMounted(load)
           <input
             v-model="query"
             type="search"
+            :aria-label="t('member.searchPlaceholder')"
             :placeholder="t('member.searchPlaceholder')"
             class="h-9 w-full rounded-md border border-border bg-card pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
@@ -244,6 +246,7 @@ onMounted(load)
                     :value="member.role"
                     :disabled="isSelf(member) || savingId === member.userId"
                     :title="isSelf(member) ? t('member.selfHint') : t('member.role')"
+                    :aria-label="`${t('member.role')} · ${member.name || member.email}`"
                     class="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-secondary disabled:opacity-60"
                     @change="onRoleChange(member, $event)"
                   >
