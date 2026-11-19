@@ -46,8 +46,9 @@ const GUEST_EXPIRES_AT = new Date('2026-11-20T23:59:59+07:00').getTime()
 async function tryGuestAutoLogin() {
   if (currentUser.value || Date.now() >= GUEST_EXPIRES_AT) return
   if (new URLSearchParams(window.location.search).get('guest') !== '1') return
-  const gEmail = import.meta.env.VITE_GUEST_EMAIL
-  const gPassword = import.meta.env.VITE_GUEST_PASSWORD
+  const clean = (v?: string) => (v ?? '').replace(/^[\s'"]+|[\s'"]+$/g, '')
+  const gEmail = clean(import.meta.env.VITE_GUEST_EMAIL)
+  const gPassword = clean(import.meta.env.VITE_GUEST_PASSWORD)
   if (!gEmail || !gPassword) {
     toast.error('게스트 설정 누락(빌드에 게스트 값 없음)')
     return
