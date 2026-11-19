@@ -280,7 +280,8 @@ utilities 를 모두 @layer 안에 넣으므로, 레이어 밖 규칙이 특이�
   border-left: 1px solid var(--border-50);
 }
 .asm-table > thead > tr > th.asm-sticky-end { background: var(--primary-6); z-index: 3; }
-.asm-table > tbody > tr:focus-within > .asm-sticky-end { background: var(--primary-soft); }
+/* 키보드 포커스일 때만 행 틴트 — 마우스 클릭 후 모달이 포커스를 되돌려도 저장 강조처럼 남지 않게 한다. */
+.asm-table > tbody > tr:has(:focus-visible) > .asm-sticky-end { background: var(--primary-soft); }
 /* 저장 직후 행 강조(4초) — 작업 열까지 같은 배경, 왼쪽 2px 파란 선(그림자 아님)으로 틴트가 약해도 보이게 한다. */
 .asm-table > tbody > tr[data-highlight] > td { background: var(--primary-soft); }
 .asm-table > tbody > tr[data-highlight] > td:first-child {

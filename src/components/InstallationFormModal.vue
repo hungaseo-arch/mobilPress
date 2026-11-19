@@ -347,6 +347,7 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-muted-foreground'
               <span class="w-6 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{{ index }}.</span>
               <input
                 v-model="serials[index - 1]"
+                :aria-label="`${t('form.serialNumbers')} ${index}`"
                 :class="inputClass"
                 :placeholder="t('form.serialPlaceholder')"
               />

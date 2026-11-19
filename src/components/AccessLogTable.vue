@@ -132,6 +132,7 @@ onMounted(load)
       <div class="flex flex-wrap items-center gap-2">
         <select
           v-model="selectedAccount"
+          :aria-label="t('log.filterAccount')"
           class="h-9 rounded-md border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none"
         >
           <option value="">{{ t('log.filterAccount') }}</option>

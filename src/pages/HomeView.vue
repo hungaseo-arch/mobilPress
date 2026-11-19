@@ -824,7 +824,7 @@ onMounted(() => {
                 :key="item.id"
                 :data-row-id="item.id"
                 :data-highlight="highlightId === item.id ? '' : undefined"
-                class="focus-within:bg-primary-soft">
+                class="has-[:focus-visible]:bg-primary-soft">
                 <td class="whitespace-nowrap px-4 py-3 text-foreground">{{ formatDate(item.workDate) }}</td>
                 <td class="px-4 py-3">
                   <!-- 행 열기는 실제 버튼으로만 — 행 전체 클릭을 없애 셀 텍스트를 드래그·복사할 수 있습니다 -->
@@ -955,6 +955,7 @@ onMounted(() => {
               <tr
                 v-for="([name, value], index) in custPage.paged.value"
                 :key="name"
+                class="has-[:focus-visible]:bg-primary-soft"
               >
                 <td class="px-4 py-3 text-right tabular-nums text-muted-foreground">{{ custPage.offset.value + index + 1 }}</td>
                 <td class="px-4 py-3">
@@ -1057,9 +1058,9 @@ onMounted(() => {
               <tr
                 v-for="[month, value] in monthPage.paged.value"
                 :key="month"
-                class="focus-within:bg-primary-soft"
+                class="has-[:focus-visible]:bg-primary-soft"
               >
-                <td class="whitespace-nowrap px-4 py-3 font-medium text-foreground">
+                <td class="whitespace-nowrap px-4 py-3 text-foreground">
                   <button type="button" class="text-left" :class="nameLinkClass" :title="t('month.rowHint')" @click="monthDetail = month">
                     {{ formatDate(month) }}<span class="sr-only"> — {{ t('month.rowHint') }}</span>
                   </button>
@@ -1173,6 +1174,7 @@ onMounted(() => {
           <button
             type="button"
             class="inline-flex h-9 w-full items-center gap-2 rounded-md border border-border bg-card px-3 text-left text-sm text-foreground transition-colors hover:bg-secondary"
+            :title="reportLabel(fi, f.fileName)"
             @click="pickReport(f.fileId, f.fileName)"
           >
             <FileText class="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />

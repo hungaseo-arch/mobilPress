@@ -327,14 +327,12 @@ const messages: Record<string, { id: string; ko: string }> = {
   'report.loadFailed': { id: 'Gagal memuat file.', ko: '파일을 불러오지 못했습니다.' },
   'report.openInDrive': { id: 'Buka di Drive', ko: 'Drive에서 열기' },
   'report.unlink': { id: 'Hapus (termasuk file Drive)', ko: '삭제 (Drive 파일 포함)' },
-  'report.none': { id: 'Belum ada laporan.', ko: '첨부된 보고서가 없습니다.' },
   'report.disabled': { id: 'Unggah belum diaktifkan (VITE_DRIVE_UPLOAD_URL).', ko: '업로드가 설정되지 않았습니다 (VITE_DRIVE_UPLOAD_URL).' },
   'report.modalTitle': { id: 'Laporan Kerja', ko: '작업보고서' },
   'report.previewHint': {
     id: 'Jika pratinjau kosong, gunakan "Buka di Drive" untuk membuka file di tab baru.',
     ko: '미리보기가 비어 있으면 "Drive에서 열기"로 새 탭에서 확인해 주세요.',
   },
-  'report.rowHint': { id: 'Klik untuk lihat laporan', ko: '클릭하면 보고서를 볼 수 있습니다' },
   'report.replace': { id: 'Ganti file', ko: '파일 교체' },
 
   // 주행거리계 사진 (선택 첨부)
