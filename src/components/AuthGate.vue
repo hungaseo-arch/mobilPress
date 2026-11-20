@@ -32,37 +32,10 @@ onMounted(async () => {
   if (!authEnabled) return
   try {
     await refreshUser()
-    await tryGuestAutoLogin()
   } finally {
     checking.value = false
   }
 })
-
-// ── 임시 게스트 자동 로그인 (2026-11-20 발표 하루 한정) ──
-// ?guest=1 로 열리고 빌드 시 VITE_GUEST_EMAIL/PASSWORD 가 주입된 경우에만 동작합니다.
-// 계정은 user 역할(조회 전용·마스킹)로 만들고, 비밀번호는 저장소에 커밋하지 않습니다.
-// ⚠️ 2026-11-21 이후 이 블록과 게스트 계정을 제거하세요.
-const GUEST_EXPIRES_AT = new Date('2026-11-20T23:59:59+07:00').getTime()
-async function tryGuestAutoLogin() {
-  if (currentUser.value || Date.now() >= GUEST_EXPIRES_AT) return
-  if (new URLSearchParams(window.location.search).get('guest') !== '1') return
-  const clean = (v?: string) => (v ?? '').replace(/^[\s'"]+|[\s'"]+$/g, '')
-  const gEmail = clean(import.meta.env.VITE_GUEST_EMAIL)
-  const gPassword = clean(import.meta.env.VITE_GUEST_PASSWORD)
-  if (!gEmail || !gPassword) {
-    toast.error('게스트 설정 누락(빌드에 게스트 값 없음)')
-    return
-  }
-  try {
-    const { signInWithEmail } = await import('@/lib/neon-auth')
-    await signInWithEmail(gEmail, gPassword)
-    await refreshUser()
-    if (!currentUser.value) toast.error('게스트 로그인 후 세션 확인 실패')
-  } catch (error) {
-    // 실패하면 일반 로그인 화면으로 남깁니다. (진단용 메시지, 11-21 제거)
-    toast.error(`게스트 자동 로그인 실패 : ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
-  }
-}
 
 async function submit() {
   if (submitting.value) return
