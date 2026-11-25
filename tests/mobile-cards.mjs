@@ -3,10 +3,13 @@
 // 모바일 카드형 결과 목록 회귀 테스트 (mock 전용, 설치 불필요).
 //
 // 무엇을 보나
-//   390×844 : 페이지 가로 넘침 없음 / 320×700 : 결과 영역 넘침 없음(툴바 기존 넘침은 NOTE 로 기록), Laporan Kerja / Pendapatan per Customer / Pendapatan Bulanan 의
+//   390×844 · 320×700 : 페이지 가로 넘침 없음(document scrollWidth ≤ 뷰포트), Laporan Kerja / Pendapatan per Customer / Pendapatan Bulanan 의
 //                     핵심 수치(날짜·고객·수량·수령액, 고객명·수량·수령액, 월·건수·수량·수령액)와 합계가
 //                     옆으로 밀지 않아도 화면 안에 잘리지 않고 보이는지, 긴 무공백 고객명이 줄바꿈되는지,
 //                     상세 팝업(클릭·키보드 Enter), 검색·기간·정렬·페이지, 보고서·삭제 동작, 빈 상태, 중복 id.
+//   320×700 ID/KO   : 세 화면의 툴바(기간 버튼, 실적 분석 서브탭, 검색·등록)가 숨지 않고 화면 안에 보이며 실제로 작동하는지
+//                     (기간 선택 aria-pressed·결과 반영 / 월별은 비활성+사유, 서브탭 전환, 검색 결과, 등록 팝업 열고 Escape 로 닫기), 넘침이 있으면 원인 요소를 출력.
+//   390 · 1440      : 툴바 각 도구의 위치를 LAYOUT 줄로 기록(변경 전후 비교용, 판정 아님).
 //   1440×900        : 기존 표(열 수, 정렬 헤더)가 그대로 보이고 카드 목록은 보이지 않는지.
 //   ID / KO         : 카드 라벨이 언어에 맞게 바뀌는지.
 //
@@ -102,7 +105,7 @@ const cleanup = () => {
 process.on('exit', cleanup)
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { cleanup(); process.exit(130) })
 // 전체 제한 시간 — 멈춰도 Chrome 을 남기지 않는다
-setTimeout(() => { console.error('TIMEOUT'); cleanup(); process.exit(3) }, 150000).unref()
+setTimeout(() => { console.error('TIMEOUT'); cleanup(); process.exit(3) }, 240000).unref()
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 async function devtoolsPort() {
@@ -182,6 +185,21 @@ const allByText = (text, root = sec()) => [...root.querySelectorAll('*')].filter
 const visibleButtons = (pred) => [...scope().querySelectorAll('button')].filter((b) => vis(b) && pred(b));
 // 결과 영역 안에서 화면 오른쪽(clientWidth)을 넘는 보이는 요소 수 — 툴바 등 영역 밖 넘침과 구분합니다
 const secOverflow = () => { const w = document.documentElement.clientWidth; const r = sec().getBoundingClientRect(); return { secRight: Math.round(r.right), clientWidth: w, over: [...sec().querySelectorAll('*')].filter((e) => vis(e) && e.getBoundingClientRect().right > w + 0.5).length }; };
+// 화면 오른쪽(clientWidth)을 넘는 보이는 요소 중 가장 바깥 것들 — 넘침 원인 기록용
+const offenders = () => { const w = document.documentElement.clientWidth; const over = [...document.body.querySelectorAll('*')].filter((e) => vis(e) && e.getBoundingClientRect().right > w + 0.5); return over.filter((e) => !over.includes(e.parentElement)).slice(0, 8).map((e) => { const r = e.getBoundingClientRect(); return { tag: e.tagName.toLowerCase(), cls: (e.getAttribute('class') ?? '').slice(0, 70), text: e.textContent.trim().slice(0, 30), left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width) }; }); };
+// 뷰포트 안에 온전히 보이는지(입력란처럼 내부 스크롤이 있는 요소용)
+const inView = (el) => { if (!vis(el)) return { ok: false, why: 'hidden' }; const r = el.getBoundingClientRect(); return { ok: r.left >= -0.5 && r.right <= innerWidth + 0.5, left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width), top: Math.round(r.top) }; };
+// 툴바 도구 — 기간 버튼(그룹 라벨로 찾음), 실적 분석 서브탭, 검색 입력, 등록 버튼
+const tools = (periodLabel, addLabel) => {
+  const grp = [...scope().querySelectorAll('[role=group]')].find((g) => g.getAttribute('aria-label') === periodLabel);
+  const search = scope().querySelector('input[type=search]');
+  return {
+    period: grp ? [...grp.querySelectorAll('button')].map((b) => ({ t: b.textContent.trim(), pressed: b.getAttribute('aria-pressed'), ...readable(b) })) : [],
+    tabs: [...scope().querySelectorAll('[role=tab]')].map((b) => ({ t: b.textContent.trim(), selected: b.getAttribute('aria-selected'), ...readable(b) })),
+    search: search ? inView(search) : null,
+    add: visibleButtons((b) => b.textContent.trim() === addLabel).map((b) => ({ t: b.textContent.trim(), ...readable(b) })),
+  };
+};
 const overflow = () => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, bodyScroll: document.body.scrollWidth });
 const dupIds = () => { const m = {}; document.querySelectorAll('[id]').forEach((e) => (m[e.id] = (m[e.id] ?? 0) + 1)); return Object.entries(m).filter(([, n]) => n > 1).map(([k]) => k); };
 const dialogTitle = () => { const d = document.querySelector('[role=dialog]'); if (!d) return null; const id = d.getAttribute('aria-labelledby'); return (id && document.getElementById(id)?.textContent.trim()) || d.textContent.trim().slice(0, 40); };
@@ -242,10 +260,8 @@ async function mobileInstallations(width, height, label) {
   await viewport(width, height)
   await open()
   const o = await evaluate('overflow()')
-  if (width >= 390) check(`${label} Laporan Kerja: 페이지 가로 넘침 없음`, noOverflow(o), o)
-  else {
-    // 320: 기존 툴바(기간 필터·검색+등록 버튼)의 넘침은 이 카드 범위 밖 — 기록만 하고 결과 영역만 판정합니다
-    console.log(`NOTE  ${label} 페이지 scrollWidth ${o.scrollWidth} / clientWidth ${o.clientWidth} (툴바 기존 넘침, 범위 밖)`)
+  check(`${label} Laporan Kerja: 페이지 가로 넘침 없음`, noOverflow(o), noOverflow(o) ? o : { ...o, offenders: await evaluate('offenders()') })
+  if (width < 390) {
     const so = await evaluate('secOverflow()')
     check(`${label} Laporan Kerja: 결과 영역 가로 넘침 없음`, so.over === 0 && so.secRight <= so.clientWidth, so)
   }
@@ -269,6 +285,83 @@ async function mobileInstallations(width, height, label) {
   const ids = await evaluate('dupIds()')
   check(`${label} Laporan Kerja: 중복 id 없음`, ids.length === 0, ids)
   return o
+}
+
+// 320 툴바: 세 화면 각각 넘침 없음 + 도구가 숨지 않고 화면 안에 보임 + 실제로 작동
+const L = {
+  id: { period: 'Periode', all: 'Semua', thisMonth: 'Bulan ini', add: 'Tambah Pemasangan', customer: 'Pendapatan per Customer', month: 'Pendapatan Bulanan' },
+  ko: { period: '기간', all: '전체', thisMonth: '이번 달', add: '장착 등록', customer: '고객별 매출', month: '월별 매출' },
+}
+const clickPeriod = (lang, label) => evaluate(`(() => { const g = [...scope().querySelectorAll('[role=group]')].find((x) => x.getAttribute('aria-label') === ${JSON.stringify(L[lang].period)}); const b = g && [...g.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(label)}); b?.click(); return !!b; })()`)
+const pressedOf = (lang, label) => evaluate(`(() => { const g = [...scope().querySelectorAll('[role=group]')].find((x) => x.getAttribute('aria-label') === ${JSON.stringify(L[lang].period)}); return [...(g?.querySelectorAll('button') ?? [])].find((x) => x.textContent.trim() === ${JSON.stringify(label)})?.getAttribute('aria-pressed') ?? null; })()`)
+async function tools320(lang) {
+  const l = L[lang]
+  const tag = `320 ${lang.toUpperCase()}`
+  await viewport(320, 700)
+  for (const [q, name] of [['', 'Laporan Kerja'], ['?tab=revenue', '고객별'], ['?tab=revenue&sub=month', '월별']]) {
+    await open(q, lang)
+    const o = await evaluate('overflow()')
+    check(`${tag} ${name}: document scrollWidth ≤ 320`, noOverflow(o) && o.clientWidth === 320, noOverflow(o) ? o : { ...o, offenders: await evaluate('offenders()') })
+    const tb = await evaluate(`tools(${JSON.stringify(l.period)}, ${JSON.stringify(l.add)})`)
+    const periodOk = tb.period.length === 4 && tb.period.every((b) => b.ok) && tb.period.some((b) => b.t === l.thisMonth)
+    if (q === '') {
+      check(`${tag} ${name}: 기간 4개·검색·등록이 화면 안에 보임`, periodOk && tb.search?.ok && tb.search.width >= 160 && tb.add.length === 1 && tb.add[0].ok, tb)
+      // 기간: 이번 달 → 11월만, 다시 전체
+      await clickPeriod(lang, l.thisMonth)
+      await sleep(250)
+      const pm = await evaluate(`({ nov: allByText('2026-11-20').length, oct: allByText('2026-10-28').length, o: overflow() })`)
+      check(`${tag} ${name}: 기간(${l.thisMonth}) 선택·반영, 넘침 없음`, (await pressedOf(lang, l.thisMonth)) === 'true' && pm.nov === 1 && pm.oct === 0 && noOverflow(pm.o), pm)
+      await clickPeriod(lang, l.all)
+      await sleep(250)
+      // 검색
+      await evaluate(`(() => { const i = scope().querySelector('input[type=search]'); i.focus(); i.value = 'Beta'; i.dispatchEvent(new Event('input')); return true; })()`)
+      await sleep(250)
+      const s = await evaluate(`({ beta: allByText('CV Beta Logistik').length, alpha: allByText('PT Alpha Mining').length, focused: document.activeElement?.type === 'search' })`)
+      check(`${tag} ${name}: 검색(Beta) → 4건`, s.beta === 4 && s.alpha === 0 && s.focused, s)
+      await evaluate(`(() => { const i = scope().querySelector('input[type=search]'); i.value = ''; i.dispatchEvent(new Event('input')); return true; })()`)
+      await sleep(200)
+      // 등록 팝업 열고 닫기
+      await evaluate(`visibleButtons((b) => b.textContent.trim() === ${JSON.stringify(l.add)})[0]?.click(), true`)
+      const opened = await waitFor(`!!document.querySelector('[role=dialog]')`)
+      await shot(`320-${lang}-installations-add`)
+      await pressEscape()
+      const closed = await waitFor(`!document.querySelector('[role=dialog]')`)
+      check(`${tag} ${name}: 등록 → 팝업 열림, Escape 로 닫힘`, opened && closed, { opened, closed, title: opened ? null : await evaluate('dialogTitle()') })
+      await shot(`320-${lang}-installations`)
+    } else {
+      const want = q.includes('month') ? l.month : l.customer
+      const other = q.includes('month') ? l.customer : l.month
+      const tabsOk = tb.tabs.length === 2 && tb.tabs.every((b) => b.ok) && tb.tabs.find((b) => b.t === want)?.selected === 'true'
+      check(`${tag} ${name}: 서브탭 2개·기간 4개가 화면 안에 보임`, tabsOk && periodOk && !tb.search && tb.add.length === 0, tb)
+      if (q.includes('month')) {
+        // 월별은 기간 필터를 숨기지 않고 비활성 + 사유(note) — 버튼과 사유가 화면 안에 보이는지
+        const d = await evaluate(`(() => { const g = [...scope().querySelectorAll('[role=group]')].find((x) => x.getAttribute('aria-label') === ${JSON.stringify(l.period)}); const n = g && document.getElementById(g.getAttribute('aria-describedby')); return { disabled: [...(g?.querySelectorAll('button') ?? [])].every((b) => b.disabled), note: n ? { text: n.textContent.trim().slice(0, 40), ...inView(n) } : null }; })()`)
+        check(`${tag} ${name}: 기간 버튼 비활성 + 사유 문구 화면 안`, d.disabled && d.note?.ok, d)
+        await shot(`320-${lang}-revenue-month`)
+      } else {
+        await clickPeriod(lang, l.thisMonth)
+        await sleep(250)
+        const pm = await evaluate(`({ nov: readable(byText(${JSON.stringify(idr(novReceived))})), o: overflow() })`)
+        check(`${tag} ${name}: 기간(${l.thisMonth}) 선택·반영, 넘침 없음`, (await pressedOf(lang, l.thisMonth)) === 'true' && pm.nov.ok && noOverflow(pm.o), pm)
+        await shot(`320-${lang}-revenue-customer-thismonth`)
+        await clickPeriod(lang, l.all)
+        await sleep(200)
+      }
+      await evaluate(`[...scope().querySelectorAll('[role=tab]')].find((b) => b.textContent.trim() === ${JSON.stringify(other)})?.click(), true`)
+      await sleep(250)
+      const sw = await evaluate(`({ sel: [...scope().querySelectorAll('[role=tab]')].find((b) => b.getAttribute('aria-selected') === 'true')?.textContent.trim(), o: overflow() })`)
+      check(`${tag} ${name}: 서브탭 → ${other} 전환, 넘침 없음`, sw.sel === other && noOverflow(sw.o), sw)
+    }
+  }
+}
+
+// 툴바 도구 위치 기록(390 · 1440 의 배치가 바뀌지 않았는지 전후 비교용 — 판정 아님)
+async function layout(label) {
+  for (const [q, name] of [['', 'installations'], ['?tab=revenue', 'customer'], ['?tab=revenue&sub=month', 'month']]) {
+    await open(q)
+    const g = await evaluate(`(() => { const tb = tools('Periode', 'Tambah Pemasangan'); const p = (x) => x && x.ok !== undefined ? [x.left, x.top ?? null, x.width] : null; const top = (sel) => { const e = sel(); return e ? Math.round(e.getBoundingClientRect().top) : null; }; return { period: tb.period.map((b) => [b.left, b.width]), periodTop: top(() => [...scope().querySelectorAll('[role=group]')].find((x) => x.getAttribute('aria-label') === 'Periode')), tabs: tb.tabs.map((b) => [b.left, b.width]), search: p(tb.search), add: tb.add.map((b) => [b.left, b.width]), addTop: top(() => visibleButtons((b) => b.textContent.trim() === 'Tambah Pemasangan')[0]) }; })()`)
+    console.log(`LAYOUT ${label} ${name} ${JSON.stringify(g)}`)
+  }
 }
 
 async function run() {
@@ -365,6 +458,8 @@ async function run() {
   check('390 월별: 월 탭 → 상세 팝업', await waitFor(`!!document.querySelector('[role=dialog]')`), await evaluate('dialogTitle()'))
   await pressEscape()
 
+  await layout('390')
+
   // 320
   await mobileInstallations(320, 700, '320')
   await shot('320-installations')
@@ -374,6 +469,7 @@ async function run() {
   await open('?tab=revenue&sub=month')
   o = await evaluate('secOverflow()')
   check('320 월별: 결과 영역 넘침 없음 + 수령액 보임', o.over === 0 && (await evaluate(`readable(byText(${JSON.stringify(idr(novReceived))}))`)).ok, o)
+  for (const lang of ['id', 'ko']) await tools320(lang)
 
   // KO 390
   await viewport(390, 844)
@@ -390,6 +486,7 @@ async function run() {
 
   // 1440 — 기존 표
   await viewport(1440, 900)
+  await layout('1440')
   for (const [q, label, cols] of [['', 'Laporan Kerja', 9], ['?tab=revenue', '고객별', 7], ['?tab=revenue&sub=month', '월별', 7]]) {
     await open(q)
     const d = await evaluate(`(() => { const t = [...scope().querySelectorAll('table')].find(vis); return { table: !!t, cols: t ? t.querySelectorAll('thead th').length : 0, rows: t ? t.querySelectorAll('tbody tr').length : 0, cards: [...scope().querySelectorAll('[data-card-list]')].filter(vis).length, o: overflow(), dup: dupIds() }; })()`)

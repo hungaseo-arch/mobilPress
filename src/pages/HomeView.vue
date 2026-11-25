@@ -750,8 +750,9 @@ onMounted(() => {
               :note="periodNote"
             />
           </div>
-          <div class="flex items-center gap-2">
-            <div v-if="activeTab === 'installations' && !store.loadError" class="relative w-48 sm:w-64">
+          <!-- 좁은 화면(320)에서는 검색이 줄어들다가(최소 144px) 등록 버튼이 다음 줄로 내려갑니다. sm 이상은 기존 고정 폭 -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div v-if="activeTab === 'installations' && !store.loadError" class="relative w-48 min-w-36 flex-1 sm:w-64 sm:flex-none">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 v-model="store.query"

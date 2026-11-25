@@ -4,6 +4,7 @@ import { PERIODS, type Period } from '@/lib/period'
 import { t } from '@/lib/i18n'
 
 // 기간 필터 — 모든 탭에서 같은 위치·같은 모양. 서브탭(보기 전환, 파란 선택색)과 구분되도록 라벨이 붙은 분절형 컨트롤이며 선택은 중립색+진한 링(ring-1 inset), hover 는 같은 중립색(bg-secondary)에 링 없이 두어 분리하고, 기간이 '전체'가 아니면 '필터 적용 중'을 버튼 뒤 고정 슬롯에 표시합니다. 높이는 검색·등록과 같은 36px.
+// 좁은 화면(320)에서 버튼 묶음이 한 줄에 안 들어가면 옆으로 넘치지 않고 묶음 안에서 두 줄로 줄바꿈합니다(넓은 화면은 한 줄 36px 그대로).
 // disabled 일 때는 숨기지 않고 비활성으로 두고(선택 강조도 풀어 '선택됨'처럼 보이지 않게), note 로 이유를 밝힙니다.
 const props = defineProps<{ modelValue: Period; disabled?: boolean; note?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Period] }>()
@@ -19,7 +20,7 @@ const options = computed(() => PERIODS.map((key) => ({ key, label: t(`period.${k
       role="group"
       :aria-label="t('period.label')"
       :aria-describedby="note ? noteId : undefined"
-      class="inline-flex h-9 items-center rounded-md border border-border bg-card p-0.5"
+      class="inline-flex min-h-9 flex-wrap items-center gap-y-0.5 rounded-md border border-border bg-card p-0.5"
       :class="props.disabled ? 'opacity-50' : ''"
     >
       <button
