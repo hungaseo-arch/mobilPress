@@ -778,7 +778,7 @@ onMounted(() => {
 
         <!-- 장착 실적 -->
         <section v-else-if="activeTab === 'installations'" class="rounded-lg border border-border bg-card">
-          <div class="overflow-x-auto">
+          <div class="relative overflow-x-auto">
           <table class="asm-table w-full min-w-240 text-left text-sm">
             <thead>
               <tr>
@@ -939,7 +939,7 @@ onMounted(() => {
         <!-- 고객별 매출 -->
         <section v-if="revenueTab === 'customer'" id="revenue-panel-customer" role="tabpanel" tabindex="0" aria-labelledby="revenue-tab-customer" class="rounded-lg border border-border bg-card">
           <p v-if="periodScope" class="border-b border-border px-4 py-2 text-xs text-muted-foreground">{{ periodScope }}</p>
-          <div class="overflow-x-auto">
+          <div class="relative overflow-x-auto">
           <table class="asm-table w-full min-w-160 table-fixed text-left text-sm">
             <thead>
               <tr>
@@ -1052,7 +1052,7 @@ onMounted(() => {
 
         <!-- 월별 매출 -->
         <section v-else id="revenue-panel-month" role="tabpanel" tabindex="0" aria-labelledby="revenue-tab-month" class="rounded-lg border border-border bg-card">
-          <div class="overflow-x-auto">
+          <div class="relative overflow-x-auto">
           <table class="asm-table w-full min-w-200 text-left text-sm">
             <thead>
               <tr>

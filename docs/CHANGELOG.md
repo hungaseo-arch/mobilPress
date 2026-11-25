@@ -2,6 +2,38 @@
 
 주요 코드 변경 내용과 주요사항을 기록합니다. 최신 항목이 위에 옵니다.
 
+## 2026-11-25 — 모바일(390px) 가로 넘침 수정: 표 래퍼 relative, 운영자료 카드 min-w-0
+
+모바일 390px 폭 점검에서 페이지 전체가 가로로 늘어나 좌우 스크롤이 생기는 문제가 두 가지 확인됐습니다.
+**SQL 마이그레이션 없음.**
+
+- **A. 표 셀 안 `span.sr-only` 가 문서 폭을 늘림** — `sr-only` 는 `position: absolute` 입니다. 표 래퍼
+  `.overflow-x-auto` 에 positioning 이 없으면 이 요소의 기준 상자가 래퍼 밖(문서)으로 잡혀, 가로 스크롤
+  안쪽에 있어야 할 위치가 문서 폭에 반영됐습니다. 390px 화면이 648px 로 늘어났습니다.
+  → 표 래퍼마다 `relative` 를 추가해 absolute 요소를 스크롤 컨테이너 안에 가둡니다
+- **B. 운영자료 Harga Jasa 표가 그리드 셀을 밀어냄** — 표 최소 폭 560px 이 섹션 카드(그리드 항목,
+  기본 `min-width: auto`)를 넓혀 페이지가 578px 로 늘어났습니다.
+  → `OperationsReference.vue` 섹션 카드에 `min-w-0`, 일반 표 래퍼에 `w-full max-w-full` 을 주어
+  표는 카드 안에서 가로 스크롤되게 합니다
+
+| 파일 | 변경 |
+| --- | --- |
+| `src/components/AccessLogTable.vue` | 표 래퍼 2곳 `relative` (A) |
+| `src/components/BudgetReference.vue` | 표 래퍼 `relative` (A) |
+| `src/components/MemberTable.vue` | 표 래퍼 `relative` (A) |
+| `src/components/MonthlyHistoryModal.vue` | 표 래퍼 `relative` (A) |
+| `src/components/OperationsReference.vue` | 섹션 카드 `min-w-0`, 일반 표 래퍼 `w-full max-w-full` (B) · 표 래퍼 `relative` (A) |
+| `src/components/RequestHistoryModal.vue` | 표 래퍼 `relative` (A) |
+| `src/components/RevenueHistoryModal.vue` | 표 래퍼 `relative` (A) |
+| `src/pages/HomeView.vue` | 표 래퍼 3곳 `relative` (A) |
+
+**남은 작업(미수행)**
+
+- C. 표 핵심 열의 모바일 가시성 — 가로 스크롤 없이 첫 화면에서 핵심 열이 보이도록
+- D. 상단 메뉴 1줄화
+- E. 터치 영역(44px)·입력창 글자 크기 16px(iOS 확대 방지)
+- F. 로그인 화면 모바일 보완
+
 ## 2026-09-10 — 조회 전용(user) 계정 마스킹: 금액·고객명·위치
 
 조회 전용 아이디로 접속하면 **금액·고객명·위치**가 가려져 보입니다. 외부에 화면을 보여줘야 하는

@@ -27,7 +27,7 @@ const totals = computed(() => ({
 
 <template>
   <BaseModal :title="`${formatDate(month)} — ${t('month.modalTitle')}`" @close="emit('close')">
-    <div class="overflow-x-auto">
+    <div class="relative overflow-x-auto">
       <table class="asm-table w-full min-w-160 text-left text-sm">
         <thead>
           <tr>

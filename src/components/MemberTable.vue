@@ -208,7 +208,7 @@ onMounted(load)
 
     <section v-else class="rounded-lg border border-border bg-card">
       <p class="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">{{ t('member.hint') }}</p>
-      <div class="overflow-x-auto">
+      <div class="relative overflow-x-auto">
         <table class="asm-table w-full min-w-180 text-left text-sm">
           <thead>
             <tr>

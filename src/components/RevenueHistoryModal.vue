@@ -93,7 +93,7 @@ const totals = computed(() => ({
     <!-- 매출 상세 히스토리 -->
     <h3 class="mb-2 text-sm font-bold text-foreground">{{ t('revenue.modalTitle') }}</h3>
     <ScopeTag :scope="scope" :widened="widened" @toggle="widened = !widened" />
-    <div class="overflow-x-auto">
+    <div class="relative overflow-x-auto">
       <table class="asm-table w-full min-w-180 text-left text-sm">
         <thead>
           <tr>

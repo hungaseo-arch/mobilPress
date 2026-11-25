@@ -122,7 +122,7 @@ async function confirmDelete(entry: BudgetEntry) {
                 <ChevronDown class="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
               </span>
             </summary>
-            <div class="overflow-x-auto border-t border-border">
+            <div class="relative overflow-x-auto border-t border-border">
               <table class="asm-table w-full min-w-160 text-left text-sm">
                 <thead>
                   <tr>

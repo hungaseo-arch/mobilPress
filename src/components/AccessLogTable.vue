@@ -167,7 +167,7 @@ onMounted(load)
       <div class="flex items-center justify-end border-b border-border px-4 py-2.5 text-sm text-muted-foreground">
         {{ t('log.durationTotal') }}: <span class="ml-1 font-semibold text-foreground">{{ formatDuration(totalDurationMs) }}</span>
       </div>
-      <div class="overflow-x-auto">
+      <div class="relative overflow-x-auto">
         <table class="asm-table w-full min-w-220 text-left text-sm">
           <thead>
             <tr>
@@ -219,7 +219,7 @@ onMounted(load)
 
     <!-- 변경 이력 -->
     <section v-else class="rounded-xl border border-border bg-card">
-      <div class="overflow-x-auto">
+      <div class="relative overflow-x-auto">
         <table class="asm-table w-full min-w-140 text-left text-sm">
           <thead>
             <tr>

@@ -345,7 +345,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
           <section
             v-for="(section, localIndex) in sectionRow.sections"
             :key="`${rowIdx}-${localIndex}`"
-            class="flex h-full flex-col rounded-lg border border-border bg-card"
+            class="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card"
           >
             <!-- 섹션 헤더: 카드 제목(.asm-title = 3px 블루 세로선) + 참조 모달·전체 펼치기 -->
             <div class="flex w-full flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3.5">
@@ -395,7 +395,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
                   </span>
                   <ChevronDown class="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
                 </summary>
-                <div class="overflow-x-auto">
+                <div class="relative overflow-x-auto">
                   <table
                     class="asm-table w-full min-w-140 text-left text-sm"
                     :class="{ 'table-fixed': eqWidthEnabled(section.table.headers.slice(1)) }"
@@ -434,7 +434,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
             </div>
 
             <!-- 일반 표 (3열 표는 각 1/3 균등 배분) -->
-            <div v-else-if="section.table" class="overflow-x-auto">
+            <div v-else-if="section.table" class="relative w-full max-w-full overflow-x-auto">
               <table
                 class="asm-table w-full text-left text-sm"
                 :class="[
@@ -510,7 +510,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
                 </span>
               </div>
 
-              <div class="overflow-x-auto">
+              <div class="relative overflow-x-auto">
                 <div class="min-w-190">
                   <!-- 월 축 -->
                   <div class="relative mb-1.5 ml-56 h-4 text-xs font-medium text-muted-foreground" aria-hidden="true">
@@ -593,7 +593,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
 
     <!-- 섹션 참조 모달 (지그 규격 등) -->
     <BaseModal v-if="openModal" :title="openModal.title" @close="openModal = null">
-      <div class="overflow-x-auto">
+      <div class="relative overflow-x-auto">
         <table class="asm-table w-full min-w-140 text-left text-sm">
           <thead>
             <tr>

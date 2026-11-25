@@ -33,7 +33,7 @@ const totals = computed(() => ({
 <template>
   <BaseModal :title="`${maskedName(distributor)} — ${t('request.modalTitle')}`" @close="emit('close')">
     <ScopeTag :scope="scope" :widened="widened" @toggle="widened = !widened" />
-    <div class="overflow-x-auto">
+    <div class="relative overflow-x-auto">
       <table class="asm-table w-full min-w-140 text-left text-sm">
         <thead>
           <tr>
