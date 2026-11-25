@@ -12,6 +12,7 @@ import { PERIODS, deltaPercent, periodRange, previousRange, type Period } from '
 import { lang, setLang, t } from '@/lib/i18n'
 import TablePagination from '@/components/TablePagination.vue'
 import PeriodFilter from '@/components/PeriodFilter.vue'
+import InstallationsEmptyState from '@/components/InstallationsEmptyState.vue'
 import { usePagination } from '@/lib/pagination'
 import type { Customer, CustomerForm, Installation, InstallationForm } from '@/lib/types'
 
@@ -118,6 +119,30 @@ function sortMark(key: SortKey): string {
 function ariaSort(key: SortKey): 'ascending' | 'descending' | 'none' {
   return sort.value?.key === key ? (sort.value.dir === 'asc' ? 'ascending' : 'descending') : 'none'
 }
+// 모바일 카드 목록은 표 헤더가 없으므로 같은 정렬 상태를 select 하나로 고릅니다(금액 정렬은 마스킹 시 제외 — toggleSort 와 같은 규칙).
+const sortOptions = computed(() => {
+  const opts = [
+    { value: 'workDate:desc', label: t('sort.newest') },
+    { value: 'workDate:asc', label: t('sort.oldest') },
+    { value: 'qty:desc', label: t('sort.high', { col: t('th.qty') }) },
+    { value: 'qty:asc', label: t('sort.low', { col: t('th.qty') }) },
+  ]
+  if (!maskSensitive.value) {
+    opts.push(
+      { value: 'receivedAmount:desc', label: t('sort.high', { col: t('th.received') }) },
+      { value: 'receivedAmount:asc', label: t('sort.low', { col: t('th.received') }) },
+    )
+  }
+  return opts
+})
+const sortValue = computed({
+  get: () => `${sort.value.key}:${sort.value.dir}`,
+  set: (value: string) => {
+    const [key, dir] = value.split(':') as [SortKey, 'asc' | 'desc']
+    if (key === 'receivedAmount' && maskSensitive.value) return
+    sort.value = { key, dir }
+  },
+})
 const sortedInstallations = computed(() => {
   const list = store.filteredInstallations
   const s = sort.value
@@ -418,7 +443,8 @@ async function showAllInstallations(savedId: string | null = null) {
   clearTimeout(highlightTimer)
   highlightTimer = setTimeout(() => (highlightId.value = null), 4000)
   await nextTick()
-  const row = document.querySelector(`[data-row-id="${CSS.escape(savedId)}"]`)
+  // PC 표 행과 모바일 카드가 같은 data-row-id 를 가지므로 지금 화면에 보이는 쪽을 고릅니다.
+  const row = [...document.querySelectorAll(`[data-row-id="${CSS.escape(savedId)}"]`)].find((el) => el.getClientRects().length > 0)
   row?.scrollIntoView({ block: 'center' })
   // 안내를 먼저 쓰고 포커스는 잠시 미룬다 — 포커스 이동의 낭독이 live region 안내를 끊지 않게 한다.
   await announce(t('installations.savedRow', { page: String(page) }))
@@ -778,7 +804,106 @@ onMounted(() => {
 
         <!-- 장착 실적 -->
         <section v-else-if="activeTab === 'installations'" class="rounded-lg border border-border bg-card">
-          <div class="relative overflow-x-auto">
+          <!-- 모바일(<sm) 카드 목록 — 표를 옆으로 밀지 않아도 날짜·고객·수량·수령액을 읽습니다. sm 이상은 아래 기존 표. -->
+          <div class="sm:hidden">
+            <div v-if="store.filteredInstallations.length" class="flex items-center justify-end gap-2 border-b border-border px-4 py-2">
+              <label for="installations-sort-mobile" class="text-xs font-medium text-muted-foreground">{{ t('sort.label') }}</label>
+              <select
+                id="installations-sort-mobile"
+                v-model="sortValue"
+                class="h-8 min-w-0 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-primary focus:outline-none"
+              >
+                <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+            <div v-if="!store.filteredInstallations.length" class="px-4 py-14 text-center text-muted-foreground">
+              <InstallationsEmptyState />
+            </div>
+            <ul v-else data-card-list class="asm-card-list">
+              <li
+                v-for="item in instPage.paged.value"
+                :key="item.id"
+                :data-row-id="item.id"
+                :data-highlight="highlightId === item.id ? '' : undefined"
+                class="px-4 py-3 has-[:focus-visible]:bg-primary-soft"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="min-w-0 flex-1">
+                    <p class="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{{ formatDate(item.workDate) }}</p>
+                    <!-- 저장 행 포커스(showAllInstallations)가 첫 버튼을 고르므로 이름 버튼을 맨 앞에 둡니다 -->
+                    <button
+                      type="button"
+                      class="mt-0.5 block w-full text-left text-sm"
+                      :title="`${maskedName(item.customerName)} — ${canEdit ? t('installations.rowHint') : t('installations.rowHintView')}`"
+                      @click="openInstallationModal(item)"
+                    >
+                      <span class="block wrap-anywhere" :class="nameLinkClass">{{ maskedName(item.customerName) }}</span>
+                      <span class="sr-only">{{ canEdit ? t('installations.rowHint') : t('installations.rowHintView') }}</span>
+                    </button>
+                  </div>
+                  <div class="-mr-1.5 flex shrink-0 gap-1">
+                    <button
+                      v-if="canViewReport && reportFilesOf(item).length"
+                      type="button"
+                      class="inline-flex items-center gap-1 rounded-md p-1.5 text-primary transition hover:bg-secondary"
+                      :title="reportButtonLabel(item)"
+                      :aria-label="reportButtonLabel(item)"
+                      @click="openReports(item)"
+                    >
+                      <FileText class="h-4 w-4" />
+                      <span v-if="reportFilesOf(item).length > 1" class="text-xs font-bold tabular-nums">{{ reportFilesOf(item).length }}</span>
+                    </button>
+                    <template v-if="canEdit">
+                      <button
+                        type="button"
+                        class="rounded-md p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        :aria-label="t('btn.editItem', { name: installationLabel(item) })"
+                        :title="t('btn.edit')"
+                        tabindex="-1"
+                        @click="openInstallationModal(item)"
+                      >
+                        <Pencil class="h-4 w-4" />
+                      </button>
+                      <button
+                        v-if="canDelete"
+                        type="button"
+                        class="ml-2 rounded-md p-1.5 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+                        :aria-label="t('btn.deleteItem', { name: installationLabel(item) })"
+                        :title="t('btn.delete')"
+                        @click="requestDelete('installations', item.id, installationLabel(item), item)"
+                      >
+                        <Trash2 class="h-4 w-4" />
+                      </button>
+                    </template>
+                  </div>
+                </div>
+                <dl class="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+                  <div>
+                    <dt class="text-xs text-muted-foreground">{{ t('th.qty') }}</dt>
+                    <dd class="whitespace-nowrap text-sm tabular-nums text-foreground">{{ formatNumber(item.qty) }} pcs</dd>
+                  </div>
+                  <div class="ml-auto text-right">
+                    <dt class="text-xs text-muted-foreground">{{ t('th.received') }}</dt>
+                    <dd class="whitespace-nowrap text-sm font-bold tabular-nums text-foreground">{{ maskedIDR(item.receivedAmount) }}</dd>
+                  </div>
+                </dl>
+              </li>
+            </ul>
+            <div v-if="store.filteredInstallations.length" class="border-t border-border bg-primary-soft px-4 py-3 text-primary">
+              <p class="text-sm font-bold">{{ installationsTotalLabel }}</p>
+              <dl class="mt-1 flex flex-wrap items-end justify-between gap-x-4 gap-y-1 font-bold">
+                <div>
+                  <dt class="text-xs font-medium">{{ t('th.qty') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ formatNumber(installationsTotal.qty) }} pcs</dd>
+                </div>
+                <div class="ml-auto text-right">
+                  <dt class="text-xs font-medium">{{ t('th.received') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ maskedIDR(installationsTotal.received) }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <div class="relative hidden overflow-x-auto sm:block">
           <table class="asm-table w-full min-w-240 text-left text-sm">
             <thead>
               <tr>
@@ -803,37 +928,7 @@ onMounted(() => {
             <tbody>
               <tr v-if="!store.filteredInstallations.length">
                 <td colspan="9" class="px-4 py-14 text-center text-muted-foreground">
-                  <ClipboardList class="mx-auto mb-2 h-8 w-8 opacity-40" />
-                  <template v-if="store.query.trim()">
-                    <p>{{ t('search.noMatch', { q: store.query.trim() }) }}</p>
-                    <p v-if="maskSensitive" class="mt-1 text-xs">{{ t('search.maskedHint') }}</p>
-                    <button
-                      type="button"
-                      class="mt-3 inline-flex h-8 items-center rounded-md border border-primary bg-card px-3 text-sm font-medium text-primary transition-colors hover:bg-secondary"
-                      @click="store.query = ''"
-                    >
-                      {{ t('search.clear') }}
-                    </button>
-                    <button
-                      v-if="store.period !== 'all'"
-                      type="button"
-                      class="ml-2 mt-3 inline-flex h-8 items-center rounded-md border border-primary bg-card px-3 text-sm font-medium text-primary transition-colors hover:bg-secondary"
-                      @click="store.period = 'all'"
-                    >
-                      {{ t('period.showAll') }}
-                    </button>
-                  </template>
-                  <template v-else-if="store.period !== 'all' && store.installations.length">
-                    {{ t('period.empty') }}
-                    <div><button
-                      type="button"
-                      class="mt-3 inline-flex h-8 items-center rounded-md border border-primary bg-card px-3 text-sm font-medium text-primary transition-colors hover:bg-secondary"
-                      @click="store.period = 'all'"
-                    >
-                      {{ t('period.showAll') }}
-                    </button></div>
-                  </template>
-                  <template v-else>{{ t('installations.empty') }}</template>
+                  <InstallationsEmptyState />
                 </td>
               </tr>
               <tr
@@ -931,7 +1026,7 @@ onMounted(() => {
             :total="instPage.total.value"
             @go="instPage.go"
           />
-          <p class="border-t border-border px-4 py-2 text-xs text-muted-foreground">{{ t('th.refLegend') }}</p>
+          <p class="hidden border-t border-border px-4 py-2 text-xs text-muted-foreground sm:block">{{ t('th.refLegend') }}</p>
         </section>
 
         <!-- 실적 분석: 고객별 매출 / 월별 매출 (서브탭은 상단 검색 행에) -->
@@ -939,7 +1034,86 @@ onMounted(() => {
         <!-- 고객별 매출 -->
         <section v-if="revenueTab === 'customer'" id="revenue-panel-customer" role="tabpanel" tabindex="0" aria-labelledby="revenue-tab-customer" class="rounded-lg border border-border bg-card">
           <p v-if="periodScope" class="border-b border-border px-4 py-2 text-xs text-muted-foreground">{{ periodScope }}</p>
-          <div class="relative overflow-x-auto">
+          <!-- 모바일(<sm) 카드 목록 — 요청 고객은 접지 않고 모두 줄바꿈해 보여 줍니다(PC 표의 id 와 겹치지 않게 id 없음) -->
+          <div class="sm:hidden">
+            <div v-if="!store.revenueByCustomer.length" class="px-4 py-14 text-center text-muted-foreground">
+              <ClipboardList class="mx-auto mb-2 h-8 w-8 opacity-40" />
+              <template v-if="store.period !== 'all' && store.installations.length">
+                {{ t('period.empty') }}
+                <div><button
+                  type="button"
+                  class="mt-3 inline-flex h-8 items-center rounded-md border border-primary bg-card px-3 text-sm font-medium text-primary transition-colors hover:bg-secondary"
+                  @click="store.period = 'all'"
+                >
+                  {{ t('period.showAll') }}
+                </button></div>
+              </template>
+              <template v-else>{{ t('revenue.empty') }}</template>
+            </div>
+            <ul v-else data-card-list class="asm-card-list">
+              <li
+                v-for="([name, value], index) in custPage.paged.value"
+                :key="name"
+                class="px-4 py-3 has-[:focus-visible]:bg-primary-soft"
+              >
+                <div class="flex items-start gap-3">
+                  <span class="w-6 shrink-0 pt-0.5 text-right text-xs tabular-nums text-muted-foreground">{{ custPage.offset.value + index + 1 }}</span>
+                  <div class="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      class="block w-full text-left text-sm"
+                      :title="`${maskedName(name)} — ${t('revenue.rowHint')}`"
+                      @click="revenueDetailCustomer = name"
+                    >
+                      <span class="block wrap-anywhere" :class="nameLinkClass">{{ maskedName(name) }}</span>
+                      <span class="sr-only"> — {{ t('revenue.rowHint') }}</span>
+                    </button>
+                    <p class="mt-0.5 text-xs text-muted-foreground wrap-anywhere">
+                      <span class="sr-only">{{ t('th.area') }}: </span>{{ areaByCustomer.get(name) ? maskedName(areaByCustomer.get(name)!) : '-' }}
+                    </p>
+                    <div v-if="requestCustomersOf(name).length" class="mt-1 flex flex-wrap items-baseline gap-x-1 gap-y-0.5 text-xs">
+                      <span class="text-muted-foreground">{{ t('th.requestCustomer') }}:</span>
+                      <template v-for="(reqName, reqIndex) in requestCustomersOf(name)" :key="reqName">
+                        <span v-if="reqIndex > 0" class="text-muted-foreground" aria-hidden="true">,</span>
+                        <button
+                          type="button"
+                          class="min-w-0 text-left"
+                          :title="maskedName(reqName)"
+                          @click="requestDetail = reqName"
+                        >
+                          <span class="wrap-anywhere" :class="nameLinkClass">{{ maskedName(reqName) }}</span><span class="sr-only"> — {{ t('request.rowHint') }}</span>
+                        </button>
+                      </template>
+                    </div>
+                    <dl class="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+                      <div>
+                        <dt class="text-xs text-muted-foreground">{{ t('th.qty') }}</dt>
+                        <dd class="whitespace-nowrap text-sm tabular-nums text-foreground">{{ formatNumber(value.qty) }} pcs</dd>
+                      </div>
+                      <div class="ml-auto text-right">
+                        <dt class="text-xs text-muted-foreground">{{ t('th.received') }}</dt>
+                        <dd class="whitespace-nowrap text-sm font-bold tabular-nums text-foreground">{{ maskedIDR(value.revenue) }}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <div v-if="store.revenueByCustomer.length" class="border-t border-border bg-primary-soft px-4 py-3 text-primary">
+              <p class="text-sm font-bold">{{ customerTotalLabel }}</p>
+              <dl class="mt-1 flex flex-wrap items-end justify-between gap-x-4 gap-y-1 font-bold">
+                <div>
+                  <dt class="text-xs font-medium">{{ t('th.qty') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ formatNumber(customerTotal.qty) }} pcs</dd>
+                </div>
+                <div class="ml-auto text-right">
+                  <dt class="text-xs font-medium">{{ t('th.received') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ maskedIDR(customerTotal.revenue) }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <div class="relative hidden overflow-x-auto sm:block">
           <table class="asm-table w-full min-w-160 table-fixed text-left text-sm">
             <thead>
               <tr>
@@ -1047,12 +1221,61 @@ onMounted(() => {
             :total="custPage.total.value"
             @go="custPage.go"
           />
-          <p class="border-t border-border px-4 py-2 text-xs text-muted-foreground">{{ t('th.refLegend') }}</p>
+          <p class="hidden border-t border-border px-4 py-2 text-xs text-muted-foreground sm:block">{{ t('th.refLegend') }}</p>
         </section>
 
         <!-- 월별 매출 -->
         <section v-else id="revenue-panel-month" role="tabpanel" tabindex="0" aria-labelledby="revenue-tab-month" class="rounded-lg border border-border bg-card">
-          <div class="relative overflow-x-auto">
+          <!-- 모바일(<sm) 카드 목록 — 월·건수·수량·수령액. 세부 수수료는 월 상세 팝업과 sm 이상 표에서 -->
+          <div class="sm:hidden">
+            <div v-if="!store.revenueByMonth.length" class="px-4 py-14 text-center text-muted-foreground">
+              <ClipboardList class="mx-auto mb-2 h-8 w-8 opacity-40" />
+              {{ t('revenue.empty') }}
+            </div>
+            <ul v-else data-card-list class="asm-card-list">
+              <li
+                v-for="[month, value] in monthPage.paged.value"
+                :key="month"
+                class="px-4 py-3 has-[:focus-visible]:bg-primary-soft"
+              >
+                <button type="button" class="text-left text-sm" :title="t('month.rowHint')" @click="monthDetail = month">
+                  <span class="tabular-nums" :class="nameLinkClass">{{ formatDate(month) }}</span><span class="sr-only"> — {{ t('month.rowHint') }}</span>
+                </button>
+                <dl class="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+                  <div>
+                    <dt class="text-xs text-muted-foreground">{{ t('th.jobs') }}</dt>
+                    <dd class="whitespace-nowrap text-sm tabular-nums text-foreground">{{ formatNumber(value.count) }} {{ t('unit.items') }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted-foreground">{{ t('th.qty') }}</dt>
+                    <dd class="whitespace-nowrap text-sm tabular-nums text-foreground">{{ formatNumber(value.qty) }} pcs</dd>
+                  </div>
+                  <div class="ml-auto text-right">
+                    <dt class="text-xs text-muted-foreground">{{ t('th.received') }}</dt>
+                    <dd class="whitespace-nowrap text-sm font-bold tabular-nums text-foreground">{{ maskedIDR(value.revenue) }}</dd>
+                  </div>
+                </dl>
+              </li>
+            </ul>
+            <div v-if="store.revenueByMonth.length" class="border-t border-border bg-primary-soft px-4 py-3 text-primary">
+              <p class="text-sm font-bold">{{ t('revenue.total') }} ({{ store.revenueByMonth.length }} {{ t('revenue.monthsUnit') }})</p>
+              <dl class="mt-1 flex flex-wrap items-end justify-between gap-x-4 gap-y-1 font-bold">
+                <div>
+                  <dt class="text-xs font-medium">{{ t('th.jobs') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ formatNumber(monthTotal.count) }} {{ t('unit.items') }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium">{{ t('th.qty') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ formatNumber(monthTotal.qty) }} pcs</dd>
+                </div>
+                <div class="ml-auto text-right">
+                  <dt class="text-xs font-medium">{{ t('th.received') }}</dt>
+                  <dd class="whitespace-nowrap text-sm tabular-nums">{{ maskedIDR(monthTotal.revenue) }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <div class="relative hidden overflow-x-auto sm:block">
           <table class="asm-table w-full min-w-200 text-left text-sm">
             <thead>
               <tr>
@@ -1114,7 +1337,7 @@ onMounted(() => {
             :total="monthPage.total.value"
             @go="monthPage.go"
           />
-          <p class="border-t border-border px-4 py-2 text-xs text-muted-foreground">{{ t('th.refLegend') }}</p>
+          <p class="hidden border-t border-border px-4 py-2 text-xs text-muted-foreground sm:block">{{ t('th.refLegend') }}</p>
         </section>
         </div>
       </template>

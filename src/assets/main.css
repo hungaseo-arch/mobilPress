@@ -291,6 +291,15 @@ utilities 를 모두 @layer 안에 넣으므로, 레이어 밖 규칙이 특이�
 }
 .asm-table > tfoot > tr > td.asm-sticky-end { background: var(--primary-soft); }
 
+/* 모바일(<sm) 카드 목록 — 표와 같은 괘선·저장 강조 규칙. 카드 사이 1px 선, 저장 직후 왼쪽 2px 파란 선. */
+.asm-card-list > li + li { border-top: 1px solid var(--border-50); }
+.asm-card-list > li[data-highlight] {
+  background-color: var(--primary-soft);
+  background-image: linear-gradient(var(--primary), var(--primary));
+  background-size: 2px 100%;
+  background-repeat: no-repeat;
+}
+
 /* 합계 행 — 견적서 합계 행 강조 응용 */
 .asm-table > tfoot > tr > td {
   background: var(--primary-soft);

@@ -197,6 +197,11 @@ const messages: Record<string, { id: string; ko: string }> = {
   'revenue.totalPeriod': { id: 'Total · {period} · {n} item', ko: '합계 · {period} · {n}건' },
   'revenue.totalPeriodFiltered': { id: 'Total · {period} · {n} item hasil pencarian', ko: '합계 · {period} · 검색 결과 {n}건' },
   'revenue.totalFiltered': { id: 'Total · {n} item hasil pencarian', ko: '합계 · 검색 결과 {n}건' },
+  'sort.label': { id: 'Urutkan', ko: '정렬' },
+  'sort.newest': { id: 'Tanggal terbaru', ko: '작업일 최신순' },
+  'sort.oldest': { id: 'Tanggal terlama', ko: '작업일 오래된순' },
+  'sort.high': { id: '{col}: tertinggi', ko: '{col} 높은순' },
+  'sort.low': { id: '{col}: terendah', ko: '{col} 낮은순' },
   'sort.maskedHint': {
     id: 'Pengurutan berdasarkan nominal tidak tersedia pada akun hanya-lihat.',
     ko: '조회 전용 계정에서는 금액순 정렬을 쓸 수 없습니다.',
