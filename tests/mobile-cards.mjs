@@ -12,6 +12,9 @@
 //   390 · 1440      : 툴바 각 도구의 위치를 LAYOUT 줄로 기록(변경 전후 비교용, 판정 아님).
 //   1440×900        : 기존 표(열 수, 정렬 헤더)가 그대로 보이고 카드 목록은 보이지 않는지.
 //   ID / KO         : 카드 라벨이 언어에 맞게 바뀌는지.
+//   320×700 · 390×844 ID/KO 메뉴 : 상단 주 메뉴 2열 격자(앞 4개 2×2 행 우선), 주 메뉴·ID/KO·실적 분석 서브탭·운영자료 하위 메뉴 각 44×44 이상,
+//                     라벨 잘림·가로 넘침 없음, 상단 높이 상한, Enter 로 상태 변경 후 포커스 유지, Tab 순서 = 화면 순서, 방향키 탭 이동.
+//   1440×900 메뉴   : 주 메뉴(32px)·ID/KO(28px)·실적 분석 서브탭(36px)·운영자료 하위 메뉴(32px)·헤더(56px)의 위치·크기가 1de017c 실측과 같은지.
 //
 // 실행
 //   1) mock 모드 dev 서버(loopback, 4173 제외 포트). 저장소의 .env 를 쓰지 않도록 VITE_* 를 프로세스 환경에서 덮어씁니다.
@@ -105,7 +108,7 @@ const cleanup = () => {
 process.on('exit', cleanup)
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { cleanup(); process.exit(130) })
 // 전체 제한 시간 — 멈춰도 Chrome 을 남기지 않는다
-setTimeout(() => { console.error('TIMEOUT'); cleanup(); process.exit(3) }, 240000).unref()
+setTimeout(() => { console.error('TIMEOUT'); cleanup(); process.exit(3) }, 420000).unref()
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 async function devtoolsPort() {
@@ -203,6 +206,19 @@ const tools = (periodLabel, addLabel) => {
 const overflow = () => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, bodyScroll: document.body.scrollWidth });
 const dupIds = () => { const m = {}; document.querySelectorAll('[id]').forEach((e) => (m[e.id] = (m[e.id] ?? 0) + 1)); return Object.entries(m).filter(([, n]) => n > 1).map(([k]) => k); };
 const dialogTitle = () => { const d = document.querySelector('[role=dialog]'); if (!d) return null; const id = d.getAttribute('aria-labelledby'); return (id && document.getElementById(id)?.textContent.trim()) || d.textContent.trim().slice(0, 40); };
+// 메뉴 버튼 측정: 크기·위치 + 글자가 버튼 안에 다 들어가는지(말줄임·넘침·가려짐 없음)
+const menuBox = (el) => {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const range = document.createRange(); range.selectNodeContents(el); const tr = range.getBoundingClientRect();
+  const textFits = el.scrollWidth <= el.clientWidth + 1 && tr.left >= r.left - 0.5 && tr.right <= r.right + 0.5 && tr.top >= r.top - 0.5 && tr.bottom <= r.bottom + 0.5;
+  return { t: el.textContent.trim(), top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right), w: Math.round(r.width), h: Math.round(r.height), ok: readable(el).ok && textFits, textFits };
+};
+const mainNav = () => document.querySelector('header nav');
+const navBtns = () => [...(mainNav()?.querySelectorAll('button') ?? [])];
+const langBtns = () => ['Bahasa Indonesia', '한국어'].map((l) => document.querySelector('header button[aria-label="' + l + '"]'));
+const tablistOf = (label) => [...document.querySelectorAll('[role=tablist]')].find((x) => x.getAttribute('aria-label') === label);
+const headerBox = () => { const h = document.querySelector('header'); const r = h.getBoundingClientRect(); return { top: Math.round(r.top), h: Math.round(r.height), bottom: Math.round(r.bottom), position: getComputedStyle(h).position }; };
 `
 async function evaluate(expr) {
   const res = await send('Runtime.evaluate', {
@@ -243,6 +259,13 @@ async function pressEnter() {
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' })
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 })
 }
+async function pressKey(key, code, vk) {
+  await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key, code, windowsVirtualKeyCode: vk })
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk })
+}
+const pressTab = () => pressKey('Tab', 'Tab', 9)
+const pressArrowRight = () => pressKey('ArrowRight', 'ArrowRight', 39)
+const pressHome = () => pressKey('Home', 'Home', 36)
 async function pressEscape() {
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 })
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 })
@@ -364,6 +387,137 @@ async function layout(label) {
   }
 }
 
+// 모바일 내부 메뉴(sm 미만): 상단 주 메뉴 2열 격자(앞 4개는 2×2, 행 우선 순서), ID/KO·실적 분석·운영자료 하위 메뉴 44×44 이상,
+// 라벨 잘림·가로 넘침 없음, 상태 변경(키보드 Enter)과 포커스 유지, Tab 이동 순서 = 화면 순서, 상단 높이 상한.
+const MENU = {
+  id: { nav: ['Laporan Kerja', 'Analisis Kinerja', 'Anggaran', 'Data Operasional'], revenue: 'Analisis Kinerja', ops: 'Data Operasional', other: 'ko' },
+  ko: { nav: ['장착 실적', '실적 분석', '예산 집행', '운영자료'], revenue: '실적 분석', ops: '운영자료', other: 'id' },
+}
+const MIN_TARGET = 44
+const big = (b) => !!b && b.w >= MIN_TARGET && b.h >= MIN_TARGET
+async function mobileMenus(width, height, lang) {
+  const m = MENU[lang]
+  const tag = `${width} ${lang.toUpperCase()} 메뉴`
+  await viewport(width, height)
+  await open('', lang)
+  const o = await evaluate('overflow()')
+  check(`${tag}: document scrollWidth ≤ ${width}`, noOverflow(o) && o.clientWidth === width, noOverflow(o) ? o : { ...o, offenders: await evaluate('offenders()') })
+
+  // 상단 주 메뉴 — 크기·라벨
+  const nav = await evaluate('navBtns().map(menuBox)')
+  check(`${tag}: 주 메뉴 순서·라벨(${m.nav.join('/')})`, m.nav.every((t, i) => nav[i]?.t === t), nav.map((b) => b.t))
+  check(`${tag}: 주 메뉴 각 ${MIN_TARGET}×${MIN_TARGET} 이상, 라벨 잘림·가려짐 없음`, nav.length >= 4 && nav.every((b) => big(b) && b.ok), nav)
+  // 2×2(행 우선): [0][1] / [2][3], 나머지(관리자 메뉴)도 같은 두 열에 이어서
+  const [a, b, c, d] = nav
+  const grid = nav.length >= 4 && Math.abs(a.top - b.top) <= 1 && Math.abs(c.top - d.top) <= 1 && c.top >= a.bottom && b.left > a.left &&
+    Math.abs(a.left - c.left) <= 1 && Math.abs(b.left - d.left) <= 1 &&
+    nav.slice(4).every((x, i) => Math.abs(x.left - (i % 2 ? b.left : a.left)) <= 1 && x.top >= c.bottom) &&
+    new Set(nav.map((x) => x.left)).size === 2
+  const rows = [...new Set(nav.map((x) => x.top))].length
+  check(`${tag}: 주 메뉴 2열 격자, 앞 4개 2×2 행 우선(열 2·줄 ${Math.ceil(nav.length / 2)})`, grid && rows === Math.ceil(nav.length / 2), { rows, cols: new Set(nav.map((x) => x.left)).size, pos: nav.map((x) => [x.t, x.left, x.top]) })
+
+  // ID/KO
+  const langs = await evaluate('langBtns().map(menuBox)')
+  check(`${tag}: ID/KO 각 ${MIN_TARGET}×${MIN_TARGET} 이상, 화면 안`, langs.length === 2 && langs.every((x) => big(x) && x.ok), langs)
+
+  // 상단 높이 상한: 위 1줄(로고·ID/KO·로그아웃) + 메뉴 줄 수 × (44 + 간격)
+  const navRows = Math.ceil(nav.length / 2)
+  const hb = await evaluate('headerBox()')
+  const limit = 66 + navRows * 48
+  check(`${tag}: 상단 높이 ≤ ${limit}px (메뉴 ${navRows}줄)`, hb.h <= limit, hb)
+  await shot(`menu-${width}-${lang}-header`)
+
+  // Tab 이동 순서: 주 메뉴 앞→뒤(화면의 행 우선 순서와 같음) → ID → KO
+  await evaluate('(navBtns()[0].focus(), true)')
+  const order = [await evaluate(`document.activeElement?.textContent.trim()`)]
+  for (let i = 0; i < nav.length + 1; i++) {
+    await pressTab()
+    order.push(await evaluate(`document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent.trim()`))
+  }
+  const wantOrder = [...nav.map((x) => x.t), 'Bahasa Indonesia', '한국어']
+  check(`${tag}: Tab 순서 = 주 메뉴(행 우선) → ID → KO`, JSON.stringify(order) === JSON.stringify(wantOrder), order)
+
+  // 주 메뉴 상태 변경(키보드 Enter) — 실적 분석, 포커스 유지
+  await evaluate('(navBtns()[1].focus(), true)')
+  await pressEnter()
+  await waitFor(`!!tablistOf(${JSON.stringify(m.revenue)})`)
+  await sleep(200)
+  const rv = await evaluate(`({ cur: navBtns().map((x) => x.getAttribute('aria-current')), focus: document.activeElement === navBtns()[1], url: location.search, o: overflow() })`)
+  check(`${tag}: Enter → ${m.revenue} 선택(aria-current·URL), 포커스 유지`, rv.cur[1] === 'page' && rv.cur.filter(Boolean).length === 1 && rv.focus && rv.url.includes('tab=revenue') && noOverflow(rv.o), rv)
+  // 실적 분석 서브탭
+  const rt = await evaluate(`[...tablistOf(${JSON.stringify(m.revenue)}).querySelectorAll('[role=tab]')].map(menuBox)`)
+  check(`${tag}: 실적 분석 서브탭 2개 각 ${MIN_TARGET}×${MIN_TARGET} 이상, 잘림 없음`, rt.length === 2 && rt.every((x) => big(x) && x.ok), rt)
+  await evaluate(`([...tablistOf(${JSON.stringify(m.revenue)}).querySelectorAll('[role=tab]')].find((x) => x.getAttribute('aria-selected') === 'true').focus(), true)`)
+  await pressArrowRight()
+  await sleep(250)
+  const rs = await evaluate(`(() => { const tabs = [...tablistOf(${JSON.stringify(m.revenue)}).querySelectorAll('[role=tab]')]; return { sel: tabs.findIndex((x) => x.getAttribute('aria-selected') === 'true'), focus: tabs.indexOf(document.activeElement), url: location.search, o: overflow() }; })()`)
+  check(`${tag}: 서브탭 → 방향키로 월별 선택·포커스 이동`, rs.sel === 1 && rs.focus === 1 && rs.url.includes('sub=month') && noOverflow(rs.o), rs)
+  await shot(`menu-${width}-${lang}-revenue`)
+  await pressHome()
+  await sleep(150)
+
+  // 운영자료 하위 메뉴
+  await evaluate('(navBtns()[3].focus(), true)')
+  await pressEnter()
+  const opsReady = await waitFor(`!!tablistOf(${JSON.stringify(m.ops)})`, 5000)
+  await sleep(250)
+  const op = await evaluate(`({ focus: document.activeElement === navBtns()[3], cur: navBtns()[3].getAttribute('aria-current'), tabs: [...tablistOf(${JSON.stringify(m.ops)}).querySelectorAll('[role=tab]')].map(menuBox), o: overflow() })`)
+  check(`${tag}: Enter → ${m.ops} 선택, 포커스 유지, 넘침 없음`, opsReady && op.cur === 'page' && op.focus && noOverflow(op.o), { ready: opsReady, cur: op.cur, focus: op.focus, o: op.o, offenders: noOverflow(op.o) ? undefined : await evaluate('offenders()') })
+  check(`${tag}: 운영자료 하위 메뉴 각 ${MIN_TARGET}×${MIN_TARGET} 이상, 잘림 없음`, op.tabs.length >= 2 && op.tabs.every((x) => big(x) && x.ok), op.tabs)
+  await evaluate(`([...tablistOf(${JSON.stringify(m.ops)}).querySelectorAll('[role=tab]')].find((x) => x.getAttribute('aria-selected') === 'true').focus(), true)`)
+  await pressHome()
+  await sleep(150)
+  await pressArrowRight()
+  await sleep(250)
+  const os = await evaluate(`(() => { const tabs = [...tablistOf(${JSON.stringify(m.ops)}).querySelectorAll('[role=tab]')]; return { sel: tabs.findIndex((x) => x.getAttribute('aria-selected') === 'true'), focus: tabs.indexOf(document.activeElement), o: overflow() }; })()`)
+  check(`${tag}: 운영자료 하위 메뉴 → 방향키로 둘째 선택·포커스 이동`, os.sel === 1 && os.focus === 1 && noOverflow(os.o), os)
+  await shot(`menu-${width}-${lang}-operations`)
+  await pressHome()
+  await sleep(150)
+
+  // 언어 전환(키보드 Enter) — 상태·라벨 변경, 포커스 유지, 다시 원래 언어로
+  const otherLabel = m.other === 'ko' ? '한국어' : 'Bahasa Indonesia'
+  const selfLabel = m.other === 'ko' ? 'Bahasa Indonesia' : '한국어'
+  await evaluate(`(document.querySelector('header button[aria-label="${otherLabel}"]').focus(), true)`)
+  await pressEnter()
+  await sleep(250)
+  const lg = await evaluate(`({ pressed: document.querySelector('header button[aria-label="${otherLabel}"]').getAttribute('aria-pressed'), focus: document.activeElement?.getAttribute('aria-label'), nav0: navBtns()[0].textContent.trim(), navOk: navBtns().map(menuBox).every((x) => x.ok && x.w >= ${MIN_TARGET} && x.h >= ${MIN_TARGET}), o: overflow() })`)
+  check(`${tag}: ${m.other.toUpperCase()} 전환(aria-pressed·라벨), 포커스 유지, 메뉴 잘림·넘침 없음`, lg.pressed === 'true' && lg.focus === otherLabel && lg.nav0 === MENU[m.other].nav[0] && lg.navOk && noOverflow(lg.o), lg)
+  await evaluate(`(document.querySelector('header button[aria-label="${selfLabel}"]').focus(), true)`)
+  await pressEnter()
+  await sleep(250)
+  const back = await evaluate(`({ pressed: document.querySelector('header button[aria-label="${selfLabel}"]').getAttribute('aria-pressed'), focus: document.activeElement?.getAttribute('aria-label'), nav0: navBtns()[0].textContent.trim() })`)
+  check(`${tag}: ${lang.toUpperCase()} 복귀, 포커스 유지`, back.pressed === 'true' && back.focus === selfLabel && back.nav0 === m.nav[0], back)
+}
+
+// PC(1440) 상단·하위 메뉴 회귀 — 1de017c 에서 잰 위치·크기와 정확히 같아야 합니다([left, top, width, height] / 서브탭 [left, width, height]).
+// (mock 은 관리자 권한이라 주 메뉴 6개이며, 기존 PC 에서도 마지막 메뉴가 둘째 줄로 내려갑니다 — 그 배치까지 그대로 둡니다.)
+const PC_BASE = {
+  nav: [[431, 4, 120, 32], [555, 4, 126, 32], [685, 4, 87, 32], [777, 4, 139, 32], [920, 4, 90, 32], [640, 40, 160, 32]],
+  langs: [[1250, 32, 28], [1284, 33, 28]],
+  header: 57,
+  revenue: [[144, 213, 36], [365, 173, 36]],
+  ops: [[144, 85, 61, 32], [213, 85, 70, 32], [290, 85, 82, 32], [380, 85, 62, 32], [450, 85, 107, 32], [566, 85, 130, 32]],
+}
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+async function pcMenus() {
+  await viewport(1440, 900)
+  await open()
+  const pc = await evaluate(`({ nav: navBtns().map(menuBox), langs: langBtns().map(menuBox), header: headerBox(), o: overflow() })`)
+  const nav = pc.nav.map((x) => [x.left, x.top, x.w, x.h])
+  const langs = pc.langs.map((x) => [x.left, x.w, x.h])
+  check('1440 메뉴: 주 메뉴·ID/KO 위치·크기, 헤더 높이 57 기존과 같음', same(nav, PC_BASE.nav) && same(langs, PC_BASE.langs) && pc.header.h === PC_BASE.header && pc.header.position === 'sticky' && pc.nav.every((x) => x.ok) && noOverflow(pc.o), { nav, langs, header: pc.header })
+  await open('?tab=revenue')
+  const rt = (await evaluate(`[...tablistOf('Analisis Kinerja').querySelectorAll('[role=tab]')].map(menuBox)`)).map((x) => [x.left, x.w, x.h])
+  check('1440 메뉴: 실적 분석 서브탭 위치·크기(높이 36) 기존과 같음', same(rt, PC_BASE.revenue), rt)
+  await evaluate(`(navBtns()[3].click(), true)`)
+  await waitFor(`!!tablistOf('Data Operasional')`, 5000)
+  await sleep(250)
+  const ot = (await evaluate(`[...tablistOf('Data Operasional').querySelectorAll('[role=tab]')].map(menuBox)`)).map((x) => [x.left, x.top, x.w, x.h])
+  check('1440 메뉴: 운영자료 하위 메뉴 위치·크기(높이 32) 기존과 같음', same(ot, PC_BASE.ops), ot)
+  await shot('menu-1440-operations')
+}
+
 async function run() {
   // 390 — Laporan Kerja
   await mobileInstallations(390, 844, '390')
@@ -471,6 +625,9 @@ async function run() {
   check('320 월별: 결과 영역 넘침 없음 + 수령액 보임', o.over === 0 && (await evaluate(`readable(byText(${JSON.stringify(idr(novReceived))}))`)).ok, o)
   for (const lang of ['id', 'ko']) await tools320(lang)
 
+  // 모바일 내부 메뉴 — 320×700 · 390×844, ID/KO 각각
+  for (const [w, h] of [[320, 700], [390, 844]]) for (const lang of ['id', 'ko']) await mobileMenus(w, h, lang)
+
   // KO 390
   await viewport(390, 844)
   await open('', 'ko')
@@ -496,6 +653,8 @@ async function run() {
   await open()
   const sortHdr = await evaluate(`(() => { const b = [...scope().querySelectorAll('thead button')].filter(vis).map((x) => x.textContent.trim()); return b; })()`)
   check('1440 Laporan Kerja: 정렬 헤더 버튼 3개 유지', sortHdr.length === 3, sortHdr)
+
+  await pcMenus()
 
   check('loopback 외 요청 없음', foreignRequests.length === 0, foreignRequests)
 }

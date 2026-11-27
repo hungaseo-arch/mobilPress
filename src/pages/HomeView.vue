@@ -561,8 +561,9 @@ onMounted(() => {
     <div class="asm-accent-bar" />
 
     <!-- 헤더 56px: 좌 시그니처 로고|구분선|화면 제목 · 중앙 대분류 메뉴 · 우 역할·언어·로그아웃 -->
-    <header class="asm-app-header sticky top-1 z-40 border-b border-border bg-card px-5">
-      <div class="mx-auto flex max-w-300 flex-wrap items-center gap-3 py-2 lg:grid lg:h-14 lg:grid-cols-[1fr_2fr_1fr] lg:flex-nowrap lg:py-0">
+    <header class="asm-app-header sticky top-1 z-40 border-b border-border bg-card px-4 sm:px-5">
+      <!-- 모바일(<640px): 1줄 로고 · ID/KO · 로그아웃, 2줄 주 메뉴 2열 격자. DOM 순서(로고→메뉴→언어)는 그대로라 Tab 순서가 PC와 같다 -->
+      <div class="mx-auto grid max-w-300 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 py-1.5 sm:flex sm:flex-wrap sm:gap-3 sm:py-2 lg:grid lg:h-14 lg:grid-cols-[1fr_2fr_1fr] lg:flex-nowrap lg:py-0">
         <!-- 1열: 시그니처 로고 + 화면 제목 (BS 04 — 비율 보존을 위해 높이만 지정) -->
         <div class="flex min-w-0 items-center">
           <img
@@ -580,12 +581,13 @@ onMounted(() => {
         </div>
 
         <!-- 2열: 대분류 메뉴 (중앙) — 활성은 블루 10% 틴트 + 블루 글자 700 (가이드 7-2) -->
-        <nav :aria-label="t('nav.main')" class="flex flex-wrap justify-center gap-1 lg:justify-self-center">
+        <!-- 모바일은 2열 격자(행 우선: 앞 4개가 2×2), 버튼 최소 44px — 긴 라벨은 잘리지 않고 두 줄로 -->
+        <nav :aria-label="t('nav.main')" class="col-span-2 row-start-2 grid grid-cols-2 gap-1 sm:col-auto sm:row-auto sm:flex sm:flex-wrap sm:justify-center lg:justify-self-center">
           <button
             v-for="tab in tabs"
             :key="tab.key"
             type="button"
-            class="whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors"
+            class="flex min-h-11 min-w-0 items-center justify-center rounded-md px-2 py-1 text-center text-sm transition-colors max-sm:leading-tight sm:block sm:min-h-0 sm:whitespace-nowrap sm:px-3 sm:py-1.5"
             :aria-current="activeTab === tab.key ? 'page' : undefined"
             :class="
               activeTab === tab.key
@@ -606,7 +608,7 @@ onMounted(() => {
           <div class="flex shrink-0 gap-0.5 rounded-md border border-border bg-card p-0.5">
             <button
               type="button"
-              class="inline-flex min-h-7 min-w-8 items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors sm:min-h-7 sm:min-w-8"
               :class="lang === 'id' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-secondary'"
               aria-label="Bahasa Indonesia"
               :aria-pressed="lang === 'id'"
@@ -616,7 +618,7 @@ onMounted(() => {
             </button>
             <button
               type="button"
-              class="inline-flex min-h-7 min-w-8 items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors sm:min-h-7 sm:min-w-8"
               :class="lang === 'ko' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-secondary'"
               aria-label="한국어"
               :aria-pressed="lang === 'ko'"
@@ -629,7 +631,7 @@ onMounted(() => {
           <button
             v-if="authEnabled && currentUser"
             type="button"
-            class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+            class="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary sm:h-9 sm:min-w-0"
             :title="`${currentUser.email} · ${t('btn.logout')}`"
             :aria-label="`${t('btn.logout')} · ${currentUser.name || currentUser.email}`"
             @click="onLogout"
@@ -729,7 +731,7 @@ onMounted(() => {
                 :key="rt.key"
                 type="button"
                 role="tab"
-                class="inline-flex h-9 items-center whitespace-nowrap rounded-md border px-4 text-sm transition-colors"
+                class="inline-flex h-11 items-center whitespace-nowrap rounded-md border px-4 text-sm transition-colors sm:h-9"
                 :class="
                   revenueTab === rt.key
                     ? 'border-primary-40 bg-primary-soft font-bold text-primary'

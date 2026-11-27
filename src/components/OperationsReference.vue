@@ -316,7 +316,7 @@ function eqWidthStyle(headers: string[]): Record<string, string> {
         :aria-selected="activeKey === tab.key"
         :aria-controls="activeKey === tab.key ? panelId(tab.key) : undefined"
         :tabindex="activeKey === tab.key ? 0 : -1"
-        class="inline-flex h-8 items-center whitespace-nowrap rounded-md border px-4 text-sm transition-colors"
+        class="inline-flex h-11 items-center whitespace-nowrap rounded-md border px-4 text-sm transition-colors sm:h-8"
         :class="
           activeKey === tab.key
             ? 'border-primary-40 bg-primary-soft font-bold text-primary'
